@@ -1,4 +1,6 @@
 export { createBehavior } from "./behavior";
+export { createStore } from "./store";
+export type { Store } from "./store";
 export type {
   Action,
   Behavior,

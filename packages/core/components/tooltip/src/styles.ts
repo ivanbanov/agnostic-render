@@ -1,26 +1,24 @@
 /**
- * Tooltip style spec — agnostic shape, paint-only.
+ * Tooltip styles — agnostic, paint-only.
  *
- * This file describes how the tooltip's box paints (colors, padding,
- * radius, text size). It does NOT describe where it mounts, how it
- * captures input, or how it positions relative to a trigger — those
- * are structural / behavioral concerns and live elsewhere
- * (see `./component.ts`, `./behavior.ts`).
+ * Each element of the component (positioner, content, future arrow…)
+ * has its own const here. Adapters (React, RN, Surface, …) translate
+ * these into their renderer-native styled wrappers.
  *
  * Property naming rule:
  *   - Use CSS names where they map cleanly across renderers.
- *   - For the handful that don't map (writing-mode logical inline/block
- *     CSS), use physical-axis equivalents: `paddingX` / `paddingY`.
- *     Adapters expand these.
+ *   - For the handful that don't (writing-mode logical inline/block),
+ *     use physical-axis equivalents: `paddingX` / `paddingY`. Adapters
+ *     expand these.
  *
  * Shape: flat base styles at the top level alongside variants /
  * compoundVariants / defaultVariants — same arrangement Stitches uses.
  */
 
-import type { Placement } from "./behavior";
+import type { Placement } from "./types";
 
 // -----------------------------------------------------------------------------
-// Style spec types
+// Types
 // -----------------------------------------------------------------------------
 
 export type StyleValue = string | number | boolean;
@@ -44,31 +42,19 @@ export type StyleSpec<TVariants extends Record<string, Record<string, Style>>> =
   [prop: string]: unknown;
 };
 
-// -----------------------------------------------------------------------------
-// Tooltip content
-// -----------------------------------------------------------------------------
-
-const sideMap: Record<Placement, "top" | "bottom" | "left" | "right"> = {
-  top: "top",
-  "top-start": "top",
-  "top-end": "top",
-  bottom: "bottom",
-  "bottom-start": "bottom",
-  "bottom-end": "bottom",
-  left: "left",
-  "left-start": "left",
-  "left-end": "left",
-  right: "right",
-  "right-start": "right",
-  "right-end": "right",
+export type ContentVariants = {
+  side: "top" | "bottom" | "left" | "right";
 };
 
-/** Convert a logical placement to the variant key the style spec exposes. */
-export function placementToSide(p: Placement) {
-  return sideMap[p];
-}
+export type PositionerVariants = {
+  anchored: "true" | "false";
+};
 
-export const tooltipContentStyle: StyleSpec<{
+// -----------------------------------------------------------------------------
+// Elements
+// -----------------------------------------------------------------------------
+
+export const content: StyleSpec<{
   side: Record<"top" | "bottom" | "left" | "right", Style>;
 }> = {
   position: "absolute",
@@ -99,20 +85,12 @@ export const tooltipContentStyle: StyleSpec<{
   },
 };
 
-export type TooltipContentVariants = {
-  side: "top" | "bottom" | "left" | "right";
-};
-
-// -----------------------------------------------------------------------------
-// Tooltip positioner — the zero-size anchor box that hosts the content.
-// -----------------------------------------------------------------------------
-//
-// Two static facts (position fixed, zero-size) live in `base`. The
-// `anchored` variant toggles visibility based on whether the runtime
-// has computed an anchor point yet. The anchor coordinates themselves
-// are runtime data, so the React layer passes them via `css`.
-
-export const tooltipPositionerStyle: StyleSpec<{
+// The zero-size anchor box that hosts the content. Two static facts
+// (position fixed, zero-size) plus an `anchored` variant that toggles
+// visibility based on whether the runtime has computed an anchor point
+// yet. The anchor coordinates themselves are runtime data, so the React
+// layer passes them via `css`.
+export const positioner: StyleSpec<{
   anchored: Record<"true" | "false", Style>;
 }> = {
   position: "fixed",
@@ -129,6 +107,26 @@ export const tooltipPositionerStyle: StyleSpec<{
   },
 };
 
-export type TooltipPositionerVariants = {
-  anchored: "true" | "false";
+// -----------------------------------------------------------------------------
+// Utils
+// -----------------------------------------------------------------------------
+
+const sideMap: Record<Placement, "top" | "bottom" | "left" | "right"> = {
+  top: "top",
+  "top-start": "top",
+  "top-end": "top",
+  bottom: "bottom",
+  "bottom-start": "bottom",
+  "bottom-end": "bottom",
+  left: "left",
+  "left-start": "left",
+  "left-end": "left",
+  right: "right",
+  "right-start": "right",
+  "right-end": "right",
 };
+
+/** Convert a logical placement to the variant key `content` exposes. */
+export function placementToSide(p: Placement) {
+  return sideMap[p];
+}

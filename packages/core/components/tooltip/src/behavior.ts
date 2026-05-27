@@ -1,5 +1,5 @@
 /**
- * Tooltip behavior — substrate-agnostic.
+ * Tooltip behavior — substrate-agnostic state machine.
  *
  * States: closed → opening → open → closing
  *
@@ -17,136 +17,58 @@
  *   - DOM event listeners outside the named effects
  *   - Floating UI / popper — positioning is a logical record, adapters translate
  *   - aria-* / role / data-* / style — those live in the connect's logical output
+ *
+ * Sibling files:
+ *   - types.ts   — public types (Placement, TooltipProps, TooltipApi, …)
+ *   - props.ts   — defaults + resolver (raw props → resolved)
+ *   - styles.ts  — paint-only style specs per element
+ *   - index.ts   — public exports
  */
 
-import type {
-  BehaviorConfig,
-  LogicalAttrs,
-  LogicalHandlers,
+import {
+  createStore,
+  type BehaviorConfig,
 } from "@render-experiment/behavior-core";
-
-// -----------------------------------------------------------------------------
-// Public types
-// -----------------------------------------------------------------------------
-
-export type Placement =
-  | "top"
-  | "top-start"
-  | "top-end"
-  | "bottom"
-  | "bottom-start"
-  | "bottom-end"
-  | "left"
-  | "left-start"
-  | "left-end"
-  | "right"
-  | "right-start"
-  | "right-end";
-
-export interface PositioningOptions {
-  placement: Placement;
-  offset: { main: number; cross: number };
-}
-
-export interface TooltipProps {
-  id: string;
-  /** Controlled open state. Pass `undefined` for uncontrolled. */
-  open?: boolean;
-  defaultOpen?: boolean;
-  openDelay?: number;
-  closeDelay?: number;
-  closeOnEscape?: boolean;
-  closeOnClick?: boolean;
-  closeOnPointerDown?: boolean;
-  interactive?: boolean;
-  disabled?: boolean;
-  positioning?: Partial<PositioningOptions>;
-  onOpenChange?: (details: { open: boolean }) => void;
-}
-
-export interface TooltipContext {
-  hasPointerMoveOpened: boolean;
-  placement: Placement;
-}
-
-export type TooltipState = "closed" | "opening" | "open" | "closing";
+import { TOOLTIP_SKIP_DELAY_MS, tooltipProps } from "./props";
+import type {
+  TooltipApi,
+  TooltipContext,
+  TooltipProps,
+  TooltipState,
+} from "./types";
 
 // -----------------------------------------------------------------------------
 // Global "only one tooltip open at a time" store + skip-delay window
 // -----------------------------------------------------------------------------
 
-interface TooltipStore {
+interface TooltipStoreState {
   openId: string | null;
   /** When non-null, new tooltips skip openDelay until skipUntil. */
   skipUntil: number | null;
 }
 
-const store: TooltipStore = { openId: null, skipUntil: null };
-const storeListeners = new Set<() => void>();
-
-const notifyStore = () => storeListeners.forEach((l) => l());
+const store = createStore<TooltipStoreState>({
+  openId: null,
+  skipUntil: null,
+});
 
 export const tooltipStore = {
-  get: () => store,
-  subscribe(listener: () => void) {
-    storeListeners.add(listener);
-    return () => storeListeners.delete(listener);
-  },
+  get: store.get,
+  subscribe: store.subscribe,
   setOpen(id: string | null) {
-    store.openId = id;
-    notifyStore();
+    store.set((s) => ({ ...s, openId: id }));
   },
   startSkipWindow(ms: number) {
-    store.skipUntil = Date.now() + ms;
-    notifyStore();
+    store.set((s) => ({ ...s, skipUntil: Date.now() + ms }));
   },
   endSkipWindow() {
-    store.skipUntil = null;
-    notifyStore();
+    store.set((s) => ({ ...s, skipUntil: null }));
   },
   isInSkipWindow() {
-    return store.skipUntil !== null && Date.now() < store.skipUntil;
+    const { skipUntil } = store.get();
+    return skipUntil !== null && Date.now() < skipUntil;
   },
 };
-
-// -----------------------------------------------------------------------------
-// Defaults
-// -----------------------------------------------------------------------------
-
-const DEFAULT_OPEN_DELAY = 400;
-const DEFAULT_CLOSE_DELAY = 150;
-const DEFAULT_SKIP_DELAY = 300;
-
-function resolvedProps(props: TooltipProps): Required<
-  Omit<TooltipProps, "open" | "defaultOpen" | "onOpenChange" | "positioning">
-> & {
-  open: boolean | undefined;
-  defaultOpen: boolean;
-  onOpenChange: TooltipProps["onOpenChange"];
-  positioning: PositioningOptions;
-} {
-  return {
-    id: props.id,
-    open: props.open,
-    defaultOpen: props.defaultOpen ?? false,
-    openDelay: props.openDelay ?? DEFAULT_OPEN_DELAY,
-    closeDelay: props.closeDelay ?? DEFAULT_CLOSE_DELAY,
-    closeOnEscape: props.closeOnEscape ?? true,
-    closeOnClick: props.closeOnClick ?? true,
-    closeOnPointerDown:
-      props.closeOnPointerDown ?? props.closeOnClick ?? true,
-    interactive: props.interactive ?? false,
-    disabled: props.disabled ?? false,
-    onOpenChange: props.onOpenChange,
-    positioning: {
-      placement: props.positioning?.placement ?? "bottom",
-      offset: {
-        main: props.positioning?.offset?.main ?? 4,
-        cross: props.positioning?.offset?.cross ?? 0,
-      },
-    },
-  };
-}
 
 // -----------------------------------------------------------------------------
 // Behavior config
@@ -154,13 +76,13 @@ function resolvedProps(props: TooltipProps): Required<
 
 export const tooltipBehavior: BehaviorConfig<TooltipContext, TooltipProps> = {
   initial: (props) => {
-    const r = resolvedProps(props);
+    const r = tooltipProps(props);
     return r.open ?? r.defaultOpen ? "open" : "closed";
   },
 
   context: (props) => ({
     hasPointerMoveOpened: false,
-    placement: resolvedProps(props).positioning.placement,
+    placement: tooltipProps(props).positioning.placement,
   }),
 
   states: {
@@ -229,15 +151,15 @@ export const tooltipBehavior: BehaviorConfig<TooltipContext, TooltipProps> = {
   implementations: {
     guards: {
       shouldSkipDelay: () => tooltipStore.isInSkipWindow(),
-      isInteractive: ({ props }) => !!resolvedProps(props).interactive,
+      isInteractive: ({ props }) => !!tooltipProps(props).interactive,
     },
 
     actions: {
       invokeOnOpen: ({ props }) => {
-        resolvedProps(props).onOpenChange?.({ open: true });
+        tooltipProps(props).onOpenChange?.({ open: true });
       },
       invokeOnClose: ({ props }) => {
-        resolvedProps(props).onOpenChange?.({ open: false });
+        tooltipProps(props).onOpenChange?.({ open: false });
       },
       setPointerMoveOpened: ({ setContext }) => {
         setContext({ hasPointerMoveOpened: true });
@@ -246,12 +168,12 @@ export const tooltipBehavior: BehaviorConfig<TooltipContext, TooltipProps> = {
         setContext({ hasPointerMoveOpened: false });
       },
       setGlobalId: ({ props }) => {
-        const { id } = resolvedProps(props);
+        const { id } = tooltipProps(props);
         tooltipStore.setOpen(id);
-        tooltipStore.startSkipWindow(DEFAULT_SKIP_DELAY);
+        tooltipStore.startSkipWindow(TOOLTIP_SKIP_DELAY_MS);
       },
       clearGlobalId: ({ props }) => {
-        const { id } = resolvedProps(props);
+        const { id } = tooltipProps(props);
         if (tooltipStore.get().openId === id) {
           tooltipStore.setOpen(null);
         }
@@ -262,7 +184,7 @@ export const tooltipBehavior: BehaviorConfig<TooltipContext, TooltipProps> = {
       waitForOpenDelay: ({ props, send }) => {
         const id = setTimeout(
           () => send({ type: "after.openDelay" }),
-          resolvedProps(props).openDelay,
+          tooltipProps(props).openDelay,
         );
         return () => clearTimeout(id);
       },
@@ -270,13 +192,13 @@ export const tooltipBehavior: BehaviorConfig<TooltipContext, TooltipProps> = {
       waitForCloseDelay: ({ props, send }) => {
         const id = setTimeout(
           () => send({ type: "after.closeDelay" }),
-          resolvedProps(props).closeDelay,
+          tooltipProps(props).closeDelay,
         );
         return () => clearTimeout(id);
       },
 
       trackEscapeKey: ({ props, send }) => {
-        if (!resolvedProps(props).closeOnEscape) return;
+        if (!tooltipProps(props).closeOnEscape) return;
         // DOM-bound on web — target-react owns this effect implementation
         // and an alternative target (Surface, RN) supplies its own.
         const onKeyDown = (event: KeyboardEvent) => {
@@ -289,7 +211,7 @@ export const tooltipBehavior: BehaviorConfig<TooltipContext, TooltipProps> = {
       },
 
       trackGlobalStore: ({ props, send }) => {
-        const { id } = resolvedProps(props);
+        const { id } = tooltipProps(props);
         return tooltipStore.subscribe(() => {
           if (tooltipStore.get().openId !== id && tooltipStore.get().openId !== null) {
             send({ type: "close", src: "store.id.change" });
@@ -304,26 +226,14 @@ export const tooltipBehavior: BehaviorConfig<TooltipContext, TooltipProps> = {
 // connect — produces a LOGICAL surface, not DOM props
 // -----------------------------------------------------------------------------
 
-export interface TooltipApi {
-  open: boolean;
-  state: TooltipState;
-  setOpen: (next: boolean) => void;
-  trigger: { handlers: LogicalHandlers; attrs: LogicalAttrs };
-  content: {
-    handlers: LogicalHandlers;
-    attrs: LogicalAttrs;
-    positioning: PositioningOptions;
-    rendered: boolean;
-  };
-}
-
 export function connect(
   state: TooltipState,
   context: TooltipContext,
   props: TooltipProps,
   send: (event: { type: string; [key: string]: unknown }) => void,
 ): TooltipApi {
-  const r = resolvedProps(props);
+  void context;
+  const r = tooltipProps(props);
   const open = state === "open" || state === "closing";
   const triggerId = `tooltip:${r.id}:trigger`;
   const contentId = `tooltip:${r.id}:content`;

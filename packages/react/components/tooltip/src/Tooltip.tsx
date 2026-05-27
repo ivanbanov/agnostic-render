@@ -5,7 +5,8 @@ import {
   type TooltipApi,
   type TooltipProps,
 } from "@render-experiment/tooltip-core";
-import { TooltipContextRef, useTooltipApi, useTooltipCtx } from "./behavior";
+import { useTooltipApi } from "./api";
+import { TooltipContextRef, useTooltipContext } from "./context";
 import * as Styled from "./elements";
 import { anchorOf, cloneOnly, getChildRef, mergeRefs } from "./utils";
 
@@ -40,7 +41,7 @@ export interface TooltipTriggerProps {
 }
 
 export function TooltipTrigger({ children }: TooltipTriggerProps) {
-  const { api, triggerRef } = useTooltipCtx();
+  const { api, triggerRef } = useTooltipContext();
 
   const setRef = (node: HTMLElement | null) => {
     triggerRef.current = node;
@@ -59,11 +60,11 @@ export function TooltipTrigger({ children }: TooltipTriggerProps) {
 // -----------------------------------------------------------------------------
 //
 // Render structure:
-//   <Styled.Root>        position: fixed at anchor point (zero-size,
+//   <Styled.Positioner>  position: fixed at anchor point (zero-size,
 //                         from spec); top/left are runtime data and
 //                         come through the `css` prop.
 //     <Styled.Content>   position: absolute + edge-pinned via variant
-//   </Styled.Root>
+//   </Styled.Positioner>
 //
 // The positioner is a zero-size box at the anchor point so the content's
 // edge-pinning variant (`top/right/bottom/left: "100%"`) resolves against
@@ -74,7 +75,7 @@ export interface TooltipContentProps {
 }
 
 export function TooltipContent({ children }: TooltipContentProps) {
-  const { api, triggerRef } = useTooltipCtx();
+  const { api, triggerRef } = useTooltipContext();
   if (!api.content.rendered) return null;
   return (
     <PositionedContent api={api} triggerRef={triggerRef}>
@@ -118,10 +119,19 @@ function PositionedContent({
   const anchorCoords = anchor ? { top: anchor.y, left: anchor.x } : undefined;
 
   return (
-    <Styled.Root anchored={anchor ? "true" : "false"} css={anchorCoords}>
+    <Styled.Positioner anchored={anchor ? "true" : "false"} css={anchorCoords}>
       <Styled.Content {...handlerProps} {...attrProps} side={side}>
         {children}
       </Styled.Content>
-    </Styled.Root>
+    </Styled.Positioner>
   );
 }
+
+// -----------------------------------------------------------------------------
+// Public composite
+// -----------------------------------------------------------------------------
+
+export const Tooltip = Object.assign(TooltipRoot, {
+  Trigger: TooltipTrigger,
+  Content: TooltipContent,
+});

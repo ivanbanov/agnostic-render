@@ -8,23 +8,23 @@ export default defineConfig({
     alias: {
       "@render-experiment/behavior-core": resolve(
         __dirname,
-        "../packages/behavior/core/src",
+        "../packages/core/behavior/src",
       ),
       "@render-experiment/behavior-react": resolve(
         __dirname,
-        "../packages/behavior/react/src",
+        "../packages/react/behavior/src",
       ),
       "@render-experiment/style-react": resolve(
         __dirname,
-        "../packages/style/react/src",
+        "../packages/react/style/src",
       ),
       "@render-experiment/tooltip-core": resolve(
         __dirname,
-        "../packages/components/core/tooltip/src",
+        "../packages/core/components/tooltip/src",
       ),
       "@render-experiment/tooltip-react": resolve(
         __dirname,
-        "../packages/components/react/tooltip/src",
+        "../packages/react/components/tooltip/src",
       ),
     },
   },
