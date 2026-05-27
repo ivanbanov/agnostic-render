@@ -1,5 +1,5 @@
-export { Tooltip, TooltipRoot, TooltipTrigger, TooltipContent } from "./Tooltip";
-export type { TooltipRootProps, TooltipTriggerProps, TooltipContentProps } from "./Tooltip";
+export { Tooltip, TooltipRoot, TooltipTrigger, TooltipContent } from "./render";
+export type { TooltipRootProps, TooltipTriggerProps, TooltipContentProps } from "./render";
 
 export { useTooltipApi } from "./api";
 export { useTooltipContext, TooltipContextRef } from "./context";

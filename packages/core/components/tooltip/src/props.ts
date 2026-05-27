@@ -5,7 +5,7 @@
  *   - TOOLTIP_DEFAULTS  — static fact, exported for inspection/docs
  *   - tooltipProps()    — raw → resolved (defaults merged, edge cases handled)
  *
- * Kept separate from behavior.ts so a designer collaborator can read the
+ * Kept separate from machine.ts so a designer collaborator can read the
  * defaults in isolation, without scrolling past the state machine.
  */
 
@@ -32,14 +32,14 @@ export const TOOLTIP_DEFAULTS = {
 
 /** Window during which a newly-hovered tooltip skips its open delay,
  *  triggered by another tooltip having recently opened. Not a user-tunable
- *  prop — purely a behavioral constant. */
+ *  prop — purely a machine-level constant. */
 export const TOOLTIP_SKIP_DELAY_MS = 300;
 
 // -----------------------------------------------------------------------------
 // Resolved shape
 // -----------------------------------------------------------------------------
 
-/** Props after defaults are applied. Behavior code only ever sees this
+/** Props after defaults are applied. Machine code only ever sees this
  * shape — every optional prop is concrete, positioning is fully populated. */
 export interface ResolvedTooltipProps {
   id: string;

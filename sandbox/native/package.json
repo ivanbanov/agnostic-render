@@ -1,0 +1,29 @@
+{
+  "name": "sandbox-native",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start --clear",
+    "ios": "expo start --ios --clear",
+    "android": "expo start --android --clear",
+    "web": "expo start --web --clear"
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "~3.2.3",
+    "@render-experiment/machine-core": "workspace:*",
+    "@render-experiment/machine-native": "workspace:*",
+    "@render-experiment/style-engine-native": "workspace:*",
+    "@render-experiment/tooltip-core": "workspace:*",
+    "@render-experiment/tooltip-native": "workspace:*",
+    "expo": "~51.0.0",
+    "expo-status-bar": "~1.12.1",
+    "react": "18.2.0",
+    "react-native": "0.74.5",
+    "react-native-web": "~0.19.13"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@types/react": "~18.2.45"
+  }
+}

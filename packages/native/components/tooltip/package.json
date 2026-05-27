@@ -1,5 +1,5 @@
 {
-  "name": "@render-experiment/tooltip-react",
+  "name": "@render-experiment/tooltip-native",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,11 +9,12 @@
     ".": "./src/index.ts"
   },
   "peerDependencies": {
-    "react": "*"
+    "react": "*",
+    "react-native": "*"
   },
   "dependencies": {
-    "@render-experiment/machine-react": "workspace:*",
-    "@render-experiment/style-engine-react": "workspace:*",
+    "@render-experiment/machine-native": "workspace:*",
+    "@render-experiment/style-engine-native": "workspace:*",
     "@render-experiment/tooltip-core": "workspace:*"
   }
 }

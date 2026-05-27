@@ -1,0 +1,31 @@
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { resolve } from "node:path";
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@render-experiment/machine-core": resolve(
+        __dirname,
+        "../../packages/core/machine/src",
+      ),
+      "@render-experiment/machine-react": resolve(
+        __dirname,
+        "../../packages/react/machine/src",
+      ),
+      "@render-experiment/style-engine-react": resolve(
+        __dirname,
+        "../../packages/react/style-engine/src",
+      ),
+      "@render-experiment/tooltip-core": resolve(
+        __dirname,
+        "../../packages/core/components/tooltip/src",
+      ),
+      "@render-experiment/tooltip-react": resolve(
+        __dirname,
+        "../../packages/react/components/tooltip/src",
+      ),
+    },
+  },
+});

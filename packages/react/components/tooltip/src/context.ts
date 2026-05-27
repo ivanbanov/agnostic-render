@@ -4,7 +4,7 @@ import type { TooltipApi } from "@render-experiment/tooltip-core";
 /**
  * React context for the tooltip — the root provides; Trigger/Content
  * consume. Kept separate from the API hook in api.ts so the wiring of
- * "behavior → React" and the wiring of "component tree → context" stay
+ * "machine → React" and the wiring of "component tree → context" stay
  * independently editable.
  */
 

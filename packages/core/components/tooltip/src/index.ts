@@ -1,5 +1,5 @@
-// Behavior
-export { tooltipBehavior, tooltipStore, connect as connectTooltip } from "./behavior";
+// Machine
+export { tooltipMachine, tooltipStore, connect as connectTooltip } from "./machine";
 
 // Types
 export type {

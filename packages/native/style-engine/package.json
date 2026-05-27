@@ -1,5 +1,5 @@
 {
-  "name": "@render-experiment/tooltip-core",
+  "name": "@render-experiment/style-engine-native",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -8,7 +8,7 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "dependencies": {
-    "@render-experiment/machine-core": "workspace:*"
+  "peerDependencies": {
+    "react-native": "*"
   }
 }

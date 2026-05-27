@@ -1,15 +1,15 @@
 /**
  * Tooltip — public types.
  *
- * Vocabulary shared across the component's other files (behavior.ts,
+ * Vocabulary shared across the component's other files (machine.ts,
  * styles.ts) and consumed by adapters. No defaults, no implementation —
- * those live next to the state machine in behavior.ts.
+ * those live next to the state machine in machine.ts.
  */
 
 import type {
-  LogicalAttrs,
-  LogicalHandlers,
-} from "@render-experiment/behavior-core";
+  AttrBindings,
+  EventBindings,
+} from "@render-experiment/machine-core";
 
 // -----------------------------------------------------------------------------
 // Positioning
@@ -73,10 +73,10 @@ export interface TooltipApi {
   open: boolean;
   state: TooltipState;
   setOpen: (next: boolean) => void;
-  trigger: { handlers: LogicalHandlers; attrs: LogicalAttrs };
+  trigger: { handlers: EventBindings; attrs: AttrBindings };
   content: {
-    handlers: LogicalHandlers;
-    attrs: LogicalAttrs;
+    handlers: EventBindings;
+    attrs: AttrBindings;
     positioning: PositioningOptions;
     rendered: boolean;
   };

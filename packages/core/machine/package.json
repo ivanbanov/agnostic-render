@@ -1,5 +1,5 @@
 {
-  "name": "@render-experiment/tooltip-core",
+  "name": "@render-experiment/machine-core",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -7,8 +7,5 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts"
-  },
-  "dependencies": {
-    "@render-experiment/machine-core": "workspace:*"
   }
 }

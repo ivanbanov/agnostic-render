@@ -1,5 +1,5 @@
 {
-  "name": "@render-experiment/tooltip-react",
+  "name": "@render-experiment/style-engine-react",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,8 +12,6 @@
     "react": "*"
   },
   "dependencies": {
-    "@render-experiment/machine-react": "workspace:*",
-    "@render-experiment/style-engine-react": "workspace:*",
-    "@render-experiment/tooltip-core": "workspace:*"
+    "@stitches/react": "^1.2.8"
   }
 }
