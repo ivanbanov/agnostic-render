@@ -14,6 +14,8 @@
     "@render-experiment/machine-core": "workspace:*",
     "@render-experiment/machine-native": "workspace:*",
     "@render-experiment/style-engine-native": "workspace:*",
+    "@render-experiment/dropdown-menu-core": "workspace:*",
+    "@render-experiment/dropdown-menu-native": "workspace:*",
     "@render-experiment/tooltip-core": "workspace:*",
     "@render-experiment/tooltip-native": "workspace:*",
     "expo": "~51.0.0",
