@@ -1,5 +1,13 @@
-import { useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { normalize } from "@render-experiment/machine-react";
+import {
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ComponentPropsWithoutRef,
+  type ReactNode,
+  type RefObject,
+} from "react";
+import { mergeProps, normalize } from "@render-experiment/machine-react";
 import {
   placementToSide,
   tooltipProps as resolveProps,
@@ -41,21 +49,38 @@ export function TooltipRoot(props: TooltipRootProps) {
 // -----------------------------------------------------------------------------
 // <Tooltip.Trigger> — clones child, captures its element via callback ref
 // -----------------------------------------------------------------------------
+//
+// Consumer-passed props on <Tooltip.Trigger> (data-*, aria-*, className,
+// onClick, etc.) are merged onto the cloned child. Machine-supplied
+// handlers and attrs (onPointerMove, aria-describedby, ...) take
+// precedence when both sides set the same key; for event handlers,
+// both fire via mergeProps.
 
-export interface TooltipTriggerProps {
+export interface TooltipTriggerProps
+  extends Omit<ComponentPropsWithoutRef<"button">, "children"> {
   children: ReactNode;
 }
 
-export function TooltipTrigger({ children }: TooltipTriggerProps) {
+export function TooltipTrigger(props: TooltipTriggerProps) {
+  const { children, ...consumerProps } = props;
   const { api, triggerRef } = useTooltipContext();
 
   const setRef = (node: HTMLElement | null) => {
     triggerRef.current = node;
   };
 
-  const triggerProps = {
+  const machineProps = {
     ...normalize(api.trigger.handlers as unknown as Record<string, unknown>),
     ...normalize(api.trigger.attrs as unknown as Record<string, unknown>),
+  };
+
+  const merged = mergeProps(
+    consumerProps as Record<string, unknown>,
+    machineProps,
+  );
+
+  const triggerProps = {
+    ...merged,
     ref: mergeRefs(setRef, getChildRef(children)),
   };
   return cloneOnly(children, triggerProps);
@@ -72,19 +97,26 @@ export function TooltipTrigger({ children }: TooltipTriggerProps) {
 //     <Styled.Content>   position: absolute + edge-pinned via variant
 //   </Styled.Positioner>
 //
-// The positioner is a zero-size box at the anchor point so the content's
-// edge-pinning variant (`top/right/bottom/left: "100%"`) resolves against
-// the anchor rather than the viewport.
+// Consumer-passed props (className, style, data-testid, onMouseEnter,
+// etc.) are merged onto <Styled.Content>. Variants come through as
+// named props (`side`, `red`); they aren't spread from `props`.
 
-export interface TooltipContentProps {
+export interface TooltipContentProps
+  extends Omit<ComponentPropsWithoutRef<"div">, "children"> {
   children: ReactNode;
 }
 
-export function TooltipContent({ children }: TooltipContentProps) {
-  const { api, props, triggerRef } = useTooltipContext();
+export function TooltipContent(props: TooltipContentProps) {
+  const { children, ...consumerProps } = props;
+  const { api, props: ctxProps, triggerRef } = useTooltipContext();
   if (!api.content.rendered) return null;
   return (
-    <PositionedContent api={api} props={props} triggerRef={triggerRef}>
+    <PositionedContent
+      api={api}
+      ctxProps={ctxProps}
+      consumerProps={consumerProps}
+      triggerRef={triggerRef}
+    >
       {children}
     </PositionedContent>
   );
@@ -92,12 +124,14 @@ export function TooltipContent({ children }: TooltipContentProps) {
 
 function PositionedContent({
   api,
-  props,
+  ctxProps,
+  consumerProps,
   triggerRef,
   children,
 }: {
   api: TooltipApi;
-  props: ResolvedTooltipProps;
+  ctxProps: ResolvedTooltipProps;
+  consumerProps: Record<string, unknown>;
   triggerRef: RefObject<HTMLElement | null>;
   children: ReactNode;
 }) {
@@ -126,13 +160,16 @@ function PositionedContent({
   // is variants on the styled element.
   const anchorCoords = anchor ? { top: anchor.y, left: anchor.x } : undefined;
 
+  // Compose consumer props with machine handlers/attrs. Machine wins on
+  // non-handler conflicts; both handlers fire when both sides have them.
+  const merged = mergeProps(consumerProps, { ...handlerProps, ...attrProps });
+
   return (
     <Styled.Positioner anchored={anchor ? "true" : "false"} css={anchorCoords}>
       <Styled.Content
-        {...handlerProps}
-        {...attrProps}
+        {...merged}
         side={side}
-        red={props.red ? "true" : "false"}
+        red={ctxProps.red ? "true" : "false"}
       >
         {children}
       </Styled.Content>

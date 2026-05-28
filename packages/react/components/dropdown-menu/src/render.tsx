@@ -6,15 +6,15 @@ import {
   useMemo,
   useRef,
   useState,
+  type ComponentPropsWithoutRef,
   type ReactNode,
   type RefObject,
 } from "react";
-import { normalize } from "@render-experiment/machine-react";
+import { mergeProps, normalize } from "@render-experiment/machine-react";
 import {
   placementToSide,
   type DropdownMenuApi,
   type DropdownMenuProps,
-  type MenuItemProps,
 } from "@render-experiment/dropdown-menu-core";
 import { useDropdownMenuApi } from "./api";
 import {
@@ -64,19 +64,27 @@ export function DropdownMenuRoot(props: DropdownMenuRootProps) {
 // <DropdownMenu.Trigger>
 // =============================================================================
 
-export interface DropdownMenuTriggerProps {
+export interface DropdownMenuTriggerProps
+  extends Omit<ComponentPropsWithoutRef<"button">, "children"> {
   children: ReactNode;
 }
 
-export function DropdownMenuTrigger({ children }: DropdownMenuTriggerProps) {
+export function DropdownMenuTrigger(props: DropdownMenuTriggerProps) {
+  const { children, ...consumerProps } = props;
   const { api, triggerRef } = useDropdownMenuContext();
   const setRef = (node: HTMLElement | null) => {
     triggerRef.current = node;
   };
 
-  const triggerProps = {
+  const machineProps = {
     ...normalize(api.trigger.handlers as unknown as Record<string, unknown>),
     ...normalize(api.trigger.attrs as unknown as Record<string, unknown>),
+  };
+
+  const merged = mergeProps(consumerProps as Record<string, unknown>, machineProps);
+
+  const triggerProps = {
+    ...merged,
     ref: mergeRefs(setRef, getChildRef(children)),
   };
   return cloneOnly(children, triggerProps);
@@ -86,15 +94,21 @@ export function DropdownMenuTrigger({ children }: DropdownMenuTriggerProps) {
 // <DropdownMenu.Content>
 // =============================================================================
 
-export interface DropdownMenuContentProps {
+export interface DropdownMenuContentProps
+  extends Omit<ComponentPropsWithoutRef<"div">, "children"> {
   children: ReactNode;
 }
 
-export function DropdownMenuContent({ children }: DropdownMenuContentProps) {
+export function DropdownMenuContent(props: DropdownMenuContentProps) {
+  const { children, ...consumerProps } = props;
   const { api, triggerRef } = useDropdownMenuContext();
   if (!api.content.rendered) return null;
   return (
-    <PositionedContent api={api} triggerRef={triggerRef}>
+    <PositionedContent
+      api={api}
+      triggerRef={triggerRef}
+      consumerProps={consumerProps}
+    >
       {children}
     </PositionedContent>
   );
@@ -103,10 +117,12 @@ export function DropdownMenuContent({ children }: DropdownMenuContentProps) {
 function PositionedContent({
   api,
   triggerRef,
+  consumerProps,
   children,
 }: {
   api: DropdownMenuApi;
   triggerRef: RefObject<HTMLElement | null>;
+  consumerProps: Record<string, unknown>;
   children: ReactNode;
 }) {
   const registry = useItemRegistry();
@@ -119,7 +135,7 @@ function PositionedContent({
     [registry],
   );
 
-  // Anchor position from the trigger's rect — same approach as tooltip.
+  // Anchor position from the trigger's rect.
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
   useLayoutEffect(() => {
     const measure = () => {
@@ -143,9 +159,7 @@ function PositionedContent({
     contentRef.current?.focus();
   }, []);
 
-  // Outside-click closes. We close on any pointerdown outside both the
-  // trigger and the content. Lives here (not in core) because it needs to
-  // know which DOM elements count as "inside."
+  // Outside-click closes.
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Node | null;
@@ -170,11 +184,12 @@ function PositionedContent({
   const side = placementToSide(apiWithItems.content.positioning.placement);
   const anchorCoords = anchor ? { top: anchor.y, left: anchor.x } : undefined;
 
+  const merged = mergeProps(consumerProps, { ...handlerProps, ...attrProps });
+
   return (
     <Styled.Positioner anchored={anchor ? "true" : "false"} css={anchorCoords}>
       <Styled.Content
-        {...handlerProps}
-        {...attrProps}
+        {...merged}
         side={side}
         ref={contentRef}
       >
@@ -198,6 +213,8 @@ interface ItemBaseProps {
   kind: "item" | "checkbox" | "radio";
   checked?: boolean | "indeterminate";
   children: ReactNode;
+  /** Arbitrary HTML attrs the consumer passed to <Item/CheckboxItem/RadioItem>. */
+  consumerProps?: Record<string, unknown>;
 }
 
 function ItemBase({
@@ -208,13 +225,13 @@ function ItemBase({
   kind,
   checked,
   children,
+  consumerProps,
 }: ItemBaseProps) {
   const api = useCurrentApi();
   const registry = useItemRegistry();
   const itemKey = useId();
 
-  // Register on mount; deregister on unmount. The registry order matches
-  // mount order, which for stable sibling lists matches source order.
+  // Register on mount; deregister on unmount.
   useLayoutEffect(() => {
     return registry.register(
       { value, textValue, disabled, kind, checked, onSelect },
@@ -234,11 +251,12 @@ function ItemBase({
     part.handlers as unknown as Record<string, unknown>,
   );
   const attrProps = normalize(part.attrs as unknown as Record<string, unknown>);
+  const machineProps = { ...handlerProps, ...attrProps };
+  const merged = mergeProps(consumerProps, machineProps);
 
   return (
     <Styled.Item
-      {...handlerProps}
-      {...attrProps}
+      {...merged}
       highlighted={part.highlighted ? "true" : "false"}
       disabled={disabled ? "true" : "false"}
     >
@@ -253,7 +271,8 @@ function ItemBase({
 // <DropdownMenu.Item>
 // =============================================================================
 
-export interface DropdownMenuItemProps {
+export interface DropdownMenuItemProps
+  extends Omit<ComponentPropsWithoutRef<"div">, "children" | "onSelect"> {
   value: string;
   textValue?: string;
   disabled?: boolean;
@@ -262,7 +281,19 @@ export interface DropdownMenuItemProps {
 }
 
 export function DropdownMenuItem(props: DropdownMenuItemProps) {
-  return <ItemBase {...props} kind="item" />;
+  const { value, textValue, disabled, onSelect, children, ...consumerProps } = props;
+  return (
+    <ItemBase
+      value={value}
+      textValue={textValue}
+      disabled={disabled}
+      onSelect={onSelect}
+      kind="item"
+      consumerProps={consumerProps as Record<string, unknown>}
+    >
+      {children}
+    </ItemBase>
+  );
 }
 
 // =============================================================================
@@ -275,18 +306,32 @@ export interface DropdownMenuCheckboxItemProps extends DropdownMenuItemProps {
 }
 
 export function DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps) {
-  const { checked, onCheckedChange, onSelect, ...rest } = props;
+  const {
+    checked,
+    onCheckedChange,
+    onSelect,
+    value,
+    textValue,
+    disabled,
+    children,
+    ...consumerProps
+  } = props;
   const handleSelect = () => {
     onSelect?.();
     onCheckedChange?.(!checked);
   };
   return (
     <ItemBase
-      {...rest}
+      value={value}
+      textValue={textValue}
+      disabled={disabled}
+      onSelect={handleSelect}
       kind="checkbox"
       checked={checked}
-      onSelect={handleSelect}
-    />
+      consumerProps={consumerProps as Record<string, unknown>}
+    >
+      {children}
+    </ItemBase>
   );
 }
 
@@ -316,7 +361,8 @@ export function DropdownMenuRadioGroup({
   );
 }
 
-export interface DropdownMenuRadioItemProps {
+export interface DropdownMenuRadioItemProps
+  extends Omit<ComponentPropsWithoutRef<"div">, "children" | "onSelect"> {
   value: string;
   textValue?: string;
   disabled?: boolean;
@@ -325,19 +371,25 @@ export interface DropdownMenuRadioItemProps {
 }
 
 export function DropdownMenuRadioItem(props: DropdownMenuRadioItemProps) {
+  const { value, textValue, disabled, onSelect, children, ...consumerProps } = props;
   const radioGroup = useRadioGroup();
-  const checked = radioGroup?.value === props.value;
+  const checked = radioGroup?.value === value;
   const handleSelect = () => {
-    props.onSelect?.();
-    radioGroup?.onValueChange(props.value);
+    onSelect?.();
+    radioGroup?.onValueChange(value);
   };
   return (
     <ItemBase
-      {...props}
+      value={value}
+      textValue={textValue}
+      disabled={disabled}
+      onSelect={handleSelect}
       kind="radio"
       checked={checked}
-      onSelect={handleSelect}
-    />
+      consumerProps={consumerProps as Record<string, unknown>}
+    >
+      {children}
+    </ItemBase>
   );
 }
 
@@ -361,34 +413,43 @@ export function DropdownMenuItemIndicator({
 // Trivial parts: Separator, Label, Group
 // =============================================================================
 
-export function DropdownMenuSeparator() {
+export type DropdownMenuSeparatorProps = ComponentPropsWithoutRef<"div">;
+
+export function DropdownMenuSeparator(props: DropdownMenuSeparatorProps) {
   const { api } = useDropdownMenuContext();
   const attrProps = normalize(
     api.separator.attrs as unknown as Record<string, unknown>,
   );
-  return <Styled.Separator {...attrProps} />;
+  const merged = mergeProps(props as Record<string, unknown>, attrProps);
+  return <Styled.Separator {...merged} />;
 }
 
-export interface DropdownMenuLabelProps {
+export interface DropdownMenuLabelProps
+  extends Omit<ComponentPropsWithoutRef<"div">, "children"> {
   children: ReactNode;
 }
 
-export function DropdownMenuLabel({ children }: DropdownMenuLabelProps) {
+export function DropdownMenuLabel(props: DropdownMenuLabelProps) {
+  const { children, ...consumerProps } = props;
   const { api } = useDropdownMenuContext();
   const attrProps = normalize(
     api.label.attrs as unknown as Record<string, unknown>,
   );
-  return <Styled.Label {...attrProps}>{children}</Styled.Label>;
+  const merged = mergeProps(consumerProps as Record<string, unknown>, attrProps);
+  return <Styled.Label {...merged}>{children}</Styled.Label>;
 }
 
-export interface DropdownMenuGroupProps {
+export interface DropdownMenuGroupProps
+  extends Omit<ComponentPropsWithoutRef<"div">, "children"> {
   children: ReactNode;
 }
 
-export function DropdownMenuGroup({ children }: DropdownMenuGroupProps) {
+export function DropdownMenuGroup(props: DropdownMenuGroupProps) {
+  const { children, ...consumerProps } = props;
   const { api } = useDropdownMenuContext();
   const attrProps = normalize(
     api.group.attrs as unknown as Record<string, unknown>,
   );
-  return <Styled.Group {...attrProps}>{children}</Styled.Group>;
+  const merged = mergeProps(consumerProps as Record<string, unknown>, attrProps);
+  return <Styled.Group {...merged}>{children}</Styled.Group>;
 }

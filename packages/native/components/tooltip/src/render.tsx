@@ -39,8 +39,10 @@ import {
   Text,
   View,
   type LayoutChangeEvent,
+  type PressableProps,
+  type ViewProps,
 } from "react-native";
-import { normalize } from "@render-experiment/machine-native";
+import { mergeProps, normalize } from "@render-experiment/machine-native";
 import {
   placementToSide,
   tooltipProps as resolveProps,
@@ -105,20 +107,17 @@ export function TooltipRoot(props: TooltipRootProps) {
 // <Tooltip.Trigger> — wraps the user's child in a Pressable with long-press
 // -----------------------------------------------------------------------------
 
-export interface TooltipTriggerProps {
+export interface TooltipTriggerProps extends Omit<PressableProps, "children"> {
   children: ReactNode;
   /** Long-press duration in ms. Defaults to 500. */
   delayLongPress?: number;
 }
 
-export function TooltipTrigger({
-  children,
-  delayLongPress = 500,
-}: TooltipTriggerProps) {
+export function TooltipTrigger(props: TooltipTriggerProps) {
+  const { children, delayLongPress = 500, ...consumerProps } = props;
   const { api, triggerRef, setAnchor } = useTooltipCtxOrThrow();
 
   // Measure on layout so the anchor is current when the tooltip opens.
-  // Re-measure when content is rendered (api.content.rendered toggles).
   const measure = useCallback(() => {
     const node = triggerRef.current;
     if (!node) return;
@@ -134,29 +133,34 @@ export function TooltipTrigger({
     [measure],
   );
 
-  // Map the API's logical handlers to RN's gesture vocabulary. Tooltip's
-  // logical surface emits onPress/onPointerDown/onPointerLeave; the
-  // normalizer drops the pointer-leave on RN. We supplement with
-  // onLongPress to actually open.
+  // Machine-supplied bindings (handler functions). The native normalizer
+  // drops hover-only handlers; we supplement with onLongPress/onPressOut
+  // below to actually open/close.
   const normalized = normalize(
     api.trigger.handlers as unknown as Record<string, unknown>,
   );
 
+  const machineProps: Record<string, unknown> = {
+    ...(normalized as object),
+    onLayout,
+    onLongPress: () => {
+      measure();
+      api.setOpen(true);
+    },
+    onPressOut: () => {
+      // Close on release. Removes the need for a tap-outside listener;
+      // keep-open-while-held is the standard touch idiom.
+      api.setOpen(false);
+    },
+    delayLongPress,
+  };
+
+  const merged = mergeProps(consumerProps as Record<string, unknown>, machineProps);
+
   return (
     <Pressable
       ref={triggerRef as unknown as React.Ref<View>}
-      onLayout={onLayout}
-      onLongPress={() => {
-        measure();
-        api.setOpen(true);
-      }}
-      onPressOut={() => {
-        // Close on release. Removes the need for a tap-outside listener
-        // for the common case; keep-open-while-held is the standard touch idiom.
-        api.setOpen(false);
-      }}
-      delayLongPress={delayLongPress}
-      {...(normalized as object)}
+      {...(merged as PressableProps)}
     >
       {children}
     </Pressable>
@@ -167,12 +171,13 @@ export function TooltipTrigger({
 // <Tooltip.Content> — renders into the portal slot or inline
 // -----------------------------------------------------------------------------
 
-export interface TooltipContentProps {
+export interface TooltipContentProps extends Omit<ViewProps, "children"> {
   children: ReactNode;
 }
 
-export function TooltipContent({ children }: TooltipContentProps) {
-  const { api, props, anchor } = useTooltipCtxOrThrow();
+export function TooltipContent(props: TooltipContentProps) {
+  const { children, ...consumerProps } = props;
+  const { api, props: ctxProps, anchor } = useTooltipCtxOrThrow();
 
   const rendered = api.content.rendered;
   const side = placementToSide(api.content.positioning.placement);
@@ -190,11 +195,9 @@ export function TooltipContent({ children }: TooltipContentProps) {
   if (!rendered) return null;
 
   const positionerStyle = resolvePositioner({ anchored: anchor ? "true" : "false" });
-  const contentStyle = resolveContent({ side, red: props.red ? "true" : "false" });
+  const contentStyle = resolveContent({ side, red: ctxProps.red ? "true" : "false" });
 
-  // Convert anchor center → absolute coords for the positioner. Mirrors
-  // the web `anchorOf` math but simplified to placement="bottom" — full
-  // placement support could be added by porting utils.ts.
+  // Convert anchor center → absolute coords for the positioner.
   const positionedStyle = anchor
     ? {
         ...positionerStyle,
@@ -203,14 +206,21 @@ export function TooltipContent({ children }: TooltipContentProps) {
       }
     : positionerStyle;
 
-  // Inline rendering. The tooltip is absolutely positioned in window-space
-  // (positioner has `position: absolute` from styles.ts), so it overlays
-  // whatever's around it without needing a portal in most layouts.
-  // For deeply-clipped scenarios (ScrollView, FlatList) a Modal-based
-  // overlay would be needed — out of scope for v1.
+  // Inline rendering. The tooltip is absolutely positioned in window-space.
+  // Consumer props land on the inner content View (the painted box);
+  // the positioner is structural and consumer-opaque.
+  const machineProps: Record<string, unknown> = {
+    style: [contentStyle, anchorContentTransform(side)],
+    pointerEvents: "auto",
+  };
+  const merged = mergeProps(
+    consumerProps as Record<string, unknown>,
+    machineProps,
+  );
+
   return (
     <View style={positionedStyle} pointerEvents="box-none">
-      <View style={[contentStyle, anchorContentTransform(side)]} pointerEvents="auto">
+      <View {...(merged as ViewProps)}>
         {typeof children === "string" ? (
           <Text style={{ color: (contentStyle.color as string) ?? "#fff", fontSize: contentStyle.fontSize as number }}>
             {children}

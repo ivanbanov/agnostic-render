@@ -41,9 +41,11 @@ import {
   Text,
   View,
   type LayoutChangeEvent,
+  type PressableProps,
   type TextStyle,
+  type ViewProps,
 } from "react-native";
-import { normalize } from "@render-experiment/machine-native";
+import { mergeProps, normalize } from "@render-experiment/machine-native";
 import {
   placementToSide,
   type DropdownMenuProps,
@@ -111,11 +113,12 @@ type DropdownMenuRootContextAnchor =
 // <DropdownMenu.Trigger>
 // =============================================================================
 
-export interface DropdownMenuTriggerProps {
+export interface DropdownMenuTriggerProps extends Omit<PressableProps, "children"> {
   children: ReactNode;
 }
 
-export function DropdownMenuTrigger({ children }: DropdownMenuTriggerProps) {
+export function DropdownMenuTrigger(props: DropdownMenuTriggerProps) {
+  const { children, ...consumerProps } = props;
   const { api, triggerRef, setAnchor } = useDropdownMenuContext();
 
   const measure = useCallback(() => {
@@ -137,15 +140,21 @@ export function DropdownMenuTrigger({ children }: DropdownMenuTriggerProps) {
     api.trigger.handlers as unknown as Record<string, unknown>,
   );
 
+  const machineProps: Record<string, unknown> = {
+    ...(normalized as object),
+    onLayout,
+    onPress: () => {
+      measure();
+      api.setOpen(!api.open);
+    },
+  };
+
+  const merged = mergeProps(consumerProps as Record<string, unknown>, machineProps);
+
   return (
     <Pressable
       ref={triggerRef as unknown as React.Ref<View>}
-      onLayout={onLayout}
-      onPress={() => {
-        measure();
-        api.setOpen(!api.open);
-      }}
-      {...(normalized as object)}
+      {...(merged as PressableProps)}
     >
       {children}
     </Pressable>
@@ -156,11 +165,12 @@ export function DropdownMenuTrigger({ children }: DropdownMenuTriggerProps) {
 // <DropdownMenu.Content>
 // =============================================================================
 
-export interface DropdownMenuContentProps {
+export interface DropdownMenuContentProps extends Omit<ViewProps, "children"> {
   children: ReactNode;
 }
 
-export function DropdownMenuContent({ children }: DropdownMenuContentProps) {
+export function DropdownMenuContent(props: DropdownMenuContentProps) {
+  const { children, ...consumerProps } = props;
   const { api, anchor, triggerRef } = useDropdownMenuContext();
   void triggerRef;
 
@@ -206,6 +216,12 @@ export function DropdownMenuContent({ children }: DropdownMenuContentProps) {
   // document-level pointer listener.
   const { width: screenW, height: screenH } = Dimensions.get("window");
 
+  const machineContentProps: Record<string, unknown> = {
+    style: contentStyle,
+    pointerEvents: "auto",
+  };
+  const merged = mergeProps(consumerProps as Record<string, unknown>, machineContentProps);
+
   return (
     <>
       <Pressable
@@ -220,7 +236,7 @@ export function DropdownMenuContent({ children }: DropdownMenuContentProps) {
         accessible={false}
       />
       <View style={positionedStyle} pointerEvents="box-none">
-        <View style={contentStyle} pointerEvents="auto">
+        <View {...(merged as ViewProps)}>
           <CurrentApiRef.Provider value={apiWithItems}>
             {children}
           </CurrentApiRef.Provider>
@@ -242,6 +258,7 @@ interface ItemBaseProps {
   kind: "item" | "checkbox" | "radio";
   checked?: boolean | "indeterminate";
   children: ReactNode;
+  consumerProps?: Record<string, unknown>;
 }
 
 function ItemBase({
@@ -252,6 +269,7 @@ function ItemBase({
   kind,
   checked,
   children,
+  consumerProps,
 }: ItemBaseProps) {
   const api = useCurrentApi();
   const registry = useItemRegistry();
@@ -281,15 +299,18 @@ function ItemBase({
     disabled: disabled ? "true" : "false",
   });
 
+  const machineProps: Record<string, unknown> = {
+    onPress: () => {
+      if (disabled) return;
+      (handlers as { onPress?: () => void }).onPress?.();
+    },
+    disabled,
+    style: itemStyle,
+  };
+  const merged = mergeProps(consumerProps, machineProps);
+
   return (
-    <Pressable
-      onPress={() => {
-        if (disabled) return;
-        (handlers as { onPress?: () => void }).onPress?.();
-      }}
-      disabled={disabled}
-      style={itemStyle}
-    >
+    <Pressable {...(merged as PressableProps)}>
       <ItemCheckedRef.Provider value={checked ?? false}>
         {renderTextSafe(children, {
           color: (itemStyle.color as string) ?? "#fff",
@@ -303,7 +324,8 @@ function ItemBase({
 // Parts
 // =============================================================================
 
-export interface DropdownMenuItemProps {
+export interface DropdownMenuItemProps
+  extends Omit<PressableProps, "children" | "onPress"> {
   value: string;
   textValue?: string;
   disabled?: boolean;
@@ -312,7 +334,19 @@ export interface DropdownMenuItemProps {
 }
 
 export function DropdownMenuItem(props: DropdownMenuItemProps) {
-  return <ItemBase {...props} kind="item" />;
+  const { value, textValue, disabled, onSelect, children, ...consumerProps } = props;
+  return (
+    <ItemBase
+      value={value}
+      textValue={textValue}
+      disabled={disabled}
+      onSelect={onSelect}
+      kind="item"
+      consumerProps={consumerProps as Record<string, unknown>}
+    >
+      {children}
+    </ItemBase>
+  );
 }
 
 export interface DropdownMenuCheckboxItemProps extends DropdownMenuItemProps {
@@ -321,18 +355,32 @@ export interface DropdownMenuCheckboxItemProps extends DropdownMenuItemProps {
 }
 
 export function DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps) {
-  const { checked, onCheckedChange, onSelect, ...rest } = props;
+  const {
+    checked,
+    onCheckedChange,
+    onSelect,
+    value,
+    textValue,
+    disabled,
+    children,
+    ...consumerProps
+  } = props;
   const handleSelect = () => {
     onSelect?.();
     onCheckedChange?.(!checked);
   };
   return (
     <ItemBase
-      {...rest}
+      value={value}
+      textValue={textValue}
+      disabled={disabled}
+      onSelect={handleSelect}
       kind="checkbox"
       checked={checked}
-      onSelect={handleSelect}
-    />
+      consumerProps={consumerProps as Record<string, unknown>}
+    >
+      {children}
+    </ItemBase>
   );
 }
 
@@ -358,7 +406,8 @@ export function DropdownMenuRadioGroup({
   );
 }
 
-export interface DropdownMenuRadioItemProps {
+export interface DropdownMenuRadioItemProps
+  extends Omit<PressableProps, "children" | "onPress"> {
   value: string;
   textValue?: string;
   disabled?: boolean;
@@ -367,19 +416,25 @@ export interface DropdownMenuRadioItemProps {
 }
 
 export function DropdownMenuRadioItem(props: DropdownMenuRadioItemProps) {
+  const { value, textValue, disabled, onSelect, children, ...consumerProps } = props;
   const radioGroup = useRadioGroup();
-  const checked = radioGroup?.value === props.value;
+  const checked = radioGroup?.value === value;
   const handleSelect = () => {
-    props.onSelect?.();
-    radioGroup?.onValueChange(props.value);
+    onSelect?.();
+    radioGroup?.onValueChange(value);
   };
   return (
     <ItemBase
-      {...props}
+      value={value}
+      textValue={textValue}
+      disabled={disabled}
+      onSelect={handleSelect}
       kind="radio"
       checked={checked}
-      onSelect={handleSelect}
-    />
+      consumerProps={consumerProps as Record<string, unknown>}
+    >
+      {children}
+    </ItemBase>
   );
 }
 
@@ -401,31 +456,40 @@ export function DropdownMenuItemIndicator({
   );
 }
 
-export function DropdownMenuSeparator() {
+export type DropdownMenuSeparatorProps = ViewProps;
+
+export function DropdownMenuSeparator(props: DropdownMenuSeparatorProps) {
   const style = resolveSeparator({});
-  return <View style={style} />;
+  const merged = mergeProps(props as Record<string, unknown>, { style });
+  return <View {...(merged as ViewProps)} />;
 }
 
-export interface DropdownMenuLabelProps {
+export interface DropdownMenuLabelProps extends Omit<ViewProps, "children"> {
   children: ReactNode;
 }
 
-export function DropdownMenuLabel({ children }: DropdownMenuLabelProps) {
+export function DropdownMenuLabel(props: DropdownMenuLabelProps) {
+  const { children, ...consumerProps } = props;
   const style = resolveLabel({});
+  const merged = mergeProps(consumerProps as Record<string, unknown>, { style });
   return (
-    <Text style={{ ...(style as object), color: (style.color as string) ?? "#9ca3af" }}>
-      {children}
-    </Text>
+    <View {...(merged as ViewProps)}>
+      <Text style={{ color: (style.color as string) ?? "#9ca3af" }}>
+        {children}
+      </Text>
+    </View>
   );
 }
 
-export interface DropdownMenuGroupProps {
+export interface DropdownMenuGroupProps extends Omit<ViewProps, "children"> {
   children: ReactNode;
 }
 
-export function DropdownMenuGroup({ children }: DropdownMenuGroupProps) {
+export function DropdownMenuGroup(props: DropdownMenuGroupProps) {
+  const { children, ...consumerProps } = props;
   const style = resolveGroup({});
-  return <View style={style}>{children}</View>;
+  const merged = mergeProps(consumerProps as Record<string, unknown>, { style });
+  return <View {...(merged as ViewProps)}>{children}</View>;
 }
 
 // =============================================================================
