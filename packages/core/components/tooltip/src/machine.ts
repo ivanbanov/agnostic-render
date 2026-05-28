@@ -19,60 +19,21 @@
  *   - aria-* / role / data-* / style — those live in the connect's logical output
  *
  * Sibling files:
- *   - types.ts   — public types (Placement, TooltipProps, TooltipApi, …)
- *   - props.ts   — defaults + resolver (raw props → resolved)
- *   - styles.ts  — paint-only style specs per element
- *   - index.ts   — public exports
+ *   - types.ts    — public types (Placement, TooltipProps, TooltipApi, …)
+ *   - props.ts    — defaults + resolver (raw props → resolved)
+ *   - store.ts    — global singleton state
+ *   - connect.ts  — logical surface (handlers + attrs the view consumes)
+ *   - elements/   — paint-only style specs per element
+ *   - index.ts    — public exports
  */
 
-import {
-  createStore,
-  type MachineConfig,
-} from "@render-experiment/machine-core";
+import type { MachineConfig } from "@render-experiment/machine-core";
 import { TOOLTIP_SKIP_DELAY_MS, tooltipProps } from "./props";
+import { tooltipStore } from "./store";
 import type {
-  TooltipApi,
   TooltipContext,
   TooltipProps,
-  TooltipState,
 } from "./types";
-
-// -----------------------------------------------------------------------------
-// Global "only one tooltip open at a time" store + skip-delay window
-// -----------------------------------------------------------------------------
-
-interface TooltipStoreState {
-  openId: string | null;
-  /** When non-null, new tooltips skip openDelay until skipUntil. */
-  skipUntil: number | null;
-}
-
-const store = createStore<TooltipStoreState>({
-  openId: null,
-  skipUntil: null,
-});
-
-export const tooltipStore = {
-  get: store.get,
-  subscribe: store.subscribe,
-  setOpen(id: string | null) {
-    store.set((s) => ({ ...s, openId: id }));
-  },
-  startSkipWindow(ms: number) {
-    store.set((s) => ({ ...s, skipUntil: Date.now() + ms }));
-  },
-  endSkipWindow() {
-    store.set((s) => ({ ...s, skipUntil: null }));
-  },
-  isInSkipWindow() {
-    const { skipUntil } = store.get();
-    return skipUntil !== null && Date.now() < skipUntil;
-  },
-};
-
-// -----------------------------------------------------------------------------
-// Machine config
-// -----------------------------------------------------------------------------
 
 export const tooltipMachine: MachineConfig<TooltipContext, TooltipProps> = {
   initial: (props) => {
@@ -213,87 +174,3 @@ export const tooltipMachine: MachineConfig<TooltipContext, TooltipProps> = {
     },
   },
 };
-
-// -----------------------------------------------------------------------------
-// connect — produces a LOGICAL surface, not DOM props
-// -----------------------------------------------------------------------------
-
-export function connect(
-  state: TooltipState,
-  context: TooltipContext,
-  props: TooltipProps,
-  send: (event: { type: string; [key: string]: unknown }) => void,
-): TooltipApi {
-  void context;
-  const r = tooltipProps(props);
-  const open = state === "open" || state === "closing";
-  const triggerId = `tooltip:${r.id}:trigger`;
-  const contentId = `tooltip:${r.id}:content`;
-
-  return {
-    open,
-    state,
-    setOpen(next) {
-      if (open === next) return;
-      send({ type: next ? "open" : "close" });
-    },
-    trigger: {
-      handlers: {
-        onPointerMove: (event) => {
-          if (event?.defaultPrevented) return;
-          if (r.disabled) return;
-          if (event?.pointerType === "touch") return;
-          send({ type: "pointer.move" });
-        },
-        onPointerLeave: () => {
-          if (r.disabled) return;
-          send({ type: "pointer.leave" });
-        },
-        onPointerDown: (event) => {
-          if (event?.defaultPrevented) return;
-          if (r.disabled) return;
-          if (event?.button !== undefined && event.button !== 0) return;
-          if (!r.closeOnPointerDown) return;
-          send({ type: "close", src: "trigger.pointerdown" });
-        },
-        onPress: (event) => {
-          if (event?.defaultPrevented) return;
-          if (r.disabled) return;
-          if (!r.closeOnClick) return;
-          send({ type: "close", src: "trigger.click" });
-        },
-        onFocus: () => {
-          if (r.disabled) return;
-          send({ type: "open", src: "trigger.focus" });
-        },
-        onBlur: () => {
-          if (r.disabled) return;
-          send({ type: "close", src: "trigger.blur" });
-        },
-      },
-      attrs: {
-        id: triggerId,
-        describedBy: open ? contentId : undefined,
-        disabled: r.disabled,
-      },
-    },
-    content: {
-      handlers: {
-        onPointerEnter: () => {
-          if (!r.interactive) return;
-          send({ type: "content.pointer.move" });
-        },
-        onPointerLeave: () => {
-          if (!r.interactive) return;
-          send({ type: "content.pointer.leave" });
-        },
-      },
-      attrs: {
-        id: contentId,
-        role: "tooltip",
-      },
-      positioning: r.positioning,
-      rendered: open,
-    },
-  };
-}

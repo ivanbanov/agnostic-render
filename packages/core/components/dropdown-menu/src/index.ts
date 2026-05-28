@@ -1,9 +1,7 @@
 // Machine
-export {
-  connect as connectDropdownMenu,
-  dropdownMenuMachine,
-  dropdownMenuStore,
-} from "./machine";
+export { dropdownMenuMachine } from "./machine";
+export { dropdownMenuStore } from "./store";
+export { connect as connectDropdownMenu } from "./connect";
 
 // Types
 export type {

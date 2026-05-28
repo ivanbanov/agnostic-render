@@ -1,5 +1,7 @@
 // Machine
-export { tooltipMachine, tooltipStore, connect as connectTooltip } from "./machine";
+export { tooltipMachine } from "./machine";
+export { tooltipStore } from "./store";
+export { connect as connectTooltip } from "./connect";
 
 // Types
 export type {
