@@ -1,0 +1,20 @@
+{
+  "name": "@render-experiment/dropdown-menu-pixi",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "peerDependencies": {
+    "pixi.js": "^8.0.0"
+  },
+  "dependencies": {
+    "@render-experiment/machine-core": "workspace:*",
+    "@render-experiment/machine-pixi": "workspace:*",
+    "@render-experiment/style-engine-pixi": "workspace:*",
+    "@render-experiment/dropdown-menu-core": "workspace:*"
+  }
+}
