@@ -4,7 +4,7 @@
 
 import { styled } from "@render-experiment/style-engine-react";
 
-// Source: core/components/dropdown-menu/src/styles.ts → content
+// Source: core/components/dropdown-menu/src/elements → content
 export const Content = styled(
   "div",
   {
@@ -43,7 +43,7 @@ export const Content = styled(
 } as any,
 );
 
-// Source: core/components/dropdown-menu/src/styles.ts → group
+// Source: core/components/dropdown-menu/src/elements → group
 export const Group = styled(
   "div",
   {
@@ -54,7 +54,7 @@ export const Group = styled(
 } as any,
 );
 
-// Source: core/components/dropdown-menu/src/styles.ts → item
+// Source: core/components/dropdown-menu/src/elements → item
 export const Item = styled(
   "div",
   {
@@ -92,7 +92,7 @@ export const Item = styled(
 } as any,
 );
 
-// Source: core/components/dropdown-menu/src/styles.ts → label
+// Source: core/components/dropdown-menu/src/elements → label
 export const Label = styled(
   "div",
   {
@@ -111,7 +111,7 @@ export const Label = styled(
 } as any,
 );
 
-// Source: core/components/dropdown-menu/src/styles.ts → positioner
+// Source: core/components/dropdown-menu/src/elements → positioner
 export const Positioner = styled(
   "div",
   {
@@ -135,7 +135,7 @@ export const Positioner = styled(
 } as any,
 );
 
-// Source: core/components/dropdown-menu/src/styles.ts → separator
+// Source: core/components/dropdown-menu/src/elements → separator
 export const Separator = styled(
   "div",
   {

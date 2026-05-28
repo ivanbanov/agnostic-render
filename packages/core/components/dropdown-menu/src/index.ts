@@ -26,14 +26,26 @@ export {
 } from "./props";
 export type { ResolvedDropdownMenuProps } from "./props";
 
-// Styles
-export * as styles from "./styles";
-export { placementToSide } from "./styles";
+// Elements (per-part style specs)
+export * as elements from "./elements";
+export {
+  content,
+  group,
+  item,
+  label,
+  parts,
+  positioner,
+  separator,
+} from "./elements";
 export type {
   ContentVariants,
   ItemVariants,
+  Part,
   PositionerVariants,
-  Style,
-  StyleSpec,
-  StyleValue,
-} from "./styles";
+} from "./elements";
+
+// Utils
+export { placementToSide } from "./utils";
+
+// Re-export shared style types for component-author convenience
+export type { Style, StyleSpec, StyleValue } from "@render-experiment/machine-core";

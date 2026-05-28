@@ -4,7 +4,7 @@
 
 import { resolveStyle, type TranslatedNativeStyle } from "@render-experiment/style-engine-native";
 
-// Source: core/components/dropdown-menu/src/styles.ts → content
+// Source: core/components/dropdown-menu/src/elements → content
 export const content: TranslatedNativeStyle = {
   "base": {
     "position": "absolute",
@@ -43,7 +43,7 @@ export function resolveContent(selections: Record<string, string> = {}) {
   return resolveStyle(content, selections);
 }
 
-// Source: core/components/dropdown-menu/src/styles.ts → group
+// Source: core/components/dropdown-menu/src/elements → group
 export const group: TranslatedNativeStyle = {
   "base": {
     "display": "block"
@@ -57,7 +57,7 @@ export function resolveGroup(selections: Record<string, string> = {}) {
   return resolveStyle(group, selections);
 }
 
-// Source: core/components/dropdown-menu/src/styles.ts → item
+// Source: core/components/dropdown-menu/src/elements → item
 export const item: TranslatedNativeStyle = {
   "base": {
     "display": "flex",
@@ -93,7 +93,7 @@ export function resolveItem(selections: Record<string, string> = {}) {
   return resolveStyle(item, selections);
 }
 
-// Source: core/components/dropdown-menu/src/styles.ts → label
+// Source: core/components/dropdown-menu/src/elements → label
 export const label: TranslatedNativeStyle = {
   "base": {
     "paddingVertical": 6,
@@ -113,7 +113,7 @@ export function resolveLabel(selections: Record<string, string> = {}) {
   return resolveStyle(label, selections);
 }
 
-// Source: core/components/dropdown-menu/src/styles.ts → positioner
+// Source: core/components/dropdown-menu/src/elements → positioner
 export const positioner: TranslatedNativeStyle = {
   "base": {
     "position": "fixed",
@@ -136,7 +136,7 @@ export function resolvePositioner(selections: Record<string, string> = {}) {
   return resolveStyle(positioner, selections);
 }
 
-// Source: core/components/dropdown-menu/src/styles.ts → separator
+// Source: core/components/dropdown-menu/src/elements → separator
 export const separator: TranslatedNativeStyle = {
   "base": {
     "height": 1,

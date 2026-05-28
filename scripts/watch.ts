@@ -1,9 +1,9 @@
 /**
  * Codegen watcher.
  *
- * Watches every core component's authored files (styles.ts, machine.ts,
- * types.ts, props.ts) and re-runs the build emitter for the affected
- * component when any of them change.
+ * Watches every core component's authored files — the per-file machine,
+ * types, props, utils, and the elements/ folder — and re-runs the build
+ * emitter for the affected component when any of them change.
  *
  * The build script writes elements.ts and api.ts inside each adapter
  * package; Vite (web) and Metro (RN) pick those changes up via their
@@ -14,12 +14,10 @@ import { resolve } from "node:path";
 import chokidar from "chokidar";
 import { buildAll, buildComponent, discoverComponents } from "./build";
 
-const REPO_ROOT = resolve(import.meta.dirname ?? "", "..");
-const CORE_DIR = resolve(REPO_ROOT, "packages/core/components");
-
 // Files inside each core/components/<slug>/src/ that the codegen reads.
-// Editing any of them invalidates that component's generated files.
-const WATCHED_FILES = ["styles.ts", "machine.ts", "types.ts", "props.ts"];
+// Plus the elements/ directory watched recursively.
+const WATCHED_FILES = ["machine.ts", "types.ts", "props.ts", "utils.ts"];
+const WATCHED_DIRS = ["elements"];
 
 const components = discoverComponents();
 if (components.length === 0) {
@@ -27,13 +25,24 @@ if (components.length === 0) {
   process.exit(0);
 }
 
-const slugByPath = new Map<string, string>();
+// Per-component, gather one absolute path prefix (the src/ dir) we use to
+// map an event path back to the owning slug.
+const srcByPrefix: Array<{ prefix: string; slug: string }> = components.map((c) => ({
+  prefix: c.coreSrc,
+  slug: c.slug,
+}));
+
+function slugFor(eventPath: string): string | undefined {
+  return srcByPrefix.find((s) => eventPath.startsWith(s.prefix))?.slug;
+}
+
 const watchPaths: string[] = [];
 for (const c of components) {
   for (const file of WATCHED_FILES) {
-    const full = resolve(c.coreSrc, file);
-    slugByPath.set(full, c.slug);
-    watchPaths.push(full);
+    watchPaths.push(resolve(c.coreSrc, file));
+  }
+  for (const dir of WATCHED_DIRS) {
+    watchPaths.push(resolve(c.coreSrc, dir));
   }
 }
 
@@ -68,11 +77,11 @@ const watcher = chokidar.watch(watchPaths, {
 });
 
 watcher.on("change", (path) => {
-  const slug = slugByPath.get(path);
+  const slug = slugFor(path);
   if (slug) rebuildSlug(slug);
 });
 watcher.on("add", (path) => {
-  const slug = slugByPath.get(path);
+  const slug = slugFor(path);
   if (slug) rebuildSlug(slug);
 });
 

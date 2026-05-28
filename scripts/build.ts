@@ -17,7 +17,7 @@
  *
  * Convention contract:
  *   - core folder name = component slug (kebab-case): "tooltip" / "dropdown-menu"
- *   - core/components/<slug>/src/styles.ts exports each element as a camelCase
+ *   - core/components/<slug>/src/elements exports each element as a camelCase
  *     const whose value is a style spec (object with `variants`). The
  *     element name on adapters is the PascalCase form: `content` → `Content`.
  *   - core/components/<slug>/src/index.ts exports `<camel>Machine` and
@@ -30,12 +30,14 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { translateAgnosticSpec } from "@render-experiment/style-engine-react";
 import { translateAgnosticSpecToNative } from "@render-experiment/style-engine-native";
+import { translateAgnosticSpecToPixi } from "@render-experiment/style-engine-pixi";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
 const COMPONENTS_CORE = resolve(REPO_ROOT, "packages/core/components");
 const COMPONENTS_REACT = resolve(REPO_ROOT, "packages/react/components");
 const COMPONENTS_NATIVE = resolve(REPO_ROOT, "packages/native/components");
+const COMPONENTS_PIXI = resolve(REPO_ROOT, "packages/pixi/components");
 
 // -----------------------------------------------------------------------------
 // Discovery
@@ -54,6 +56,8 @@ export interface DiscoveredComponent {
   reactSrc: string;
   /** Path to native adapter's src dir (may not exist). */
   nativeSrc: string;
+  /** Path to pixi adapter's src dir (may not exist). */
+  pixiSrc: string;
 }
 
 function pascalize(slug: string): string {
@@ -92,6 +96,7 @@ export function discoverComponents(): DiscoveredComponent[] {
       coreSrc: resolve(COMPONENTS_CORE, slug, "src"),
       reactSrc: resolve(COMPONENTS_REACT, slug, "src"),
       nativeSrc: resolve(COMPONENTS_NATIVE, slug, "src"),
+      pixiSrc: resolve(COMPONENTS_PIXI, slug, "src"),
     }));
 }
 
@@ -116,13 +121,13 @@ function isStyleSpec(value: unknown): boolean {
 }
 
 async function loadCore(component: DiscoveredComponent): Promise<LoadedCore> {
-  const stylesPath = resolve(component.coreSrc, "styles.ts");
+  const elementsPath = resolve(component.coreSrc, "elements/index.ts");
   const indexPath = resolve(component.coreSrc, "index.ts");
 
   // Cache-bust dynamic imports so the watcher sees fresh content on
   // re-runs. ESM caches by URL; appending a unique query forces a reload.
   const bust = `?t=${Date.now()}`;
-  const stylesMod = (await import(pathToFileURL(stylesPath).href + bust)) as Record<
+  const elementsMod = (await import(pathToFileURL(elementsPath).href + bust)) as Record<
     string,
     unknown
   >;
@@ -131,15 +136,17 @@ async function loadCore(component: DiscoveredComponent): Promise<LoadedCore> {
     unknown
   >;
 
+  // Pick up every camelCase export from elements/ whose value looks like
+  // a style spec. The element name on adapters is the PascalCase form.
   const styles: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(stylesMod)) {
+  for (const [key, value] of Object.entries(elementsMod)) {
     if (!isStyleSpec(value)) continue;
     styles[capitalize(key)] = value;
   }
 
   if (Object.keys(styles).length === 0) {
     throw new Error(
-      `[${component.slug}] No style-spec exports found in core's styles.ts (need objects with a \`variants\` field).`,
+      `[${component.slug}] No style-spec exports found in core's elements/ (each <name>.ts should export a const with a \`variants\` field).`,
     );
   }
 
@@ -174,7 +181,7 @@ function emitReactElements(component: DiscoveredComponent, styles: Record<string
       const camel = elementName[0]!.toLowerCase() + elementName.slice(1);
       const translated = translateAgnosticSpec(spec as never);
       const inlined = JSON.stringify(translated, null, 2);
-      return `// Source: core/components/${component.slug}/src/styles.ts → ${camel}
+      return `// Source: core/components/${component.slug}/src/elements → ${camel}
 export const ${elementName} = styled(
   "div",
   ${inlined} as any,
@@ -235,7 +242,7 @@ function emitNativeElements(component: DiscoveredComponent, styles: Record<strin
     const translated = translateAgnosticSpecToNative(spec as never);
     const inlined = JSON.stringify(translated, null, 2);
     decls.push(
-      `// Source: core/components/${component.slug}/src/styles.ts → ${camel}
+      `// Source: core/components/${component.slug}/src/elements → ${camel}
 export const ${camel}: TranslatedNativeStyle = ${inlined};
 
 export function resolve${elementName}(selections: Record<string, string> = {}) {
@@ -285,6 +292,94 @@ export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
 }
 
 // -----------------------------------------------------------------------------
+// Pixi emitters
+// -----------------------------------------------------------------------------
+
+/**
+ * Pick the Pixi primitive tag for a given element name.
+ *
+ *   "Positioner"     → "container"  (invisible layout host)
+ *   "Label" / "Hotkey" → "text"      (text-only)
+ *   anything else    → "graphics"   (background-painted surface)
+ *
+ * Components can override by exporting a constant `pixiPrimitives` from
+ * styles.ts mapping element name → primitive — wired later if needed.
+ */
+function pixiPrimitiveFor(elementName: string): "container" | "graphics" | "text" {
+  if (elementName === "Positioner" || elementName === "Group") return "container";
+  if (elementName === "Label" || elementName === "Hotkey") return "text";
+  return "graphics";
+}
+
+function emitPixiElements(component: DiscoveredComponent, styles: Record<string, unknown>): string {
+  const decls: string[] = [];
+  for (const [elementName, spec] of Object.entries(styles)) {
+    const camel = elementName[0]!.toLowerCase() + elementName.slice(1);
+    const primitive = pixiPrimitiveFor(elementName);
+    const translated = translateAgnosticSpecToPixi(spec as never);
+    const inlined = JSON.stringify(translated, null, 2);
+    decls.push(
+      `// Source: core/components/${component.slug}/src/elements → ${camel} (primitive: ${primitive})
+export const ${elementName} = styled(${JSON.stringify(primitive)}, ${inlined});`,
+    );
+  }
+
+  return `${HEADER}
+import { styled } from "@render-experiment/style-engine-pixi";
+
+${decls.join("\n\n")}
+`;
+}
+
+function emitPixiApi(component: DiscoveredComponent): string {
+  const { pascal, slug, camel } = component;
+  return `${HEADER}
+import { withAdapter } from "@render-experiment/machine-core";
+import { createMachineRuntime, type MachineRuntime } from "@render-experiment/machine-pixi";
+import {
+  connect${pascal},
+  ${camel}Machine,
+  type ${pascal}Api,
+  type ${pascal}Context as ${pascal}MachineContext,
+  type ${pascal}Props,
+  type ${pascal}State,
+} from "@render-experiment/${slug}-core";
+import { ${camel}Adapter } from "./adapter";
+
+const ${camel}MachineWithAdapter = withAdapter(${camel}Machine, ${camel}Adapter);
+
+/**
+ * Pixi version: not a hook (no React). Returns a runtime + a getApi() that
+ * re-derives the connect() output on demand. Consumer subscribes to
+ * runtime to know when to re-derive.
+ */
+export interface ${pascal}Bridge {
+  runtime: MachineRuntime<${pascal}MachineContext, ${pascal}Props>;
+  /** Latest connect() output for the current state. */
+  getApi: () => ${pascal}Api;
+}
+
+export function create${pascal}Bridge(props: ${pascal}Props): ${pascal}Bridge {
+  const runtime = createMachineRuntime<${pascal}MachineContext, ${pascal}Props>(
+    ${camel}MachineWithAdapter,
+    props,
+  );
+  const { machine } = runtime;
+  return {
+    runtime,
+    getApi: () =>
+      connect${pascal}(
+        machine.getState() as ${pascal}State,
+        machine.getContext(),
+        machine.getProps(),
+        machine.send,
+      ),
+  };
+}
+`;
+}
+
+// -----------------------------------------------------------------------------
 // Orchestration
 // -----------------------------------------------------------------------------
 
@@ -316,6 +411,18 @@ export async function buildComponent(component: DiscoveredComponent) {
       emitNativeApi(component),
     );
     targets.push("native");
+  }
+
+  if (existsSync(component.pixiSrc)) {
+    writeFile(
+      resolve(component.pixiSrc, "elements.ts"),
+      emitPixiElements(component, core.styles),
+    );
+    writeFile(
+      resolve(component.pixiSrc, "api.ts"),
+      emitPixiApi(component),
+    );
+    targets.push("pixi");
   }
 
   if (targets.length === 0) {
