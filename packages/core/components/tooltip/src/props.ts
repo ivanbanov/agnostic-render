@@ -24,6 +24,7 @@ export const TOOLTIP_DEFAULTS = {
   closeOnPointerDown: true,
   interactive: false,
   disabled: false,
+  red: false,
   positioning: {
     placement: "bottom" as Placement,
     offset: { main: 4, cross: 0 },
@@ -52,6 +53,7 @@ export interface ResolvedTooltipProps {
   closeOnPointerDown: boolean;
   interactive: boolean;
   disabled: boolean;
+  red: boolean;
   onOpenChange: TooltipProps["onOpenChange"];
   positioning: PositioningOptions;
 }
@@ -88,6 +90,7 @@ export function tooltipProps(props: TooltipProps): ResolvedTooltipProps {
       TOOLTIP_DEFAULTS.closeOnPointerDown,
     interactive: props.interactive ?? TOOLTIP_DEFAULTS.interactive,
     disabled: props.disabled ?? TOOLTIP_DEFAULTS.disabled,
+    red: props.red ?? TOOLTIP_DEFAULTS.red,
     onOpenChange: props.onOpenChange,
     // Deep merge so partial overrides preserve untouched defaults.
     positioning: {

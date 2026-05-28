@@ -44,6 +44,7 @@ export type StyleSpec<TVariants extends Record<string, Record<string, Style>>> =
 
 export type ContentVariants = {
   side: "top" | "bottom" | "left" | "right";
+  red: "true" | "false";
 };
 
 export type PositionerVariants = {
@@ -56,6 +57,7 @@ export type PositionerVariants = {
 
 export const content: StyleSpec<{
   side: Record<"top" | "bottom" | "left" | "right", Style>;
+  red: Record<"true" | "false", Style>;
 }> = {
   position: "absolute",
   pointerEvents: "auto",
@@ -79,9 +81,14 @@ export const content: StyleSpec<{
       left: { right: "100%" },
       right: { left: "100%" },
     },
+    red: {
+      true: { background: "#c0392b" },
+      false: {},
+    },
   },
   defaultVariants: {
     side: "bottom",
+    red: "false",
   },
 };
 

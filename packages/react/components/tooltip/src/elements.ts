@@ -32,11 +32,18 @@ export const Content = styled(
       "right": {
         "left": "100%"
       }
+    },
+    "red": {
+      "true": {
+        "background": "#c0392b"
+      },
+      "false": {}
     }
   },
   "compoundVariants": [],
   "defaultVariants": {
-    "side": "bottom"
+    "side": "bottom",
+    "red": "false"
   }
 } as any,
 );

@@ -2,6 +2,8 @@ import { useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObjec
 import { normalize } from "@render-experiment/machine-react";
 import {
   placementToSide,
+  tooltipProps as resolveProps,
+  type ResolvedTooltipProps,
   type TooltipApi,
   type TooltipProps,
 } from "@render-experiment/tooltip-core";
@@ -25,10 +27,14 @@ export function TooltipRoot(props: TooltipRootProps) {
   const id = providedId ?? autoId;
 
   const triggerRef = useRef<HTMLElement | null>(null);
-  const api = useTooltipApi({ id, ...rest });
+  const rawProps: TooltipProps = { id, ...rest };
+  const api = useTooltipApi(rawProps);
+  const resolved = resolveProps(rawProps);
 
   return (
-    <TooltipContextRef.Provider value={{ api, triggerRef }}>{children}</TooltipContextRef.Provider>
+    <TooltipContextRef.Provider value={{ api, props: resolved, triggerRef }}>
+      {children}
+    </TooltipContextRef.Provider>
   );
 }
 
@@ -75,10 +81,10 @@ export interface TooltipContentProps {
 }
 
 export function TooltipContent({ children }: TooltipContentProps) {
-  const { api, triggerRef } = useTooltipContext();
+  const { api, props, triggerRef } = useTooltipContext();
   if (!api.content.rendered) return null;
   return (
-    <PositionedContent api={api} triggerRef={triggerRef}>
+    <PositionedContent api={api} props={props} triggerRef={triggerRef}>
       {children}
     </PositionedContent>
   );
@@ -86,10 +92,12 @@ export function TooltipContent({ children }: TooltipContentProps) {
 
 function PositionedContent({
   api,
+  props,
   triggerRef,
   children,
 }: {
   api: TooltipApi;
+  props: ResolvedTooltipProps;
   triggerRef: RefObject<HTMLElement | null>;
   children: ReactNode;
 }) {
@@ -120,7 +128,12 @@ function PositionedContent({
 
   return (
     <Styled.Positioner anchored={anchor ? "true" : "false"} css={anchorCoords}>
-      <Styled.Content {...handlerProps} {...attrProps} side={side}>
+      <Styled.Content
+        {...handlerProps}
+        {...attrProps}
+        side={side}
+        red={props.red ? "true" : "false"}
+      >
         {children}
       </Styled.Content>
     </Styled.Positioner>

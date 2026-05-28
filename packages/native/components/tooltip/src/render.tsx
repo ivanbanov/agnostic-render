@@ -43,6 +43,8 @@ import {
 import { normalize } from "@render-experiment/machine-native";
 import {
   placementToSide,
+  tooltipProps as resolveProps,
+  type ResolvedTooltipProps,
   type TooltipApi,
   type TooltipProps,
 } from "@render-experiment/tooltip-core";
@@ -55,6 +57,7 @@ import { resolveContent, resolvePositioner } from "./elements";
 
 interface TooltipCtxValue {
   api: TooltipApi;
+  props: ResolvedTooltipProps;
   triggerRef: React.MutableRefObject<View | null>;
   anchor: { x: number; y: number; width: number; height: number } | null;
   setAnchor: (a: { x: number; y: number; width: number; height: number } | null) => void;
@@ -87,10 +90,12 @@ export function TooltipRoot(props: TooltipRootProps) {
 
   const triggerRef = useRef<View | null>(null);
   const [anchor, setAnchor] = useState<TooltipCtxValue["anchor"]>(null);
-  const api = useTooltipApi({ id, ...rest });
+  const rawProps: TooltipProps = { id, ...rest };
+  const api = useTooltipApi(rawProps);
+  const resolved = resolveProps(rawProps);
 
   return (
-    <TooltipCtx.Provider value={{ api, triggerRef, anchor, setAnchor, id }}>
+    <TooltipCtx.Provider value={{ api, props: resolved, triggerRef, anchor, setAnchor, id }}>
       {children}
     </TooltipCtx.Provider>
   );
@@ -167,7 +172,7 @@ export interface TooltipContentProps {
 }
 
 export function TooltipContent({ children }: TooltipContentProps) {
-  const { api, anchor } = useTooltipCtxOrThrow();
+  const { api, props, anchor } = useTooltipCtxOrThrow();
 
   const rendered = api.content.rendered;
   const side = placementToSide(api.content.positioning.placement);
@@ -185,7 +190,7 @@ export function TooltipContent({ children }: TooltipContentProps) {
   if (!rendered) return null;
 
   const positionerStyle = resolvePositioner({ anchored: anchor ? "true" : "false" });
-  const contentStyle = resolveContent({ side });
+  const contentStyle = resolveContent({ side, red: props.red ? "true" : "false" });
 
   // Convert anchor center → absolute coords for the positioner. Mirrors
   // the web `anchorOf` math but simplified to placement="bottom" — full

@@ -50,6 +50,8 @@ export interface TooltipProps {
   closeOnPointerDown?: boolean;
   interactive?: boolean;
   disabled?: boolean;
+  /** Render the tooltip with the red color variant. */
+  red?: boolean;
   positioning?: Partial<PositioningOptions>;
   onOpenChange?: (details: { open: boolean }) => void;
 }
