@@ -9,12 +9,17 @@ export const Content = styled("graphics", {
   "base": {
     "position": "absolute",
     "pointerEvents": "auto",
-    "background": 1118481,
+    "background": 1645084,
     "color": 16777215,
     "paddingY": 6,
-    "paddingX": 10,
-    "borderRadius": 4,
-    "fontSize": 13
+    "paddingX": 8,
+    "borderRadius": 3,
+    "fontSize": 14,
+    "fontWeight": 400,
+    "lineHeight": "20px",
+    "fontFamily": "inherit",
+    "outline": "1px solid transparent",
+    "zIndex": 2147483647
   },
   "variants": {
     "side": {

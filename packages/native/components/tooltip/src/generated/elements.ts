@@ -8,12 +8,17 @@ import { resolveStyle, type TranslatedNativeStyle } from "@render-experiment/sty
 export const content: TranslatedNativeStyle = {
   "base": {
     "position": "absolute",
-    "backgroundColor": "#111",
-    "color": "#fff",
+    "backgroundColor": "#191a1c",
+    "color": "#ffffff",
     "paddingVertical": 6,
-    "paddingHorizontal": 10,
-    "borderRadius": 4,
-    "fontSize": 13
+    "paddingHorizontal": 8,
+    "borderRadius": 3,
+    "fontSize": 14,
+    "fontWeight": 400,
+    "lineHeight": "20px",
+    "fontFamily": "inherit",
+    "outline": "1px solid transparent",
+    "zIndex": 2147483647
   },
   "variants": {
     "side": {

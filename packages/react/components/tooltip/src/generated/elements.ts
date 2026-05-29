@@ -10,14 +10,19 @@ export const Content = styled(
   {
   "position": "absolute",
   "pointerEvents": "auto",
-  "background": "#111",
-  "color": "#fff",
+  "background": "#191a1c",
+  "color": "#ffffff",
   "paddingTop": 6,
   "paddingBottom": 6,
-  "paddingLeft": 10,
-  "paddingRight": 10,
-  "borderRadius": 4,
-  "fontSize": 13,
+  "paddingLeft": 8,
+  "paddingRight": 8,
+  "borderRadius": 3,
+  "fontSize": 14,
+  "fontWeight": 400,
+  "lineHeight": "20px",
+  "fontFamily": "inherit",
+  "outline": "1px solid transparent",
+  "zIndex": 2147483647,
   "variants": {
     "side": {
       "top": {

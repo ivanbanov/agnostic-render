@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useId,
   useLayoutEffect,
   useRef,
@@ -7,6 +8,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
+import type { Side } from "@render-experiment/utils";
 import { mergeProps, normalize } from "@render-experiment/machine-react";
 import {
   tooltipProps as resolveProps,
@@ -125,6 +127,52 @@ export function TooltipContent(props: TooltipContentProps) {
   );
 }
 
+/**
+ * Pick the effective side after collision. The connect supplies the
+ * preferred side (from `placement`); we flip to the opposite when the
+ * preferred would clip the viewport given the content's measured size.
+ *
+ * Vertical/horizontal sides flip in their own axis; we don't rotate
+ * 90° (that's a much bigger redesign and rarely useful).
+ */
+function pickSide(
+  preferred: Side,
+  triggerRect: DOMRect,
+  contentRect: DOMRect | null,
+  viewport: { width: number; height: number },
+  offset: number,
+): Side {
+  if (!contentRect) return preferred;
+  const ch = contentRect.height;
+  const cw = contentRect.width;
+  switch (preferred) {
+    case "bottom": {
+      const fitsBottom = triggerRect.bottom + offset + ch <= viewport.height;
+      if (fitsBottom) return "bottom";
+      const fitsTop = triggerRect.top - offset - ch >= 0;
+      return fitsTop ? "top" : "bottom";
+    }
+    case "top": {
+      const fitsTop = triggerRect.top - offset - ch >= 0;
+      if (fitsTop) return "top";
+      const fitsBottom = triggerRect.bottom + offset + ch <= viewport.height;
+      return fitsBottom ? "bottom" : "top";
+    }
+    case "right": {
+      const fitsRight = triggerRect.right + offset + cw <= viewport.width;
+      if (fitsRight) return "right";
+      const fitsLeft = triggerRect.left - offset - cw >= 0;
+      return fitsLeft ? "left" : "right";
+    }
+    case "left": {
+      const fitsLeft = triggerRect.left - offset - cw >= 0;
+      if (fitsLeft) return "left";
+      const fitsRight = triggerRect.right + offset + cw <= viewport.width;
+      return fitsRight ? "right" : "left";
+    }
+  }
+}
+
 function PositionedContent({
   api,
   ctxProps,
@@ -138,14 +186,46 @@ function PositionedContent({
   triggerRef: RefObject<HTMLElement | null>;
   children: ReactNode;
 }) {
-  const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
+  void ctxProps;
 
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
+  const [effectiveSide, setEffectiveSide] = useState<Side>(
+    api.parts.content.variants.side,
+  );
+
+  // Measure: read both rects, compute the effective side (collision
+  // flip), then anchor against the effective placement so the offsets
+  // come out right.
   useLayoutEffect(() => {
     const measure = () => {
       const trigger = triggerRef.current;
       if (!trigger) return;
-      setAnchor(anchorOf(trigger.getBoundingClientRect(), api.parts.content.positioning));
+      const triggerRect = trigger.getBoundingClientRect();
+      const contentRect = contentRef.current?.getBoundingClientRect() ?? null;
+
+      const preferred = api.parts.content.variants.side;
+      const next = pickSide(
+        preferred,
+        triggerRect,
+        contentRect,
+        { width: window.innerWidth, height: window.innerHeight },
+        api.parts.content.positioning.offset.main,
+      );
+      setEffectiveSide(next);
+
+      // Re-anchor against the (possibly flipped) side. Build a virtual
+      // PositioningOptions that mirrors the resolved side.
+      const flippedPositioning = {
+        ...api.parts.content.positioning,
+        placement:
+          next === api.parts.content.variants.side
+            ? api.parts.content.positioning.placement
+            : (next as typeof api.parts.content.positioning.placement),
+      };
+      setAnchor(anchorOf(triggerRect, flippedPositioning));
     };
+
     measure();
     window.addEventListener("scroll", measure, true);
     window.addEventListener("resize", measure);
@@ -153,26 +233,81 @@ function PositionedContent({
       window.removeEventListener("scroll", measure, true);
       window.removeEventListener("resize", measure);
     };
-  }, [api.parts.content.positioning, triggerRef]);
+  }, [api.parts.content.positioning, api.parts.content.variants.side, triggerRef]);
 
-  const handlerProps = normalize(api.parts.content.handlers as unknown as Record<string, unknown>);
-  const attrProps = normalize(api.parts.content.attrs as unknown as Record<string, unknown>);
+  // Trigger-move detection: a ResizeObserver on the trigger catches the
+  // case where the trigger's box changes without a window scroll/resize.
+  // No-op when ResizeObserver isn't available (older RN-web shells).
+  useEffect(() => {
+    if (typeof ResizeObserver === "undefined") return;
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const ro = new ResizeObserver(() => {
+      // Re-run measurement on the next frame.
+      const t = triggerRef.current;
+      if (!t) return;
+      const triggerRect = t.getBoundingClientRect();
+      const contentRect = contentRef.current?.getBoundingClientRect() ?? null;
+      const next = pickSide(
+        api.parts.content.variants.side,
+        triggerRect,
+        contentRect,
+        { width: window.innerWidth, height: window.innerHeight },
+        api.parts.content.positioning.offset.main,
+      );
+      setEffectiveSide(next);
+      const flippedPositioning = {
+        ...api.parts.content.positioning,
+        placement:
+          next === api.parts.content.variants.side
+            ? api.parts.content.positioning.placement
+            : (next as typeof api.parts.content.positioning.placement),
+      };
+      setAnchor(anchorOf(triggerRect, flippedPositioning));
+    });
+    ro.observe(trigger);
+    return () => ro.disconnect();
+  }, [api.parts.content.positioning, api.parts.content.variants.side, triggerRef]);
 
-  // Two runtime numbers — that's the irreducible minimum. Everything else
-  // is variants on the styled element.
+  // Viewport dismiss: close when the trigger scrolls out of view.
+  // Implemented via IntersectionObserver so we don't need to poll.
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") return;
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const io = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) {
+          api.setOpen(false);
+        }
+      }
+    });
+    io.observe(trigger);
+    return () => io.disconnect();
+  }, [api, triggerRef]);
+
+  const handlerProps = normalize(
+    api.parts.content.handlers as unknown as Record<string, unknown>,
+  );
+  const attrProps = normalize(
+    api.parts.content.attrs as unknown as Record<string, unknown>,
+  );
+
+  // Two runtime numbers — that's the irreducible minimum.
   const anchorCoords = anchor ? { top: anchor.y, left: anchor.x } : undefined;
 
-  // Compose consumer props with machine handlers/attrs. Machine wins on
-  // non-handler conflicts; both handlers fire when both sides have them.
-  const merged = mergeProps(consumerProps, { ...handlerProps, ...attrProps });
-
-  // ctxProps is read for parity with native/pixi adapters that still
-  // need ResolvedTooltipProps; here `red` flows through api.parts.content.variants.
-  void ctxProps;
+  // Override the connect's `side` (preferred) with the effective side
+  // (after collision flip) so styling and the data-side attr reflect
+  // where the tooltip actually ended up.
+  const merged = mergeProps(consumerProps, {
+    ...handlerProps,
+    ...attrProps,
+    "data-side": effectiveSide,
+  });
 
   return (
     <Styled.Positioner anchored={!!anchor} css={anchorCoords}>
-      <Styled.Content {...merged} {...api.parts.content.variants}>
+      <Styled.Content {...merged} side={effectiveSide} ref={contentRef}>
         {children}
       </Styled.Content>
     </Styled.Positioner>
