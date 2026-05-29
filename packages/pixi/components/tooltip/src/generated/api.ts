@@ -3,7 +3,7 @@
 // To change this file, edit the core spec it derives from and rerun `pnpm codegen`.
 
 import { withAdapter } from "@render-experiment/machine-core";
-import { createMachineRuntime, type MachineRuntime } from "@render-experiment/machine-pixi";
+import { createRuntime, type Runtime } from "@render-experiment/machine-pixi";
 import {
   connectTooltip,
   tooltipMachine,
@@ -17,30 +17,16 @@ import { tooltipAdapter } from "../adapter";
 const tooltipMachineWithAdapter = withAdapter(tooltipMachine, tooltipAdapter);
 
 /**
- * Pixi version: not a hook (no React). Returns a runtime + a getApi() that
- * re-derives the connect() output on demand. Consumer subscribes to
- * runtime to know when to re-derive.
+ * Pixi version: not a hook (no React). Returns a runtime + a getApi()
+ * that's cached by the machine's version counter — calls are cheap as
+ * long as nothing has changed.
  */
-export interface TooltipBridge {
-  runtime: MachineRuntime<TooltipMachineContext, TooltipProps>;
-  /** Latest connect() output for the current state. */
-  getApi: () => TooltipApi;
-}
+export type TooltipBridge = Runtime<TooltipMachineContext, TooltipProps, TooltipApi>;
 
 export function createTooltipBridge(props: TooltipProps): TooltipBridge {
-  const runtime = createMachineRuntime<TooltipMachineContext, TooltipProps>(
+  return createRuntime<TooltipMachineContext, TooltipProps, TooltipState, TooltipApi>(
     tooltipMachineWithAdapter,
     props,
+    connectTooltip,
   );
-  const { machine } = runtime;
-  return {
-    runtime,
-    getApi: () =>
-      connectTooltip({
-        state: machine.getState() as TooltipState,
-        context: machine.getContext(),
-        props: machine.getProps(),
-        send: machine.send,
-      })(),
-  };
 }

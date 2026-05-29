@@ -3,7 +3,7 @@
 // To change this file, edit the core spec it derives from and rerun `pnpm codegen`.
 
 import { withAdapter } from "@render-experiment/machine-core";
-import { useMachine } from "@render-experiment/machine-native";
+import { useApi } from "@render-experiment/machine-native";
 import {
   connectTooltip,
   tooltipMachine,
@@ -18,14 +18,9 @@ const tooltipMachineWithAdapter = withAdapter(tooltipMachine, tooltipAdapter);
 
 /** Wire the core machine to native and return the connect() API. */
 export function useTooltipApi(props: TooltipProps): TooltipApi {
-  const machine = useMachine<TooltipMachineContext, TooltipProps>(
+  return useApi<TooltipMachineContext, TooltipProps, TooltipState, TooltipApi>(
     tooltipMachineWithAdapter,
     props,
+    connectTooltip,
   );
-  return connectTooltip({
-    state: machine.getState() as TooltipState,
-    context: machine.getContext(),
-    props: machine.getProps(),
-    send: machine.send,
-  })();
 }

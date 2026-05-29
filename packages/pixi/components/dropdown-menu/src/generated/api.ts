@@ -3,7 +3,7 @@
 // To change this file, edit the core spec it derives from and rerun `pnpm codegen`.
 
 import { withAdapter } from "@render-experiment/machine-core";
-import { createMachineRuntime, type MachineRuntime } from "@render-experiment/machine-pixi";
+import { createRuntime, type Runtime } from "@render-experiment/machine-pixi";
 import {
   connectDropdownMenu,
   dropdownMenuMachine,
@@ -17,30 +17,16 @@ import { dropdownMenuAdapter } from "../adapter";
 const dropdownMenuMachineWithAdapter = withAdapter(dropdownMenuMachine, dropdownMenuAdapter);
 
 /**
- * Pixi version: not a hook (no React). Returns a runtime + a getApi() that
- * re-derives the connect() output on demand. Consumer subscribes to
- * runtime to know when to re-derive.
+ * Pixi version: not a hook (no React). Returns a runtime + a getApi()
+ * that's cached by the machine's version counter — calls are cheap as
+ * long as nothing has changed.
  */
-export interface DropdownMenuBridge {
-  runtime: MachineRuntime<DropdownMenuMachineContext, DropdownMenuProps>;
-  /** Latest connect() output for the current state. */
-  getApi: () => DropdownMenuApi;
-}
+export type DropdownMenuBridge = Runtime<DropdownMenuMachineContext, DropdownMenuProps, DropdownMenuApi>;
 
 export function createDropdownMenuBridge(props: DropdownMenuProps): DropdownMenuBridge {
-  const runtime = createMachineRuntime<DropdownMenuMachineContext, DropdownMenuProps>(
+  return createRuntime<DropdownMenuMachineContext, DropdownMenuProps, DropdownMenuState, DropdownMenuApi>(
     dropdownMenuMachineWithAdapter,
     props,
+    connectDropdownMenu,
   );
-  const { machine } = runtime;
-  return {
-    runtime,
-    getApi: () =>
-      connectDropdownMenu({
-        state: machine.getState() as DropdownMenuState,
-        context: machine.getContext(),
-        props: machine.getProps(),
-        send: machine.send,
-      })(),
-  };
 }

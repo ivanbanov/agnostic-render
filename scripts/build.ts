@@ -201,7 +201,7 @@ function emitReactApi(component: DiscoveredComponent): string {
   const { pascal, slug, camel } = component;
   return `${HEADER}
 import { withAdapter } from "@render-experiment/machine-core";
-import { useMachine } from "@render-experiment/machine-react";
+import { useApi } from "@render-experiment/machine-react";
 import {
   connect${pascal},
   ${camel}Machine,
@@ -216,16 +216,11 @@ const ${camel}MachineWithAdapter = withAdapter(${camel}Machine, ${camel}Adapter)
 
 /** Wire the core machine to React and return the connect() API. */
 export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
-  const machine = useMachine<${pascal}MachineContext, ${pascal}Props>(
+  return useApi<${pascal}MachineContext, ${pascal}Props, ${pascal}State, ${pascal}Api>(
     ${camel}MachineWithAdapter,
     props,
+    connect${pascal},
   );
-  return connect${pascal}({
-    state: machine.getState() as ${pascal}State,
-    context: machine.getContext(),
-    props: machine.getProps(),
-    send: machine.send,
-  })();
 }
 `;
 }
@@ -263,7 +258,7 @@ function emitNativeApi(component: DiscoveredComponent): string {
   const { pascal, slug, camel } = component;
   return `${HEADER}
 import { withAdapter } from "@render-experiment/machine-core";
-import { useMachine } from "@render-experiment/machine-native";
+import { useApi } from "@render-experiment/machine-native";
 import {
   connect${pascal},
   ${camel}Machine,
@@ -278,16 +273,11 @@ const ${camel}MachineWithAdapter = withAdapter(${camel}Machine, ${camel}Adapter)
 
 /** Wire the core machine to native and return the connect() API. */
 export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
-  const machine = useMachine<${pascal}MachineContext, ${pascal}Props>(
+  return useApi<${pascal}MachineContext, ${pascal}Props, ${pascal}State, ${pascal}Api>(
     ${camel}MachineWithAdapter,
     props,
+    connect${pascal},
   );
-  return connect${pascal}({
-    state: machine.getState() as ${pascal}State,
-    context: machine.getContext(),
-    props: machine.getProps(),
-    send: machine.send,
-  })();
 }
 `;
 }
@@ -336,7 +326,7 @@ function emitPixiApi(component: DiscoveredComponent): string {
   const { pascal, slug, camel } = component;
   return `${HEADER}
 import { withAdapter } from "@render-experiment/machine-core";
-import { createMachineRuntime, type MachineRuntime } from "@render-experiment/machine-pixi";
+import { createRuntime, type Runtime } from "@render-experiment/machine-pixi";
 import {
   connect${pascal},
   ${camel}Machine,
@@ -350,32 +340,18 @@ import { ${camel}Adapter } from "../adapter";
 const ${camel}MachineWithAdapter = withAdapter(${camel}Machine, ${camel}Adapter);
 
 /**
- * Pixi version: not a hook (no React). Returns a runtime + a getApi() that
- * re-derives the connect() output on demand. Consumer subscribes to
- * runtime to know when to re-derive.
+ * Pixi version: not a hook (no React). Returns a runtime + a getApi()
+ * that's cached by the machine's version counter — calls are cheap as
+ * long as nothing has changed.
  */
-export interface ${pascal}Bridge {
-  runtime: MachineRuntime<${pascal}MachineContext, ${pascal}Props>;
-  /** Latest connect() output for the current state. */
-  getApi: () => ${pascal}Api;
-}
+export type ${pascal}Bridge = Runtime<${pascal}MachineContext, ${pascal}Props, ${pascal}Api>;
 
 export function create${pascal}Bridge(props: ${pascal}Props): ${pascal}Bridge {
-  const runtime = createMachineRuntime<${pascal}MachineContext, ${pascal}Props>(
+  return createRuntime<${pascal}MachineContext, ${pascal}Props, ${pascal}State, ${pascal}Api>(
     ${camel}MachineWithAdapter,
     props,
+    connect${pascal},
   );
-  const { machine } = runtime;
-  return {
-    runtime,
-    getApi: () =>
-      connect${pascal}({
-        state: machine.getState() as ${pascal}State,
-        context: machine.getContext(),
-        props: machine.getProps(),
-        send: machine.send,
-      })(),
-  };
 }
 `;
 }

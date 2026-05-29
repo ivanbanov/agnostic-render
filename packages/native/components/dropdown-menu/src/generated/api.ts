@@ -3,7 +3,7 @@
 // To change this file, edit the core spec it derives from and rerun `pnpm codegen`.
 
 import { withAdapter } from "@render-experiment/machine-core";
-import { useMachine } from "@render-experiment/machine-native";
+import { useApi } from "@render-experiment/machine-native";
 import {
   connectDropdownMenu,
   dropdownMenuMachine,
@@ -18,14 +18,9 @@ const dropdownMenuMachineWithAdapter = withAdapter(dropdownMenuMachine, dropdown
 
 /** Wire the core machine to native and return the connect() API. */
 export function useDropdownMenuApi(props: DropdownMenuProps): DropdownMenuApi {
-  const machine = useMachine<DropdownMenuMachineContext, DropdownMenuProps>(
+  return useApi<DropdownMenuMachineContext, DropdownMenuProps, DropdownMenuState, DropdownMenuApi>(
     dropdownMenuMachineWithAdapter,
     props,
+    connectDropdownMenu,
   );
-  return connectDropdownMenu({
-    state: machine.getState() as DropdownMenuState,
-    context: machine.getContext(),
-    props: machine.getProps(),
-    send: machine.send,
-  })();
 }
