@@ -38,6 +38,14 @@ export interface DropdownMenuProps {
   closeOnSelect?: boolean;
   /** Esc closes the menu. */
   closeOnEscape?: boolean;
+  /**
+   * Keep keyboard focus inside the open menu. When true, Tab / Shift+Tab
+   * are swallowed (the menu stays open; Esc or selecting an item exits) —
+   * matching Radix/React-Aria's trapped behavior. When false (default),
+   * Tab closes the menu and lets focus move to the next tabbable element
+   * in document order — the literal W3C APG menu-button behavior.
+   */
+  focusTrap?: boolean;
   /** Allow keyboard navigation to wrap around at boundaries. */
   loop?: boolean;
   /** Enable type-ahead character matching. */
@@ -126,6 +134,12 @@ export type DropdownMenuItemPart = Part<
 export interface DropdownMenuApi {
   open: boolean;
   setOpen: (next: boolean) => void;
+  /**
+   * Resolved focus-trap mode (default false). The render layer reads this
+   * to decide whether to refocus the trigger on Tab — see connect's Tab
+   * handler. Surfaced here so the default lives in one place (props.ts).
+   */
+  focusTrap: boolean;
 
   parts: {
     trigger: Part;

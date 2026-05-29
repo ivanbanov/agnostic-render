@@ -700,6 +700,100 @@ describe("trigger keyboard interaction", () => {
 });
 
 // -----------------------------------------------------------------------------
+// focusTrap mode
+//
+// SPEC (Behavior › Focus trap): the `focusTrap` prop (default false)
+// decides what Tab does while the menu is open.
+//   - false (default, covered above): Tab closes + focus leaves the menu.
+//   - true: Tab is swallowed (preventDefault, no close); focus stays in the
+//     menu. Only Escape or activating an item exits.
+// -----------------------------------------------------------------------------
+
+describe("focusTrap mode", () => {
+  it("Tab does NOT close the menu when focusTrap is true", () => {
+    render(
+      <div>
+        <DropdownMenu defaultOpen focusTrap>
+          <DropdownMenu.Trigger>
+            <button>Open</button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content>
+            <DropdownMenu.Item value="a">A</DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu>
+        <button>After</button>
+      </div>,
+    );
+
+    const menu = screen.getByRole("menu");
+    fireEvent.keyDown(menu, { key: "Tab" });
+
+    // Menu stays open and focus is not yanked to the trigger.
+    expect(screen.getByRole("menu")).toBeTruthy();
+    expect(document.activeElement).not.toBe(screen.getByText("Open"));
+  });
+
+  it("Tab calls preventDefault when focusTrap is true (focus can't leave)", () => {
+    render(
+      <DropdownMenu defaultOpen focusTrap>
+        <DropdownMenu.Trigger>
+          <button>Open</button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Content>
+          <DropdownMenu.Item value="a">A</DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu>,
+    );
+
+    const menu = screen.getByRole("menu");
+    const event = createEvent.keyDown(menu, { key: "Tab" });
+    fireEvent(menu, event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(screen.getByRole("menu")).toBeTruthy();
+  });
+
+  it("Shift+Tab is also swallowed when focusTrap is true", () => {
+    render(
+      <DropdownMenu defaultOpen focusTrap>
+        <DropdownMenu.Trigger>
+          <button>Open</button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Content>
+          <DropdownMenu.Item value="a">A</DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu>,
+    );
+
+    const menu = screen.getByRole("menu");
+    const event = createEvent.keyDown(menu, { key: "Tab", shiftKey: true });
+    fireEvent(menu, event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(screen.getByRole("menu")).toBeTruthy();
+  });
+
+  it("Escape still closes the menu in focusTrap mode", () => {
+    render(
+      <DropdownMenu defaultOpen focusTrap>
+        <DropdownMenu.Trigger>
+          <button>Open</button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Content>
+          <DropdownMenu.Item value="a">A</DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu>,
+    );
+
+    expect(screen.getByRole("menu")).toBeTruthy();
+    act(() => {
+      fireEvent.keyDown(document, { key: "Escape" });
+    });
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+});
+
+// -----------------------------------------------------------------------------
 // typeahead
 // -----------------------------------------------------------------------------
 

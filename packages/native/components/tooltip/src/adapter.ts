@@ -1,9 +1,10 @@
 /**
  * React Native adapter for Tooltip.
  *
- * No-op for trackEscapeKey: RN doesn't have a hardware Escape key for
- * the general case. The Tooltip view wires the Android back button
- * separately via BackHandler (see render.tsx).
+ * No substrate effects to override: the core's trackEscapeKey no-op stands.
+ * RN has no general hardware Escape key; the Android back button is wired in
+ * render.tsx via BackHandler. Left empty intentionally rather than re-stating
+ * the no-op.
  */
 import type { Adapter } from "@render-experiment/machine-core";
 import type {
@@ -11,6 +12,4 @@ import type {
   TooltipProps,
 } from "@render-experiment/tooltip-core";
 
-export const tooltipAdapter: Adapter<TooltipContext, TooltipProps> = {
-  trackEscapeKey: () => undefined,
-};
+export const tooltipAdapter: Adapter<TooltipContext, TooltipProps> = {};

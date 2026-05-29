@@ -215,6 +215,48 @@ function DropdownMenuDemos() {
       </section>
 
       <section>
+        <h3>focusTrap — Tab behavior</h3>
+        <p style={{ color: "#888", fontSize: 13 }}>
+          Open a menu, then press Tab. Default (<code>focusTrap: false</code>) closes the menu and
+          moves focus to the next button. With <code>focusTrap</code>, Tab is swallowed — the menu
+          stays open and only Escape (or selecting an item) exits.
+        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button>before</button>
+
+          <DropdownMenu>
+            <DropdownMenu.Trigger>
+              <button>Tab exits (default)</button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content>
+              <DropdownMenu.Item value="a" onSelect={() => setLastAction("loose / A")}>
+                Item A
+              </DropdownMenu.Item>
+              <DropdownMenu.Item value="b" onSelect={() => setLastAction("loose / B")}>
+                Item B
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu>
+
+          <DropdownMenu focusTrap>
+            <DropdownMenu.Trigger>
+              <button>Tab trapped</button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content>
+              <DropdownMenu.Item value="a" onSelect={() => setLastAction("trapped / A")}>
+                Item A
+              </DropdownMenu.Item>
+              <DropdownMenu.Item value="b" onSelect={() => setLastAction("trapped / B")}>
+                Item B
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu>
+
+          <button>after</button>
+        </div>
+      </section>
+
+      <section>
         <h3>Groups</h3>
         <DropdownMenu>
           <DropdownMenu.Trigger>

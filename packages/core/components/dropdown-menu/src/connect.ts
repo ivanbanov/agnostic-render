@@ -103,9 +103,15 @@ export const connectDropdownMenu = connector<
           // Handled by trackEscapeKey effect; render layer just lets it bubble.
           break;
         case "Tab":
-          // Don't preventDefault: the browser's Tab handling moves focus
-          // to the next focusable, which is exactly what we want after
-          // closing.
+          if (r.focusTrap) {
+            // Trapped: swallow Tab so focus can't leave the open menu.
+            // The menu stays open; Esc or selecting an item exits.
+            event.preventDefault?.();
+            break;
+          }
+          // Loose (default): don't preventDefault — the browser's Tab
+          // handling moves focus to the next focusable, which is exactly
+          // what we want after closing.
           send({ type: "close" });
           break;
         default:
@@ -214,6 +220,7 @@ export const connectDropdownMenu = connector<
 
   return {
     open,
+    focusTrap: r.focusTrap,
     setOpen(next) {
       if (open === next) return;
       send({ type: next ? "open" : "close" });

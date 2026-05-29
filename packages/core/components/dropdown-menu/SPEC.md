@@ -47,8 +47,11 @@ scope for v1.
 
 - Click the trigger while open → closes.
 - Escape while open → closes; focus returns to the trigger.
-- Tab / Shift+Tab while open → closes; focus moves to the next tabbable
-  element in document order, skipping the menu.
+- Tab / Shift+Tab while open → depends on `focusTrap` (see Focus trap).
+  - Default (`focusTrap: false`) → closes; focus moves to the next
+    tabbable element in document order, skipping the menu.
+  - `focusTrap: true` → swallowed; the menu stays open and focus stays
+    inside it (Esc or selecting an item exits).
 - Pointer down outside the trigger and menu surface → closes.
 - Activating a regular item → closes (unless the item opted out).
 - Activating a checkbox or radio item → keeps the menu open.
@@ -86,6 +89,32 @@ scope for v1.
 ### Mutual exclusion
 
 Only one menu is visible at a time. Opening one closes any other.
+
+### Focus trap
+
+The `focusTrap` prop (default `false`) controls what Tab / Shift+Tab do
+while the menu is open:
+
+- **`false` (default)** — Tab closes the menu and lets focus move to the
+  next tabbable element in document order. This is the literal
+  [W3C APG menu-button] keyboard behavior ("move focus out of the menu and
+  close it"). The render layer refocuses the trigger first, so the
+  browser's native Tab continues from the trigger — one step past the
+  dropdown.
+- **`true`** — Tab is swallowed (`preventDefault`, no close); focus stays
+  inside the open menu. The only ways out are Escape or activating an item.
+  This matches the trapped behavior of Radix UI and React Aria, which
+  contain focus inside the popover surface.
+
+Rationale for defaulting to `false`: it is the spec-faithful behavior, and
+it sidesteps the focus-proxying problem that keeps libraries that trap
+(e.g. Radix's still-open issue for non-modal Tab) from letting focus leave
+cleanly. `true` exists for callers who want the familiar Radix-style
+containment.
+
+This is a Tab/focus switch only — it does not make the rest of the page
+inert (no scroll lock, no outside `aria-hidden`). Page modality, if needed,
+is a separate concern.
 
 ### Positioning
 
@@ -138,8 +167,9 @@ while open, the menu dismisses.
 - Home → first enabled item. End → last enabled item.
 - Enter / Space → activate the highlighted item.
 - Escape → close the menu; focus returns to the trigger.
-- Tab / Shift+Tab → close the menu; focus moves to the next/previous
-  tabbable element.
+- Tab / Shift+Tab → with `focusTrap: false` (default) close the menu and
+  move focus to the next/previous tabbable element; with `focusTrap: true`
+  the key is swallowed and the menu stays open (see Focus trap).
 - Any printable character → typeahead (see above).
 
 ## Controlled vs. uncontrolled

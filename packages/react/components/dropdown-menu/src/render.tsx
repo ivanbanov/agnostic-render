@@ -248,13 +248,14 @@ function PositionedContent({
     }
   }, [anchor]);
 
-  // On Tab, restore focus to the trigger before the machine's keydown
-  // handler closes the menu. After unmount the browser's native Tab
-  // navigation continues from the trigger, so the user's next focusable
-  // is one Tab past the dropdown — matching the SPEC's "Tab leaves the
-  // menu" behavior.
+  // On Tab in loose mode, restore focus to the trigger before the machine's
+  // keydown handler closes the menu. After unmount the browser's native Tab
+  // navigation continues from the trigger, so the user's next focusable is
+  // one Tab past the dropdown — matching the SPEC's "Tab leaves the menu"
+  // behavior. In focus-trap mode the core swallows Tab and the menu stays
+  // open, so we must NOT pull focus to the trigger — leave it on the menu.
   const onContentKeyDownCapture = (event: ReactKeyboardEvent) => {
-    if (event.key === "Tab") {
+    if (event.key === "Tab" && !api.focusTrap) {
       triggerRef.current?.focus();
     }
   };

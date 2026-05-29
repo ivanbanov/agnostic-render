@@ -23,6 +23,7 @@ export const DROPDOWN_MENU_DEFAULTS = {
   defaultOpen: false,
   closeOnSelect: true,
   closeOnEscape: true,
+  focusTrap: false,
   loop: true,
   typeahead: true,
   dir: "ltr" as const,
@@ -47,6 +48,7 @@ export interface ResolvedDropdownMenuProps {
   defaultOpen: boolean;
   closeOnSelect: boolean;
   closeOnEscape: boolean;
+  focusTrap: boolean;
   loop: boolean;
   typeahead: boolean;
   dir: "ltr" | "rtl";
@@ -71,6 +73,7 @@ export function dropdownMenuProps(
     defaultOpen: props.defaultOpen ?? DROPDOWN_MENU_DEFAULTS.defaultOpen,
     closeOnSelect: props.closeOnSelect ?? DROPDOWN_MENU_DEFAULTS.closeOnSelect,
     closeOnEscape: props.closeOnEscape ?? DROPDOWN_MENU_DEFAULTS.closeOnEscape,
+    focusTrap: props.focusTrap ?? DROPDOWN_MENU_DEFAULTS.focusTrap,
     loop: props.loop ?? DROPDOWN_MENU_DEFAULTS.loop,
     typeahead: props.typeahead ?? DROPDOWN_MENU_DEFAULTS.typeahead,
     dir: props.dir ?? DROPDOWN_MENU_DEFAULTS.dir,
