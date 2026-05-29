@@ -4,7 +4,7 @@
 
 import { resolveStyle, type TranslatedNativeStyle } from "@render-experiment/style-engine-native";
 
-// Source: core/components/tooltip/src/elements → content
+// Source: core/components/tooltip/src/shared/styles → content
 export const content: TranslatedNativeStyle = {
   "base": {
     "position": "absolute",
@@ -35,12 +35,6 @@ export const content: TranslatedNativeStyle = {
         "backgroundColor": "#c0392b"
       },
       "false": {}
-    },
-    "blue": {
-      "true": {
-        "backgroundColor": "#00ff00"
-      },
-      "false": {}
     }
   },
   "compoundVariants": [],
@@ -54,7 +48,7 @@ export function resolveContent(selections: Record<string, string> = {}) {
   return resolveStyle(content, selections);
 }
 
-// Source: core/components/tooltip/src/elements → positioner
+// Source: core/components/tooltip/src/shared/styles → positioner
 export const positioner: TranslatedNativeStyle = {
   "base": {
     "position": "fixed",

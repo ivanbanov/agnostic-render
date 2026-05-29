@@ -4,7 +4,7 @@
 
 import { styled } from "@render-experiment/style-engine-react";
 
-// Source: core/components/tooltip/src/elements → content
+// Source: core/components/tooltip/src/shared/styles → content
 export const Content = styled(
   "div",
   {
@@ -38,12 +38,6 @@ export const Content = styled(
         "background": "#c0392b"
       },
       "false": {}
-    },
-    "blue": {
-      "true": {
-        "background": "#00ff00"
-      },
-      "false": {}
     }
   },
   "compoundVariants": [],
@@ -54,7 +48,7 @@ export const Content = styled(
 } as any,
 );
 
-// Source: core/components/tooltip/src/elements → positioner
+// Source: core/components/tooltip/src/shared/styles → positioner
 export const Positioner = styled(
   "div",
   {

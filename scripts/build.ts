@@ -18,9 +18,11 @@
  *
  * Convention contract:
  *   - core folder name = component slug (kebab-case): "tooltip" / "dropdown-menu"
- *   - core/components/<slug>/src/elements exports each element as a camelCase
- *     const whose value is a style spec (object with `variants`). The
- *     element name on adapters is the PascalCase form: `content` → `Content`.
+ *   - core/components/<slug>/src/shared/styles.ts exports each part as a
+ *     camelCase const whose value is a style spec (object with `variants`).
+ *     The part name on adapters is the PascalCase form: `content` → `Content`.
+ *   - core/components/<slug>/src/parts/<name>.ts holds the matching variant
+ *     types (the contract). Codegen does not read these.
  *   - core/components/<slug>/src/index.ts exports `<camel>Machine` and
  *     `connect<Pascal>`.
  *
@@ -122,13 +124,13 @@ function isStyleSpec(value: unknown): boolean {
 }
 
 async function loadCore(component: DiscoveredComponent): Promise<LoadedCore> {
-  const elementsPath = resolve(component.coreSrc, "elements/index.ts");
+  const stylesPath = resolve(component.coreSrc, "shared/styles.ts");
   const indexPath = resolve(component.coreSrc, "index.ts");
 
   // Cache-bust dynamic imports so the watcher sees fresh content on
   // re-runs. ESM caches by URL; appending a unique query forces a reload.
   const bust = `?t=${Date.now()}`;
-  const elementsMod = (await import(pathToFileURL(elementsPath).href + bust)) as Record<
+  const stylesMod = (await import(pathToFileURL(stylesPath).href + bust)) as Record<
     string,
     unknown
   >;
@@ -137,17 +139,18 @@ async function loadCore(component: DiscoveredComponent): Promise<LoadedCore> {
     unknown
   >;
 
-  // Pick up every camelCase export from elements/ whose value looks like
-  // a style spec. The element name on adapters is the PascalCase form.
+  // Pick up every camelCase export from shared/styles.ts whose value
+  // looks like a style spec. The part name on adapters is the
+  // PascalCase form.
   const styles: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(elementsMod)) {
+  for (const [key, value] of Object.entries(stylesMod)) {
     if (!isStyleSpec(value)) continue;
     styles[capitalize(key)] = value;
   }
 
   if (Object.keys(styles).length === 0) {
     throw new Error(
-      `[${component.slug}] No style-spec exports found in core's elements/ (each <name>.ts should export a const with a \`variants\` field).`,
+      `[${component.slug}] No style-spec exports found in core's shared/styles.ts (each part should export a const with a \`variants\` field).`,
     );
   }
 
@@ -182,7 +185,7 @@ function emitReactElements(component: DiscoveredComponent, styles: Record<string
       const camel = elementName[0]!.toLowerCase() + elementName.slice(1);
       const translated = translateAgnosticSpec(spec as never);
       const inlined = JSON.stringify(translated, null, 2);
-      return `// Source: core/components/${component.slug}/src/elements → ${camel}
+      return `// Source: core/components/${component.slug}/src/shared/styles → ${camel}
 export const ${elementName} = styled(
   "div",
   ${inlined} as any,
@@ -238,7 +241,7 @@ function emitNativeElements(component: DiscoveredComponent, styles: Record<strin
     const translated = translateAgnosticSpecToNative(spec as never);
     const inlined = JSON.stringify(translated, null, 2);
     decls.push(
-      `// Source: core/components/${component.slug}/src/elements → ${camel}
+      `// Source: core/components/${component.slug}/src/shared/styles → ${camel}
 export const ${camel}: TranslatedNativeStyle = ${inlined};
 
 export function resolve${elementName}(selections: Record<string, string> = {}) {
@@ -310,7 +313,7 @@ function emitPixiElements(component: DiscoveredComponent, styles: Record<string,
     const translated = translateAgnosticSpecToPixi(spec as never);
     const inlined = JSON.stringify(translated, null, 2);
     decls.push(
-      `// Source: core/components/${component.slug}/src/elements → ${camel} (primitive: ${primitive})
+      `// Source: core/components/${component.slug}/src/shared/styles → ${camel} (primitive: ${primitive})
 export const ${elementName} = styled(${JSON.stringify(primitive)}, ${inlined});`,
     );
   }

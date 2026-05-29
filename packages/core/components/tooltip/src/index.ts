@@ -15,7 +15,8 @@ export * from "./props";
 export * from "./machine";
 export * from "./store";
 export * from "./connect";
-export * from "./elements";
+export * from "./parts";
+export * as styles from "./shared/styles";
 export {
   placementToSide,
   type Placement,

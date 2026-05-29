@@ -4,7 +4,7 @@
 
 import { styled } from "@render-experiment/style-engine-pixi";
 
-// Source: core/components/tooltip/src/elements → content (primitive: graphics)
+// Source: core/components/tooltip/src/shared/styles → content (primitive: graphics)
 export const Content = styled("graphics", {
   "base": {
     "position": "absolute",
@@ -36,12 +36,6 @@ export const Content = styled("graphics", {
         "background": 12597547
       },
       "false": {}
-    },
-    "blue": {
-      "true": {
-        "background": 65280
-      },
-      "false": {}
     }
   },
   "compoundVariants": [],
@@ -51,7 +45,7 @@ export const Content = styled("graphics", {
   }
 });
 
-// Source: core/components/tooltip/src/elements → positioner (primitive: container)
+// Source: core/components/tooltip/src/shared/styles → positioner (primitive: container)
 export const Positioner = styled("container", {
   "base": {
     "position": "fixed",
