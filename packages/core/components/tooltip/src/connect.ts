@@ -2,9 +2,12 @@
  * Tooltip connect — translates machine state into a logical surface
  * the view layer consumes.
  *
- * Output is substrate-agnostic: handler names like `onPress`,
- * `onPointerMove`; attr names like `describedBy`, `role`. Each
- * adapter's normalize() maps them to native props.
+ * Output is substrate-agnostic: handler names like `onPointerMove`;
+ * attr names like `describedBy`, `role`, `data-*`. Each adapter's
+ * normalize() maps the named ones to native props and passes through
+ * `data-*` verbatim.
+ *
+ * See ../SPEC.md for the contract.
  *
  * Sibling files:
  *   - machine.ts  — the state machine config that produces `state` / `context`
@@ -22,17 +25,27 @@ import type {
   TooltipState,
 } from "./types";
 
+/** Map machine state → data-state value (matches Radix). */
+function dataStateFor(
+  state: TooltipState,
+  context: TooltipContext,
+): "closed" | "delayed-open" | "instant-open" {
+  if (state === "closed" || state === "opening") return "closed";
+  return context.hasInstantOpen ? "instant-open" : "delayed-open";
+}
+
 export const connectTooltip = connector<
   TooltipState,
   TooltipContext,
   TooltipProps,
   TooltipApi
 >()(({ state, context, props, send }) => {
-  void context;
   const r = tooltipProps(props);
   const open = state === "open" || state === "closing";
   const triggerId = `tooltip:${r.id}:trigger`;
   const contentId = `tooltip:${r.id}:content`;
+  const side = placementToSide(r.positioning.placement);
+  const dataState = dataStateFor(state, context);
 
   return {
     open,
@@ -53,19 +66,6 @@ export const connectTooltip = connector<
             if (r.disabled) return;
             send({ type: "pointer.leave" });
           },
-          onPointerDown: (event) => {
-            if (event?.defaultPrevented) return;
-            if (r.disabled) return;
-            if (event?.button !== undefined && event.button !== 0) return;
-            if (!r.closeOnPointerDown) return;
-            send({ type: "close", src: "trigger.pointerdown" });
-          },
-          onPress: (event) => {
-            if (event?.defaultPrevented) return;
-            if (r.disabled) return;
-            if (!r.closeOnClick) return;
-            send({ type: "close", src: "trigger.click" });
-          },
           onFocus: () => {
             if (r.disabled) return;
             send({ type: "open", src: "trigger.focus" });
@@ -79,27 +79,28 @@ export const connectTooltip = connector<
           id: triggerId,
           describedBy: open ? contentId : undefined,
           disabled: r.disabled,
+          "data-state": dataState,
+          ...(r.disabled ? { "data-disabled": "" } : {}),
         },
       },
       content: {
         handlers: {
           onPointerEnter: () => {
-            if (!r.interactive) return;
+            if (r.disableHoverableContent) return;
             send({ type: "content.pointer.move" });
           },
           onPointerLeave: () => {
-            if (!r.interactive) return;
+            if (r.disableHoverableContent) return;
             send({ type: "content.pointer.leave" });
           },
         },
         attrs: {
           id: contentId,
           role: "tooltip",
+          "data-state": dataState,
+          "data-side": side,
         },
-        variants: {
-          side: placementToSide(r.positioning.placement),
-          red: !!r.red,
-        },
+        variants: { side },
         positioning: r.positioning,
         rendered: open,
       },

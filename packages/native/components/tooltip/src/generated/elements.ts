@@ -29,18 +29,11 @@ export const content: TranslatedNativeStyle = {
       "right": {
         "left": "100%"
       }
-    },
-    "red": {
-      "true": {
-        "backgroundColor": "#c0392b"
-      },
-      "false": {}
     }
   },
   "compoundVariants": [],
   "defaultVariants": {
-    "side": "bottom",
-    "red": false
+    "side": "bottom"
   }
 };
 

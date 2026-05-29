@@ -23,7 +23,6 @@ export default function App() {
         <Text style={styles.section}>Tooltip</Text>
         <View style={styles.row}>
           <Tooltip
-            red
             id="tip-1"
             openDelay={200}
             onOpenChange={({ open }) => {

@@ -188,15 +188,6 @@ createTooltip({
   positioning: { placement: "right" },
 });
 
-const redBtn = makeButton("red variant", 32, 276);
-app.stage.addChild(redBtn);
-createTooltip({
-  trigger: redBtn,
-  parent: overlay,
-  content: "warning tone",
-  red: true,
-});
-
 // Skip-delay row
 sectionLabel("Skip-delay window — open one then hover the next", 32, 324);
 const skip1 = makeButton("1", 32, 356);

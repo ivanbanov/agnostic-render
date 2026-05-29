@@ -179,7 +179,7 @@ export function TooltipContent(props: TooltipContentProps) {
   const { api, props: ctxProps, anchor } = useTooltipCtxOrThrow();
 
   const rendered = api.parts.content.rendered;
-  const { side, red } = api.parts.content.variants;
+  const { side } = api.parts.content.variants;
 
   // Wire Android back button to close (mirror of trackEscapeKey on web).
   useEffect(() => {
@@ -194,7 +194,7 @@ export function TooltipContent(props: TooltipContentProps) {
   if (!rendered) return null;
 
   const positionerStyle = resolvePositioner({ anchored: !!anchor });
-  const contentStyle = resolveContent({ side, red });
+  const contentStyle = resolveContent({ side });
 
   // Convert anchor center → absolute coords for the positioner.
   const positionedStyle = anchor

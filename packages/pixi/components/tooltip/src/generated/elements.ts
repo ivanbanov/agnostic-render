@@ -30,18 +30,11 @@ export const Content = styled("graphics", {
       "right": {
         "left": "100%"
       }
-    },
-    "red": {
-      "true": {
-        "background": 12597547
-      },
-      "false": {}
     }
   },
   "compoundVariants": [],
   "defaultVariants": {
-    "side": "bottom",
-    "red": false
+    "side": "bottom"
   }
 });
 

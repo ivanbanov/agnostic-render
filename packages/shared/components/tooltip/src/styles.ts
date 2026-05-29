@@ -14,14 +14,9 @@ export const content = {
       left: { right: "100%" },
       right: { left: "100%" },
     },
-    red: {
-      true: { background: "#c0392b" },
-      false: {},
-    },
   },
   defaultVariants: {
     side: "bottom",
-    red: false,
   },
 };
 

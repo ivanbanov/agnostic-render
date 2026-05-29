@@ -66,9 +66,7 @@ export function createTooltip(options: CreateTooltipOptions): TooltipHandle {
   // The Positioner + Content nodes are owned by us; (re)used across opens.
   const positionerNode = Styled.Positioner();
   const isStringContent = typeof content === "string";
-  const contentNode = isStringContent
-    ? Styled.Content({ red: !!rest.red })
-    : null;
+  const contentNode = isStringContent ? Styled.Content() : null;
   if (contentNode) contentNode.setLabel(content as string);
   const contentRoot: Container = contentNode ? contentNode.root : (content as Container);
 
@@ -139,7 +137,7 @@ export function createTooltip(options: CreateTooltipOptions): TooltipHandle {
     positionerNode.root.x = anchor.x;
     positionerNode.root.y = anchor.y;
 
-    const { side, red } = api.parts.content.variants;
+    const { side } = api.parts.content.variants;
     const align = (api.parts.content.positioning.placement.split("-")[1] ?? undefined) as
       | "start"
       | "end"
@@ -156,7 +154,7 @@ export function createTooltip(options: CreateTooltipOptions): TooltipHandle {
 
     // Apply variants if we own the styled content (string-content mode).
     if (contentNode) {
-      contentNode.apply({ side, red });
+      contentNode.apply({ side });
     }
     positionerNode.apply({ anchored: true });
   };

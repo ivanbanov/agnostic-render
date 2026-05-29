@@ -3,37 +3,31 @@
  *
  * States: closed → opening → open → closing
  *
- * Feature parity with @zag-js/tooltip:
- *   - openDelay / closeDelay
- *   - skip-delay window (once one tooltip opens, others open instantly briefly)
- *   - closeOnEscape, closeOnClick, closeOnPointerDown
- *   - interactive (don't close while pointer is over content)
- *   - disabled
+ * Feature parity with the SPEC.md contract:
+ *   - openDelay / closeDelay (Provider-inheritable, Root override)
+ *   - skipDelayDuration window (per-tooltip; Provider-inheritable)
+ *   - closeOnEscape — adapter listens; machine receives "escape" event
+ *   - disableHoverableContent — inverse of legacy "interactive"
+ *   - disabled — suppresses opens
  *   - controlled `open` + `onOpenChange`
  *   - global single-tooltip store (only one open at a time)
- *   - positioning placement (logical — adapter resolves to renderer coords)
  *
  * What is NOT here (intentional):
  *   - DOM event listeners outside the named effects
- *   - Floating UI / popper — positioning is a logical record, adapters translate
  *   - aria-* / role / data-* / style — those live in the connect's logical output
  *
  * Sibling files:
- *   - types.ts    — public types (Placement, TooltipProps, TooltipApi, …)
- *   - props.ts    — defaults + resolver (raw props → resolved)
+ *   - types.ts    — public types
+ *   - props.ts    — defaults + resolver
  *   - store.ts    — global singleton state
- *   - connect.ts  — logical surface (handlers + attrs the view consumes)
- *   - elements/   — paint-only style specs per element
+ *   - connect.ts  — logical surface (handlers + attrs)
  *   - index.ts    — public exports
  */
 
 import type { MachineConfig } from "@render-experiment/machine-core";
-import { TOOLTIP_SKIP_DELAY_MS, tooltipProps } from "./props";
+import { tooltipProps } from "./props";
 import { tooltipStore } from "./store";
-import type {
-  TooltipContext,
-  TooltipProps,
-} from "./types";
+import type { TooltipContext, TooltipProps } from "./types";
 
 export const tooltipMachine: MachineConfig<TooltipContext, TooltipProps> = {
   initial: (props) => {
@@ -43,6 +37,7 @@ export const tooltipMachine: MachineConfig<TooltipContext, TooltipProps> = {
 
   context: (props) => ({
     hasPointerMoveOpened: false,
+    hasInstantOpen: false,
     placement: tooltipProps(props).positioning.placement,
   }),
 
@@ -55,7 +50,11 @@ export const tooltipMachine: MachineConfig<TooltipContext, TooltipProps> = {
           {
             guard: "shouldSkipDelay",
             target: "open",
-            actions: ["setPointerMoveOpened", "invokeOnOpen"],
+            actions: [
+              "setPointerMoveOpened",
+              "setInstantOpen",
+              "invokeOnOpen",
+            ],
           },
           { target: "opening" },
         ],
@@ -68,7 +67,11 @@ export const tooltipMachine: MachineConfig<TooltipContext, TooltipProps> = {
       on: {
         "after.openDelay": {
           target: "open",
-          actions: ["setPointerMoveOpened", "invokeOnOpen"],
+          actions: [
+            "setPointerMoveOpened",
+            "clearInstantOpen",
+            "invokeOnOpen",
+          ],
         },
         open: { target: "open", actions: ["invokeOnOpen"] },
         close: { target: "closed", actions: ["invokeOnClose"] },
@@ -85,13 +88,16 @@ export const tooltipMachine: MachineConfig<TooltipContext, TooltipProps> = {
       on: {
         close: { target: "closed", actions: ["invokeOnClose"] },
         "pointer.leave": [
-          { guard: "isInteractive", target: "closing" },
+          { guard: "isHoverableContent", target: "closing" },
           {
             target: "closed",
             actions: ["clearPointerMoveOpened", "invokeOnClose"],
           },
         ],
-        "content.pointer.leave": { guard: "isInteractive", target: "closing" },
+        "content.pointer.leave": {
+          guard: "isHoverableContent",
+          target: "closing",
+        },
       },
     },
 
@@ -112,7 +118,9 @@ export const tooltipMachine: MachineConfig<TooltipContext, TooltipProps> = {
   implementations: {
     guards: {
       shouldSkipDelay: () => tooltipStore.isInSkipWindow(),
-      isInteractive: ({ props }) => !!tooltipProps(props).interactive,
+      /** Inverse of disableHoverableContent — pointer can dwell on Content. */
+      isHoverableContent: ({ props }) =>
+        !tooltipProps(props).disableHoverableContent,
     },
 
     actions: {
@@ -128,10 +136,18 @@ export const tooltipMachine: MachineConfig<TooltipContext, TooltipProps> = {
       clearPointerMoveOpened: ({ setContext }) => {
         setContext({ hasPointerMoveOpened: false });
       },
+      setInstantOpen: ({ setContext }) => {
+        setContext({ hasInstantOpen: true });
+      },
+      clearInstantOpen: ({ setContext }) => {
+        setContext({ hasInstantOpen: false });
+      },
       setGlobalId: ({ props }) => {
-        const { id } = tooltipProps(props);
+        const { id, skipDelayDuration } = tooltipProps(props);
         tooltipStore.setOpen(id);
-        tooltipStore.startSkipWindow(TOOLTIP_SKIP_DELAY_MS);
+        if (skipDelayDuration > 0) {
+          tooltipStore.startSkipWindow(skipDelayDuration);
+        }
       },
       clearGlobalId: ({ props }) => {
         const { id } = tooltipProps(props);

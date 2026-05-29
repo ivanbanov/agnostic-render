@@ -13,10 +13,24 @@ import {
 
 export const tooltipAdapter: Adapter<TooltipContext, TooltipProps> = {
   trackEscapeKey: ({ props, send }) => {
-    if (!tooltipProps(props).closeOnEscape) return;
+    const r = tooltipProps(props);
+    if (!r.closeOnEscape) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       event.stopPropagation();
+      const cb = r.onEscapeKeyDown;
+      if (cb) {
+        let prevented = false;
+        cb({
+          preventDefault: () => {
+            prevented = true;
+          },
+          get defaultPrevented() {
+            return prevented;
+          },
+        });
+        if (prevented) return;
+      }
       send({ type: "close", src: "keydown.escape" });
     };
     window.addEventListener("keydown", onKeyDown, true);

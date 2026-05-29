@@ -1,9 +1,6 @@
 /**
- * Tooltip props — public types are in `./types`. This file owns the
- * runtime side of props:
- *
- *   - TOOLTIP_DEFAULTS  — static fact, exported for inspection/docs
- *   - tooltipProps()    — raw → resolved (defaults merged, edge cases handled)
+ * Tooltip props — public types live in `./types`. This file owns the
+ * runtime side of props: defaults + raw → resolved resolution.
  *
  * Kept separate from machine.ts so a designer collaborator can read the
  * defaults in isolation, without scrolling past the state machine.
@@ -19,22 +16,20 @@ export const TOOLTIP_DEFAULTS = {
   defaultOpen: false,
   openDelay: 400,
   closeDelay: 150,
+  /**
+   * After any tooltip closes, the next tooltip hovered within this many
+   * milliseconds opens instantly. 0 disables instant-open entirely.
+   */
+  skipDelayDuration: 300,
   closeOnEscape: true,
-  closeOnClick: true,
-  closeOnPointerDown: true,
-  interactive: false,
+  /** When true, the tooltip closes immediately on pointer leave (no hoverable content). */
+  disableHoverableContent: false,
   disabled: false,
-  red: false,
   positioning: {
     placement: "bottom" as Placement,
     offset: { main: 4, cross: 0 },
   },
 } as const;
-
-/** Window during which a newly-hovered tooltip skips its open delay,
- *  triggered by another tooltip having recently opened. Not a user-tunable
- *  prop — purely a machine-level constant. */
-export const TOOLTIP_SKIP_DELAY_MS = 300;
 
 // -----------------------------------------------------------------------------
 // Resolved shape
@@ -48,13 +43,12 @@ export interface ResolvedTooltipProps {
   defaultOpen: boolean;
   openDelay: number;
   closeDelay: number;
+  skipDelayDuration: number;
   closeOnEscape: boolean;
-  closeOnClick: boolean;
-  closeOnPointerDown: boolean;
-  interactive: boolean;
+  disableHoverableContent: boolean;
   disabled: boolean;
-  red: boolean;
   onOpenChange: TooltipProps["onOpenChange"];
+  onEscapeKeyDown: TooltipProps["onEscapeKeyDown"];
   positioning: PositioningOptions;
 }
 
@@ -65,14 +59,8 @@ export interface ResolvedTooltipProps {
 /**
  * Apply TOOLTIP_DEFAULTS to raw props.
  *
- * Most fields are a plain `??` fallback. Two exceptions, called out
- * explicitly:
- *
- *   - closeOnPointerDown falls back to closeOnClick first, then to the
- *     default. A user who sets `closeOnClick: false` expects pointer
- *     down to inherit that, not stay open.
- *   - positioning is deep-merged: passing `{ positioning: { placement } }`
- *     overrides only that field, keeping the default offset.
+ * Most fields are plain `??` fallback. `positioning` is deep-merged so
+ * passing `{ positioning: { placement } }` overrides only that field.
  */
 export function tooltipProps(props: TooltipProps): ResolvedTooltipProps {
   return {
@@ -81,18 +69,14 @@ export function tooltipProps(props: TooltipProps): ResolvedTooltipProps {
     defaultOpen: props.defaultOpen ?? TOOLTIP_DEFAULTS.defaultOpen,
     openDelay: props.openDelay ?? TOOLTIP_DEFAULTS.openDelay,
     closeDelay: props.closeDelay ?? TOOLTIP_DEFAULTS.closeDelay,
+    skipDelayDuration:
+      props.skipDelayDuration ?? TOOLTIP_DEFAULTS.skipDelayDuration,
     closeOnEscape: props.closeOnEscape ?? TOOLTIP_DEFAULTS.closeOnEscape,
-    closeOnClick: props.closeOnClick ?? TOOLTIP_DEFAULTS.closeOnClick,
-    // Field-to-field dependency — explicit because it's not just a default.
-    closeOnPointerDown:
-      props.closeOnPointerDown ??
-      props.closeOnClick ??
-      TOOLTIP_DEFAULTS.closeOnPointerDown,
-    interactive: props.interactive ?? TOOLTIP_DEFAULTS.interactive,
+    disableHoverableContent:
+      props.disableHoverableContent ?? TOOLTIP_DEFAULTS.disableHoverableContent,
     disabled: props.disabled ?? TOOLTIP_DEFAULTS.disabled,
-    red: props.red ?? TOOLTIP_DEFAULTS.red,
     onOpenChange: props.onOpenChange,
-    // Deep merge so partial overrides preserve untouched defaults.
+    onEscapeKeyDown: props.onEscapeKeyDown,
     positioning: {
       placement:
         props.positioning?.placement ?? TOOLTIP_DEFAULTS.positioning.placement,

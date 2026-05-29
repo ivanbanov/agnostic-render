@@ -21,5 +21,4 @@ export type TooltipPositionerVariants = {
 
 export type TooltipContentVariants = {
   side: Side;
-  red: boolean;
 };

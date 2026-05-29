@@ -46,14 +46,24 @@ export function App() {
       </section>
 
       <section>
-        <h2>Interactive (hover the tooltip to keep it open)</h2>
-        <Tooltip interactive>
+        <h2>Hoverable content (default)</h2>
+        <Tooltip>
           <Tooltip.Trigger>
-            <button>interactive tooltip</button>
+            <button>hoverable tooltip</button>
           </Tooltip.Trigger>
           <Tooltip.Content>
             You can <a href="#">click links</a> in here.
           </Tooltip.Content>
+        </Tooltip>
+      </section>
+
+      <section>
+        <h2>disableHoverableContent (closes on pointer leave)</h2>
+        <Tooltip disableHoverableContent>
+          <Tooltip.Trigger>
+            <button>non-hoverable tooltip</button>
+          </Tooltip.Trigger>
+          <Tooltip.Content>Pointer must stay on trigger.</Tooltip.Content>
         </Tooltip>
       </section>
 
@@ -83,7 +93,7 @@ export function App() {
           Open one tooltip, then quickly hover the next — the second opens instantly.
         </p>
         <div style={{ display: "flex", gap: 8 }}>
-          <Tooltip red>
+          <Tooltip>
             <Tooltip.Trigger>
               <button>1</button>
             </Tooltip.Trigger>

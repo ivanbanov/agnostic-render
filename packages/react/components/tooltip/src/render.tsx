@@ -16,6 +16,7 @@ import {
 } from "@render-experiment/tooltip-core";
 import { useTooltipApi } from "./generated/api";
 import { TooltipContextRef, useTooltipContext } from "./context";
+import { useTooltipProviderConfig } from "./provider";
 import * as Styled from "./generated/elements";
 import { anchorOf, cloneOnly, getChildRef, mergeRefs } from "./utils";
 
@@ -33,8 +34,11 @@ export function TooltipRoot(props: TooltipRootProps) {
   const autoId = useId();
   const id = providedId ?? autoId;
 
+  // Provider supplies inheritable defaults; Root props override them.
+  const providerConfig = useTooltipProviderConfig();
+  const rawProps: TooltipProps = { ...providerConfig, ...rest, id };
+
   const triggerRef = useRef<HTMLElement | null>(null);
-  const rawProps: TooltipProps = { id, ...rest };
   const api = useTooltipApi(rawProps);
   const resolved = resolveProps(rawProps);
 
@@ -167,7 +171,7 @@ function PositionedContent({
   void ctxProps;
 
   return (
-    <Styled.Positioner anchored={anchor ? "true" : "false"} css={anchorCoords}>
+    <Styled.Positioner anchored={!!anchor} css={anchorCoords}>
       <Styled.Content {...merged} {...api.parts.content.variants}>
         {children}
       </Styled.Content>

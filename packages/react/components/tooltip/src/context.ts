@@ -8,8 +8,8 @@ import type { ResolvedTooltipProps, TooltipApi } from "@render-experiment/toolti
  * independently editable.
  *
  * `props` carries the resolved props through so the view can read
- * visual-only fields (like `red`) without going through the state
- * machine — the machine should only own behavioral state.
+ * configuration without going through the state machine — the machine
+ * should only own behavioral state.
  */
 
 export interface TooltipContextValue {
