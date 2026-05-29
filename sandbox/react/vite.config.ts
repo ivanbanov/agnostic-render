@@ -6,6 +6,14 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
+      "@render-experiment/store": resolve(
+        __dirname,
+        "../../packages/core/store/src",
+      ),
+      "@render-experiment/store-react": resolve(
+        __dirname,
+        "../../packages/react/store/src",
+      ),
       "@render-experiment/machine-core": resolve(
         __dirname,
         "../../packages/core/machine/src",

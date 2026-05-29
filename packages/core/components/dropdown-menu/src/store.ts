@@ -4,7 +4,7 @@
  * one closes any other via trackGlobalStore.
  */
 
-import { createStore } from "@render-experiment/machine-core";
+import { createStore } from "@render-experiment/store";
 
 interface MenuStoreState {
   openId: string | null;
@@ -13,9 +13,9 @@ interface MenuStoreState {
 const store = createStore<MenuStoreState>({ openId: null });
 
 export const dropdownMenuStore = {
-  get: store.get,
+  get: store.getState,
   subscribe: store.subscribe,
   setOpen(id: string | null) {
-    store.set((s) => ({ ...s, openId: id }));
+    store.setState({ openId: id });
   },
 };

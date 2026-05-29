@@ -4,6 +4,10 @@ import { resolve } from "node:path";
 export default defineConfig({
   resolve: {
     alias: {
+      "@render-experiment/store": resolve(
+        __dirname,
+        "../../packages/core/store/src",
+      ),
       "@render-experiment/machine-core": resolve(
         __dirname,
         "../../packages/core/machine/src",

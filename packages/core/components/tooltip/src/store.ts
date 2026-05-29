@@ -9,7 +9,7 @@
  * cleanly.
  */
 
-import { createStore } from "@render-experiment/machine-core";
+import { createStore } from "@render-experiment/store";
 
 interface TooltipStoreState {
   openId: string | null;
@@ -23,19 +23,19 @@ const store = createStore<TooltipStoreState>({
 });
 
 export const tooltipStore = {
-  get: store.get,
+  get: store.getState,
   subscribe: store.subscribe,
   setOpen(id: string | null) {
-    store.set((s) => ({ ...s, openId: id }));
+    store.setState({ openId: id });
   },
   startSkipWindow(ms: number) {
-    store.set((s) => ({ ...s, skipUntil: Date.now() + ms }));
+    store.setState({ skipUntil: Date.now() + ms });
   },
   endSkipWindow() {
-    store.set((s) => ({ ...s, skipUntil: null }));
+    store.setState({ skipUntil: null });
   },
   isInSkipWindow() {
-    const { skipUntil } = store.get();
+    const { skipUntil } = store.getState();
     return skipUntil !== null && Date.now() < skipUntil;
   },
 };
