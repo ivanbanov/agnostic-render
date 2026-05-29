@@ -119,8 +119,8 @@ export const connectDropdownMenu = connector<
     return {
       highlighted,
       variants: {
-        highlighted: highlighted ? "true" : "false",
-        disabled: item.disabled ? "true" : "false",
+        highlighted,
+        disabled: !!item.disabled,
       },
       handlers: {
         onPress: () => {

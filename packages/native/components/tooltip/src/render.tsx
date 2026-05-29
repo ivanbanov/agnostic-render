@@ -193,7 +193,7 @@ export function TooltipContent(props: TooltipContentProps) {
 
   if (!rendered) return null;
 
-  const positionerStyle = resolvePositioner({ anchored: anchor ? "true" : "false" });
+  const positionerStyle = resolvePositioner({ anchored: !!anchor });
   const contentStyle = resolveContent({ side, red });
 
   // Convert anchor center → absolute coords for the positioner.

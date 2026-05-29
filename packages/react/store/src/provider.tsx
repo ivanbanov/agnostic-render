@@ -18,13 +18,7 @@
  *   - defaultEqualityFn: applied per-selector unless the call overrides.
  */
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useRef, type ReactNode } from "react";
 import { createStore, type Store } from "@render-experiment/store";
 import { useStore } from "./use-store";
 
@@ -57,11 +51,7 @@ export interface StoreProviderOptions<T extends object> {
 export function createStoreProvider<T extends object>(
   options: StoreProviderOptions<T> = {},
 ): StoreProvider<T> {
-  const {
-    inherit = false,
-    throwOnMissingProvider = true,
-    defaultEqualityFn,
-  } = options;
+  const { inherit = false, throwOnMissingProvider = true, defaultEqualityFn } = options;
 
   const Context = createContext<Store<T> | null>(null);
 
@@ -95,24 +85,16 @@ export function createStoreProvider<T extends object>(
 
     useEffect(() => () => storeRef.current?.destroy(), []);
 
-    return (
-      <Context.Provider value={storeRef.current}>{children}</Context.Provider>
-    );
+    return <Context.Provider value={storeRef.current}>{children}</Context.Provider>;
   };
 
-  const useSelector: StoreProvider<T>["useSelector"] = (
-    selector,
-    equalityFn,
-  ) => {
+  const useSelector: StoreProvider<T>["useSelector"] = (selector, equalityFn) => {
     const store = useContext(Context);
     // Always call useStore unconditionally to satisfy rules-of-hooks.
     const selected = useStore(
       store ?? fallbackStore,
       selector,
-      equalityFn ??
-        (defaultEqualityFn as
-          | ((a: unknown, b: unknown) => boolean)
-          | undefined),
+      equalityFn ?? (defaultEqualityFn as ((a: unknown, b: unknown) => boolean) | undefined),
     );
 
     if (!store && throwOnMissingProvider) {

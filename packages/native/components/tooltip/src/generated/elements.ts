@@ -40,7 +40,7 @@ export const content: TranslatedNativeStyle = {
   "compoundVariants": [],
   "defaultVariants": {
     "side": "bottom",
-    "red": "false"
+    "red": false
   }
 };
 
@@ -63,7 +63,7 @@ export const positioner: TranslatedNativeStyle = {
   },
   "compoundVariants": [],
   "defaultVariants": {
-    "anchored": "false"
+    "anchored": false
   }
 };
 

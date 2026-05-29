@@ -16,10 +16,10 @@ export const parts = ["positioner", "content"] as const;
 export type Part = (typeof parts)[number];
 
 export type TooltipPositionerVariants = {
-  anchored: "true" | "false";
+  anchored: boolean;
 };
 
 export type TooltipContentVariants = {
   side: Side;
-  red: "true" | "false";
+  red: boolean;
 };

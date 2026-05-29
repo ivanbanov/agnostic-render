@@ -23,7 +23,7 @@ export const parts = [
 export type Part = (typeof parts)[number];
 
 export type DropdownMenuPositionerVariants = {
-  anchored: "true" | "false";
+  anchored: boolean;
 };
 
 export type DropdownMenuContentVariants = {
@@ -31,6 +31,6 @@ export type DropdownMenuContentVariants = {
 };
 
 export type DropdownMenuItemVariants = {
-  highlighted: "true" | "false";
-  disabled: "true" | "false";
+  highlighted: boolean;
+  disabled: boolean;
 };

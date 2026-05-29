@@ -30,7 +30,7 @@ interface AgnosticStyleSpec {
   compoundVariants?: Array<
     Record<string, unknown> & { css: AgnosticStyleObject }
   >;
-  defaultVariants?: Record<string, string>;
+  defaultVariants?: Record<string, string | boolean>;
   [prop: string]: unknown;
 }
 
@@ -97,7 +97,7 @@ export interface TranslatedNativeStyle {
   base: RNStyle;
   variants: Record<string, Record<string, RNStyle>>;
   compoundVariants: Array<Record<string, unknown> & { style: RNStyle }>;
-  defaultVariants: Record<string, string>;
+  defaultVariants: Record<string, string | boolean>;
 }
 
 export function translateAgnosticSpecToNative(
@@ -138,16 +138,22 @@ export function translateAgnosticSpecToNative(
  *   resolveStyle(content, { side: 'top' })
  *     → { ...base, ...variants.side.top, ...(any matching compoundVariants) }
  */
+/** Coerce a variant prop value into the string key used in the spec. */
+const slot = (v: unknown): string =>
+  typeof v === "boolean" ? (v ? "true" : "false") : String(v);
+
 export function resolveStyle(
   translated: TranslatedNativeStyle,
-  selections: Record<string, string> = {},
+  selections: Record<string, unknown> = {},
 ): RNStyle {
   const { base, variants, compoundVariants, defaultVariants } = translated;
   const resolved: RNStyle = { ...base };
 
   // Variants: apply each selected option (or default).
   for (const [variantName, options] of Object.entries(variants)) {
-    const selected = selections[variantName] ?? defaultVariants[variantName];
+    const selected = slot(
+      selections[variantName] ?? defaultVariants[variantName],
+    );
     if (selected && options[selected]) {
       Object.assign(resolved, options[selected]);
     }
@@ -158,8 +164,8 @@ export function resolveStyle(
   for (const compound of compoundVariants) {
     const { style, ...keys } = compound;
     const matches = Object.entries(keys).every(([k, expected]) => {
-      const current = selections[k] ?? defaultVariants[k];
-      return current === expected;
+      const current = slot(selections[k] ?? defaultVariants[k]);
+      return current === slot(expected);
     });
     if (matches) Object.assign(resolved, style);
   }

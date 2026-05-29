@@ -197,7 +197,7 @@ export function createDropdownMenu(
       for (const { event, listener } of pairs) {
         node.root.on(event as never, listener as never);
       }
-      node.apply(part.variants as unknown as Record<string, string>);
+      node.apply(part.variants);
       return pairs;
     });
   };
@@ -291,8 +291,8 @@ export function createDropdownMenu(
     contentNode.root.x = offset.x;
     contentNode.root.y = offset.y;
 
-    contentNode.apply(api.parts.content.variants as unknown as Record<string, string>);
-    positionerNode.apply({ anchored: "true" });
+    contentNode.apply(api.parts.content.variants);
+    positionerNode.apply({ anchored: true });
   };
 
   // -------------------------------------------------------------------

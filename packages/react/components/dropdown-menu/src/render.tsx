@@ -185,7 +185,7 @@ function PositionedContent({
   const merged = mergeProps(consumerProps, { ...handlerProps, ...attrProps });
 
   return (
-    <Styled.Positioner anchored={anchor ? "true" : "false"} css={anchorCoords}>
+    <Styled.Positioner anchored={!!anchor} css={anchorCoords}>
       <Styled.Content
         {...merged}
         {...apiWithItems.parts.content.variants}

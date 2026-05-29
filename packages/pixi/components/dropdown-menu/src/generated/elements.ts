@@ -80,8 +80,8 @@ export const Item = styled("graphics", {
   },
   "compoundVariants": [],
   "defaultVariants": {
-    "highlighted": "false",
-    "disabled": "false"
+    "highlighted": false,
+    "disabled": false
   }
 });
 
@@ -120,7 +120,7 @@ export const Positioner = styled("container", {
   },
   "compoundVariants": [],
   "defaultVariants": {
-    "anchored": "false"
+    "anchored": false
   }
 });
 

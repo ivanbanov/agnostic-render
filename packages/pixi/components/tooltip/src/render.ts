@@ -67,7 +67,7 @@ export function createTooltip(options: CreateTooltipOptions): TooltipHandle {
   const positionerNode = Styled.Positioner();
   const isStringContent = typeof content === "string";
   const contentNode = isStringContent
-    ? Styled.Content({ red: rest.red ? "true" : "false" })
+    ? Styled.Content({ red: !!rest.red })
     : null;
   if (contentNode) contentNode.setLabel(content as string);
   const contentRoot: Container = contentNode ? contentNode.root : (content as Container);
@@ -158,7 +158,7 @@ export function createTooltip(options: CreateTooltipOptions): TooltipHandle {
     if (contentNode) {
       contentNode.apply({ side, red });
     }
-    positionerNode.apply({ anchored: "true" });
+    positionerNode.apply({ anchored: true });
   };
 
   // -----------------------------------------------------------------------

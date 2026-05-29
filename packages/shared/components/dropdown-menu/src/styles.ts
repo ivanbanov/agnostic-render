@@ -1,19 +1,4 @@
-/**
- * DropdownMenu — substrate-agnostic style specs.
- *
- * One entry per part. Each is a `StyleSpec` consumable by every
- * adapter's translator. Variant types live in ../parts/<name>.ts.
- */
-
-import type { Style, StyleSpec } from "@render-experiment/machine-core";
-
-// -----------------------------------------------------------------------------
-// positioner
-// -----------------------------------------------------------------------------
-
-export const positioner: StyleSpec<{
-  anchored: Record<"true" | "false", Style>;
-}> = {
+export const positioner = {
   position: "fixed",
   width: 0,
   height: 0,
@@ -24,17 +9,11 @@ export const positioner: StyleSpec<{
     },
   },
   defaultVariants: {
-    anchored: "false",
+    anchored: false,
   },
 };
 
-// -----------------------------------------------------------------------------
-// content
-// -----------------------------------------------------------------------------
-
-export const content: StyleSpec<{
-  side: Record<"top" | "bottom" | "left" | "right", Style>;
-}> = {
+export const content = {
   position: "absolute",
   pointerEvents: "auto",
   background: "#1f2937",
@@ -58,14 +37,7 @@ export const content: StyleSpec<{
   },
 };
 
-// -----------------------------------------------------------------------------
-// item
-// -----------------------------------------------------------------------------
-
-export const item: StyleSpec<{
-  highlighted: Record<"true" | "false", Style>;
-  disabled: Record<"true" | "false", Style>;
-}> = {
+export const item = {
   display: "flex",
   alignItems: "center",
   paddingY: 6,
@@ -84,16 +56,12 @@ export const item: StyleSpec<{
     },
   },
   defaultVariants: {
-    highlighted: "false",
-    disabled: "false",
+    highlighted: false,
+    disabled: false,
   },
 };
 
-// -----------------------------------------------------------------------------
-// separator
-// -----------------------------------------------------------------------------
-
-export const separator: StyleSpec<Record<string, never>> = {
+export const separator = {
   height: 1,
   marginY: 4,
   marginX: 0,
@@ -101,11 +69,7 @@ export const separator: StyleSpec<Record<string, never>> = {
   variants: {},
 };
 
-// -----------------------------------------------------------------------------
-// label
-// -----------------------------------------------------------------------------
-
-export const label: StyleSpec<Record<string, never>> = {
+export const label = {
   paddingY: 6,
   paddingX: 12,
   fontSize: 11,
@@ -116,11 +80,7 @@ export const label: StyleSpec<Record<string, never>> = {
   variants: {},
 };
 
-// -----------------------------------------------------------------------------
-// group
-// -----------------------------------------------------------------------------
-
-export const group: StyleSpec<Record<string, never>> = {
+export const group = {
   display: "block",
   variants: {},
 };

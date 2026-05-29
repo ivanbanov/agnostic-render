@@ -98,7 +98,7 @@ export const connectTooltip = connector<
         },
         variants: {
           side: placementToSide(r.positioning.placement),
-          red: r.red ? "true" : "false",
+          red: !!r.red,
         },
         positioning: r.positioning,
         rendered: open,

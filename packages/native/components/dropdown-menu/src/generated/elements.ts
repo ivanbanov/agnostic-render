@@ -84,8 +84,8 @@ export const item: TranslatedNativeStyle = {
   },
   "compoundVariants": [],
   "defaultVariants": {
-    "highlighted": "false",
-    "disabled": "false"
+    "highlighted": false,
+    "disabled": false
   }
 };
 
@@ -128,7 +128,7 @@ export const positioner: TranslatedNativeStyle = {
   },
   "compoundVariants": [],
   "defaultVariants": {
-    "anchored": "false"
+    "anchored": false
   }
 };
 

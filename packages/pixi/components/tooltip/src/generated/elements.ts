@@ -41,7 +41,7 @@ export const Content = styled("graphics", {
   "compoundVariants": [],
   "defaultVariants": {
     "side": "bottom",
-    "red": "false"
+    "red": false
   }
 });
 
@@ -64,6 +64,6 @@ export const Positioner = styled("container", {
   },
   "compoundVariants": [],
   "defaultVariants": {
-    "anchored": "false"
+    "anchored": false
   }
 });

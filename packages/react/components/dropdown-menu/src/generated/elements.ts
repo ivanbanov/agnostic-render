@@ -86,8 +86,8 @@ export const Item = styled(
   },
   "compoundVariants": [],
   "defaultVariants": {
-    "highlighted": "false",
-    "disabled": "false"
+    "highlighted": false,
+    "disabled": false
   }
 } as any,
 );
@@ -130,7 +130,7 @@ export const Positioner = styled(
   },
   "compoundVariants": [],
   "defaultVariants": {
-    "anchored": "false"
+    "anchored": false
   }
 } as any,
 );

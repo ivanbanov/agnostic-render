@@ -30,7 +30,7 @@ interface AgnosticStyleSpec {
   compoundVariants?: Array<
     Record<string, unknown> & { css: AgnosticStyleObject }
   >;
-  defaultVariants?: Record<string, string>;
+  defaultVariants?: Record<string, string | boolean>;
   [prop: string]: unknown;
 }
 
@@ -48,7 +48,7 @@ export interface PixiStyleSpec {
   base: PixiStyleRecord;
   variants: Record<string, Record<string, PixiStyleRecord>>;
   compoundVariants: PixiCompoundVariant[];
-  defaultVariants: Record<string, string>;
+  defaultVariants: Record<string, string | boolean>;
 }
 
 const RESERVED = new Set([

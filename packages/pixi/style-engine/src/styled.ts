@@ -40,7 +40,7 @@ export interface StyledNode {
   /** Pixi node the consumer adds to a parent scene. */
   root: Container;
   /** Re-resolve the style with new variant selections + repaint. */
-  apply: (selections?: Record<string, string>) => void;
+  apply: (selections?: Record<string, unknown>) => void;
   /** Set the label text (only meaningful for "graphics" / "text"). */
   setLabel: (text: string | undefined) => void;
   /** Force an explicit size; defaults to label-bounds + padding. */
@@ -50,24 +50,28 @@ export interface StyledNode {
 }
 
 export interface StyledFactory {
-  (selections?: Record<string, string>): StyledNode;
+  (selections?: Record<string, unknown>): StyledNode;
 }
 
 // -----------------------------------------------------------------------------
 // Style resolution — combine base + variant slots + compound variants
 // -----------------------------------------------------------------------------
 
+/** Coerce a variant prop value into the string key used in the spec. */
+const slotKey = (v: unknown): string =>
+  typeof v === "boolean" ? (v ? "true" : "false") : String(v);
+
 function resolveStyle(
   spec: PixiStyleSpec,
-  selections: Record<string, string>,
+  selections: Record<string, unknown>,
 ): PixiStyleRecord {
   const merged: PixiStyleRecord = { ...spec.base };
 
   // Variant slots (last write wins; insertion order of spec.variants)
   for (const [name, options] of Object.entries(spec.variants)) {
-    const choice = selections[name] ?? spec.defaultVariants[name];
-    if (!choice) continue;
-    const slot = options[choice];
+    const raw = selections[name] ?? spec.defaultVariants[name];
+    if (raw == null) continue;
+    const slot = options[slotKey(raw)];
     if (!slot) continue;
     Object.assign(merged, slot);
   }
@@ -78,7 +82,7 @@ function resolveStyle(
     for (const [name, expected] of Object.entries(cv)) {
       if (name === "css") continue;
       const actual = selections[name] ?? spec.defaultVariants[name];
-      if (actual !== expected) {
+      if (slotKey(actual) !== slotKey(expected)) {
         matches = false;
         break;
       }
@@ -114,14 +118,14 @@ export function styled(
 
 function makeContainerNode(
   spec: PixiStyleSpec,
-  initialSelections: Record<string, string>,
+  initialSelections: Record<string, unknown>,
 ): StyledNode {
   const root = new Container();
   let selections = { ...initialSelections };
   let labelText: string | undefined;
   let explicitSize: { width: number; height: number } | null = null;
 
-  const apply = (next?: Record<string, string>) => {
+  const apply = (next?: Record<string, unknown>) => {
     if (next) selections = { ...selections, ...next };
     const style = resolveStyle(spec, selections);
     // visibility variant
@@ -155,7 +159,7 @@ function makeContainerNode(
 
 function makeGraphicsNode(
   spec: PixiStyleSpec,
-  initialSelections: Record<string, string>,
+  initialSelections: Record<string, unknown>,
 ): StyledNode {
   const root = new Container();
   const bg = new Graphics();
@@ -167,7 +171,7 @@ function makeGraphicsNode(
   let labelText: string | undefined;
   let explicitSize: { width: number; height: number } | null = null;
 
-  const apply = (next?: Record<string, string>) => {
+  const apply = (next?: Record<string, unknown>) => {
     if (next) selections = { ...selections, ...next };
     const style = resolveStyle(spec, selections);
 
@@ -231,7 +235,7 @@ function makeGraphicsNode(
 
 function makeTextNode(
   spec: PixiStyleSpec,
-  initialSelections: Record<string, string>,
+  initialSelections: Record<string, unknown>,
 ): StyledNode {
   const root = new Container();
   const text = new Text({ text: "", style: new TextStyle({ fill: 0xffffff }) });
@@ -240,7 +244,7 @@ function makeTextNode(
   let selections = { ...initialSelections };
   let labelText: string | undefined;
 
-  const apply = (next?: Record<string, string>) => {
+  const apply = (next?: Record<string, unknown>) => {
     if (next) selections = { ...selections, ...next };
     const style = resolveStyle(spec, selections);
     text.style = new TextStyle({
