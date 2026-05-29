@@ -92,3 +92,27 @@ export function typeaheadFind(
 
 /** Unicode-aware regex for printable characters (typeahead filter). */
 export const PRINTABLE_KEY_RE = /^[\p{L}\p{N}\p{P}\p{S} ]$/u;
+
+// -----------------------------------------------------------------------------
+// Select event
+// -----------------------------------------------------------------------------
+
+/**
+ * Build the cancelable event object passed to an item's onSelect. The
+ * machine reads `defaultPrevented` after the consumer's callback runs
+ * to decide whether to close the menu.
+ */
+export function makeSelectEvent(): {
+  preventDefault: () => void;
+  defaultPrevented: boolean;
+} {
+  let prevented = false;
+  return {
+    preventDefault() {
+      prevented = true;
+    },
+    get defaultPrevented() {
+      return prevented;
+    },
+  };
+}

@@ -29,18 +29,6 @@ tooltip.provider              // optional, supplies inherited timing defaults
 `open` and `closing` are both visually open. Consumers should treat them
 as a single visible bit.
 
-## Available presentation states
-
-Reported on the trigger and the content so the styling layer can react.
-
-- `closed` — not visible.
-- `delayed-open` — just opened after paying the full hover delay.
-- `instant-open` — just opened inside the skip-delay window.
-- `disabled` — the tooltip is currently suppressed.
-
-The resolved placement side (top / bottom / left / right) is also reported
-on the content so side-specific styling can branch on it.
-
 ## Behavior
 
 ### Opening

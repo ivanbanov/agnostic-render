@@ -38,6 +38,7 @@ import type {
 import {
   firstEnabled,
   lastEnabled,
+  makeSelectEvent,
   readItems,
   step,
   typeaheadFind,
@@ -58,11 +59,12 @@ export const dropdownMenuMachine: MachineConfig<
     currentPlacement: dropdownMenuProps(props).positioning.placement,
     typeaheadBuffer: "",
     typeaheadLastTime: 0,
+    pendingHighlight: null,
   }),
 
   states: {
     idle: {
-      entry: ["clearGlobalId", "clearHighlight"],
+      entry: ["clearGlobalId", "clearHighlight", "clearPendingHighlight"],
       on: {
         "trigger.click": {
           target: "open",
@@ -70,11 +72,11 @@ export const dropdownMenuMachine: MachineConfig<
         },
         "trigger.key.open": {
           target: "open",
-          actions: ["invokeOnOpen", "setGlobalId", "highlightFirst"],
+          actions: ["invokeOnOpen", "setGlobalId", "setPendingFirst"],
         },
         "trigger.key.open.last": {
           target: "open",
-          actions: ["invokeOnOpen", "setGlobalId", "highlightLast"],
+          actions: ["invokeOnOpen", "setGlobalId", "setPendingLast"],
         },
         open: {
           target: "open",
@@ -96,9 +98,11 @@ export const dropdownMenuMachine: MachineConfig<
           {
             guard: "shouldCloseOnSelect",
             target: "idle",
-            actions: ["invokeOnSelect", "invokeOnClose"],
+            // onSelect was already invoked synchronously at the connect's
+            // call site so the guard could read event.defaultPrevented.
+            actions: ["invokeOnClose"],
           },
-          { actions: ["invokeOnSelect"] },
+          {},
         ],
 
         "arrow.down": { actions: ["suspendPointer", "highlightNext"] },
@@ -112,6 +116,8 @@ export const dropdownMenuMachine: MachineConfig<
         "typeahead.char": { actions: ["typeaheadMatch"] },
 
         "pointer.resume": { actions: ["resumePointer"] },
+
+        "items.ready": { actions: ["applyPendingHighlight"] },
       },
     },
   },
@@ -119,9 +125,15 @@ export const dropdownMenuMachine: MachineConfig<
   implementations: {
     guards: {
       shouldCloseOnSelect: ({ props, event }) => {
+        // Consumer can cancel close via onSelect(event).preventDefault().
+        const selectEvent = event.selectEvent as
+          | { defaultPrevented?: boolean }
+          | undefined;
+        if (selectEvent?.defaultPrevented) return false;
         // Per-item override (false for checkbox/radio); otherwise resolved prop.
         const itemCloseOnSelect = event.closeOnSelect as boolean | undefined;
         if (itemCloseOnSelect === false) return false;
+        if (itemCloseOnSelect === true) return true;
         return dropdownMenuProps(props).closeOnSelect;
       },
     },
@@ -132,10 +144,6 @@ export const dropdownMenuMachine: MachineConfig<
       },
       invokeOnClose: ({ props }) => {
         dropdownMenuProps(props).onOpenChange?.({ open: false });
-      },
-      invokeOnSelect: ({ event }) => {
-        const onSelect = event.onSelect as (() => void) | undefined;
-        onSelect?.();
       },
       setGlobalId: ({ props }) => {
         dropdownMenuStore.setOpen(dropdownMenuProps(props).id);
@@ -168,6 +176,30 @@ export const dropdownMenuMachine: MachineConfig<
       },
       resumePointer: ({ setContext }) => {
         setContext({ suspendPointer: false });
+      },
+
+      setPendingFirst: ({ setContext }) => {
+        setContext({ pendingHighlight: "first" });
+      },
+      setPendingLast: ({ setContext }) => {
+        setContext({ pendingHighlight: "last" });
+      },
+      clearPendingHighlight: ({ setContext }) => {
+        setContext({ pendingHighlight: null });
+      },
+      applyPendingHighlight: ({ context, setContext, event }) => {
+        if (!context.pendingHighlight) return;
+        const items = readItems(event);
+        const next =
+          context.pendingHighlight === "first"
+            ? firstEnabled(items)
+            : lastEnabled(items);
+        if (next) {
+          setContext({
+            highlightedValue: next.value,
+            pendingHighlight: null,
+          });
+        }
       },
 
       highlightFirst: ({ setContext, event }) => {
@@ -205,15 +237,23 @@ export const dropdownMenuMachine: MachineConfig<
         const items = readItems(event);
         const current = items.find((i) => i.value === context.highlightedValue);
         if (!current || current.disabled) return;
+        // Invoke onSelect synchronously so the guard can read
+        // event.defaultPrevented — matches the pointer-click path in
+        // connect.ts.
+        const selectEvent = makeSelectEvent();
+        current.onSelect?.(selectEvent);
         send({
           type: "item.click",
           value: current.value,
           onSelect: current.onSelect,
-          // checkbox/radio always keep open
+          selectEvent,
+          // explicit per-item override; falls through to default behavior
+          // when undefined (regular items close, toggles don't)
           closeOnSelect:
-            current.kind === "checkbox" || current.kind === "radio"
+            current.closeOnSelect ??
+            (current.kind === "checkbox" || current.kind === "radio"
               ? false
-              : undefined,
+              : undefined),
           items,
         });
       },

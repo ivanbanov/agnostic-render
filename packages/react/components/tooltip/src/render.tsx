@@ -8,7 +8,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import type { Side } from "@render-experiment/utils";
+import { pickSide, type Side } from "@render-experiment/utils";
 import { mergeProps, normalize } from "@render-experiment/machine-react";
 import {
   tooltipProps as resolveProps,
@@ -125,52 +125,6 @@ export function TooltipContent(props: TooltipContentProps) {
       {children}
     </PositionedContent>
   );
-}
-
-/**
- * Pick the effective side after collision. The connect supplies the
- * preferred side (from `placement`); we flip to the opposite when the
- * preferred would clip the viewport given the content's measured size.
- *
- * Vertical/horizontal sides flip in their own axis; we don't rotate
- * 90° (that's a much bigger redesign and rarely useful).
- */
-function pickSide(
-  preferred: Side,
-  triggerRect: DOMRect,
-  contentRect: DOMRect | null,
-  viewport: { width: number; height: number },
-  offset: number,
-): Side {
-  if (!contentRect) return preferred;
-  const ch = contentRect.height;
-  const cw = contentRect.width;
-  switch (preferred) {
-    case "bottom": {
-      const fitsBottom = triggerRect.bottom + offset + ch <= viewport.height;
-      if (fitsBottom) return "bottom";
-      const fitsTop = triggerRect.top - offset - ch >= 0;
-      return fitsTop ? "top" : "bottom";
-    }
-    case "top": {
-      const fitsTop = triggerRect.top - offset - ch >= 0;
-      if (fitsTop) return "top";
-      const fitsBottom = triggerRect.bottom + offset + ch <= viewport.height;
-      return fitsBottom ? "bottom" : "top";
-    }
-    case "right": {
-      const fitsRight = triggerRect.right + offset + cw <= viewport.width;
-      if (fitsRight) return "right";
-      const fitsLeft = triggerRect.left - offset - cw >= 0;
-      return fitsLeft ? "left" : "right";
-    }
-    case "left": {
-      const fitsLeft = triggerRect.left - offset - cw >= 0;
-      if (fitsLeft) return "left";
-      const fitsRight = triggerRect.right + offset + cw <= viewport.width;
-      return fitsRight ? "right" : "left";
-    }
-  }
 }
 
 function PositionedContent({

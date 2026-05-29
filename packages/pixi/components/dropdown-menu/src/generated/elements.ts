@@ -9,14 +9,16 @@ export const Content = styled("graphics", {
   "base": {
     "position": "absolute",
     "pointerEvents": "auto",
-    "background": 2042167,
-    "color": 16777215,
-    "borderRadius": 6,
-    "paddingY": 4,
-    "paddingX": 0,
-    "fontSize": 13,
+    "background": 16777215,
+    "color": 2237480,
+    "borderRadius": 4,
+    "padding": "12px 12px",
+    "fontSize": 14,
+    "lineHeight": "20px",
     "minWidth": 180,
-    "boxShadow": "0 10px 30px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.15)"
+    "maxWidth": 500,
+    "boxShadow": "0 4px 16px #05003812",
+    "outline": "1px solid transparent"
   },
   "variants": {
     "side": {
@@ -53,18 +55,27 @@ export const Group = styled("container", {
 // Source: shared/components/dropdown-menu/src/styles → item (primitive: graphics)
 export const Item = styled("graphics", {
   "base": {
-    "display": "flex",
+    "boxSizing": "border-box",
+    "display": "grid",
+    "gridTemplateColumns": "auto 1fr auto",
+    "gridTemplateAreas": "\"left-slot item-text right-slot\"",
     "alignItems": "center",
-    "paddingY": 6,
-    "paddingX": 12,
-    "cursor": "default",
+    "gap": 8,
+    "padding": "10px 8px",
+    "fontSize": 14,
+    "lineHeight": "20px",
+    "color": 2237480,
+    "borderRadius": 4,
+    "position": "relative",
     "userSelect": "none",
+    "cursor": "pointer",
     "outline": "none"
   },
   "variants": {
     "highlighted": {
       "true": {
-        "background": 3621201
+        "background": 15265020,
+        "color": 3230937
       },
       "false": {
         "background": 0
@@ -72,8 +83,9 @@ export const Item = styled("graphics", {
     },
     "disabled": {
       "true": {
-        "opacity": 0.5,
-        "cursor": "not-allowed"
+        "color": 11449024,
+        "cursor": "default",
+        "pointerEvents": "none"
       },
       "false": {}
     }
@@ -88,13 +100,11 @@ export const Item = styled("graphics", {
 // Source: shared/components/dropdown-menu/src/styles → label (primitive: text)
 export const Label = styled("text", {
   "base": {
-    "paddingY": 6,
-    "paddingX": 12,
-    "fontSize": 11,
+    "padding": "6px 8px",
+    "fontSize": 12,
+    "lineHeight": "16px",
     "fontWeight": 600,
-    "color": 10265519,
-    "textTransform": "uppercase",
-    "letterSpacing": "0.05em"
+    "color": 11449024
   },
   "variants": {},
   "compoundVariants": [],
@@ -130,7 +140,7 @@ export const Separator = styled("graphics", {
     "height": 1,
     "marginY": 4,
     "marginX": 0,
-    "background": 3621201
+    "background": 15330031
   },
   "variants": {},
   "compoundVariants": [],

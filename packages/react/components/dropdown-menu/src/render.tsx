@@ -7,13 +7,16 @@ import {
   useRef,
   useState,
   type ComponentPropsWithoutRef,
+  type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
   type RefObject,
 } from "react";
 import { mergeProps, normalize } from "@render-experiment/machine-react";
+import { pickSide, type Side } from "@render-experiment/utils";
 import {
   type DropdownMenuApi,
   type DropdownMenuProps,
+  type DropdownMenuSelectEvent,
 } from "@render-experiment/dropdown-menu-core";
 import { useDropdownMenuApi } from "./generated/api";
 import {
@@ -134,15 +137,39 @@ function PositionedContent({
     [registry],
   );
 
-  // Anchor position from the trigger's rect.
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
+  const [effectiveSide, setEffectiveSide] = useState<Side>(
+    api.parts.content.variants.side,
+  );
+
+  // Measure: read both rects, compute the effective side (collision
+  // flip), then anchor against the effective placement so the offsets
+  // come out right. Same flow as tooltip.
   useLayoutEffect(() => {
     const measure = () => {
       const trigger = triggerRef.current;
       if (!trigger) return;
-      setAnchor(
-        anchorOf(trigger.getBoundingClientRect(), api.parts.content.positioning),
+      const triggerRect = trigger.getBoundingClientRect();
+      const contentRect = contentRef.current?.getBoundingClientRect() ?? null;
+
+      const preferred = api.parts.content.variants.side;
+      const next = pickSide(
+        preferred,
+        triggerRect,
+        contentRect,
+        { width: window.innerWidth, height: window.innerHeight },
+        api.parts.content.positioning.offset.main,
       );
+      setEffectiveSide(next);
+
+      const flippedPositioning = {
+        ...api.parts.content.positioning,
+        placement:
+          next === api.parts.content.variants.side
+            ? api.parts.content.positioning.placement
+            : (next as typeof api.parts.content.positioning.placement),
+      };
+      setAnchor(anchorOf(triggerRect, flippedPositioning));
     };
     measure();
     window.addEventListener("scroll", measure, true);
@@ -151,12 +178,86 @@ function PositionedContent({
       window.removeEventListener("scroll", measure, true);
       window.removeEventListener("resize", measure);
     };
-  }, [api.parts.content.positioning, triggerRef]);
+  }, [
+    api.parts.content.positioning,
+    api.parts.content.variants.side,
+    triggerRef,
+  ]);
 
-  // Focus the content on open so keyboard handlers attach to it.
+  // Trigger-move detection: ResizeObserver catches box changes that
+  // don't trigger window scroll/resize.
+  useEffect(() => {
+    if (typeof ResizeObserver === "undefined") return;
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const ro = new ResizeObserver(() => {
+      const t = triggerRef.current;
+      if (!t) return;
+      const triggerRect = t.getBoundingClientRect();
+      const contentRect = contentRef.current?.getBoundingClientRect() ?? null;
+      const next = pickSide(
+        api.parts.content.variants.side,
+        triggerRect,
+        contentRect,
+        { width: window.innerWidth, height: window.innerHeight },
+        api.parts.content.positioning.offset.main,
+      );
+      setEffectiveSide(next);
+      const flippedPositioning = {
+        ...api.parts.content.positioning,
+        placement:
+          next === api.parts.content.variants.side
+            ? api.parts.content.positioning.placement
+            : (next as typeof api.parts.content.positioning.placement),
+      };
+      setAnchor(anchorOf(triggerRect, flippedPositioning));
+    });
+    ro.observe(trigger);
+    return () => ro.disconnect();
+  }, [
+    api.parts.content.positioning,
+    api.parts.content.variants.side,
+    triggerRef,
+  ]);
+
+  // Viewport dismiss: close when the trigger scrolls out of view.
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") return;
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const io = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) {
+          api.setOpen(false);
+        }
+      }
+    });
+    io.observe(trigger);
+    return () => io.disconnect();
+  }, [api, triggerRef]);
+
+  // Focus the content as soon as it is visible (anchor measured →
+  // visibility flips to visible). visibility:hidden elements can't
+  // receive focus, so focusing on mount alone silently no-ops and
+  // leaves keystrokes routed to the trigger.
+  const didFocusRef = useRef(false);
   useLayoutEffect(() => {
-    contentRef.current?.focus();
-  }, []);
+    if (anchor && !didFocusRef.current) {
+      contentRef.current?.focus();
+      didFocusRef.current = true;
+    }
+  }, [anchor]);
+
+  // On Tab, restore focus to the trigger before the machine's keydown
+  // handler closes the menu. After unmount the browser's native Tab
+  // navigation continues from the trigger, so the user's next focusable
+  // is one Tab past the dropdown — matching the SPEC's "Tab leaves the
+  // menu" behavior.
+  const onContentKeyDownCapture = (event: ReactKeyboardEvent) => {
+    if (event.key === "Tab") {
+      triggerRef.current?.focus();
+    }
+  };
 
   // Outside-click closes.
   useEffect(() => {
@@ -182,13 +283,19 @@ function PositionedContent({
   );
   const anchorCoords = anchor ? { top: anchor.y, left: anchor.x } : undefined;
 
-  const merged = mergeProps(consumerProps, { ...handlerProps, ...attrProps });
+  const merged = mergeProps(consumerProps, {
+    ...handlerProps,
+    ...attrProps,
+    "data-side": effectiveSide,
+    onKeyDownCapture: onContentKeyDownCapture,
+  });
 
   return (
     <Styled.Positioner anchored={!!anchor} css={anchorCoords}>
       <Styled.Content
         {...merged}
         {...apiWithItems.parts.content.variants}
+        side={effectiveSide}
         ref={contentRef}
       >
         <DropdownMenuCurrentApiRef.Provider value={apiWithItems}>
@@ -207,7 +314,7 @@ interface ItemBaseProps {
   value: string;
   textValue?: string;
   disabled?: boolean;
-  onSelect?: () => void;
+  onSelect?: (event: DropdownMenuSelectEvent) => void;
   kind: "item" | "checkbox" | "radio";
   checked?: boolean | "indeterminate";
   children: ReactNode;
@@ -270,7 +377,7 @@ export interface DropdownMenuItemProps
   value: string;
   textValue?: string;
   disabled?: boolean;
-  onSelect?: () => void;
+  onSelect?: (event: DropdownMenuSelectEvent) => void;
   children: ReactNode;
 }
 
@@ -310,8 +417,9 @@ export function DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps) {
     children,
     ...consumerProps
   } = props;
-  const handleSelect = () => {
-    onSelect?.();
+  const handleSelect = (event: DropdownMenuSelectEvent) => {
+    onSelect?.(event);
+    if (event.defaultPrevented) return;
     onCheckedChange?.(!checked);
   };
   return (
@@ -360,7 +468,7 @@ export interface DropdownMenuRadioItemProps
   value: string;
   textValue?: string;
   disabled?: boolean;
-  onSelect?: () => void;
+  onSelect?: (event: DropdownMenuSelectEvent) => void;
   children: ReactNode;
 }
 
@@ -368,8 +476,9 @@ export function DropdownMenuRadioItem(props: DropdownMenuRadioItemProps) {
   const { value, textValue, disabled, onSelect, children, ...consumerProps } = props;
   const radioGroup = useDropdownMenuRadioGroup();
   const checked = radioGroup?.value === value;
-  const handleSelect = () => {
-    onSelect?.();
+  const handleSelect = (event: DropdownMenuSelectEvent) => {
+    onSelect?.(event);
+    if (event.defaultPrevented) return;
     radioGroup?.onValueChange(value);
   };
   return (

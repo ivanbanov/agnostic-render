@@ -10,16 +10,16 @@ export const Content = styled(
   {
   "position": "absolute",
   "pointerEvents": "auto",
-  "background": "#1f2937",
-  "color": "#fff",
-  "borderRadius": 6,
-  "paddingTop": 4,
-  "paddingBottom": 4,
-  "paddingLeft": 0,
-  "paddingRight": 0,
-  "fontSize": 13,
+  "background": "#FFFFFF",
+  "color": "#222428",
+  "borderRadius": 4,
+  "padding": "12px 12px",
+  "fontSize": 14,
+  "lineHeight": "20px",
   "minWidth": 180,
-  "boxShadow": "0 10px 30px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.15)",
+  "maxWidth": 500,
+  "boxShadow": "0 4px 16px #05003812",
+  "outline": "1px solid transparent",
   "variants": {
     "side": {
       "top": {
@@ -58,19 +58,26 @@ export const Group = styled(
 export const Item = styled(
   "div",
   {
-  "display": "flex",
+  "boxSizing": "border-box",
+  "display": "grid",
+  "gridTemplateColumns": "auto 1fr auto",
+  "gridTemplateAreas": "\"left-slot item-text right-slot\"",
   "alignItems": "center",
-  "paddingTop": 6,
-  "paddingBottom": 6,
-  "paddingLeft": 12,
-  "paddingRight": 12,
-  "cursor": "default",
+  "gap": 8,
+  "padding": "10px 8px",
+  "fontSize": 14,
+  "lineHeight": "20px",
+  "color": "#222428",
+  "borderRadius": 4,
+  "position": "relative",
   "userSelect": "none",
+  "cursor": "pointer",
   "outline": "none",
   "variants": {
     "highlighted": {
       "true": {
-        "background": "#374151"
+        "background": "#E8ECFC",
+        "color": "#314CD9"
       },
       "false": {
         "background": "transparent"
@@ -78,8 +85,9 @@ export const Item = styled(
     },
     "disabled": {
       "true": {
-        "opacity": 0.5,
-        "cursor": "not-allowed"
+        "color": "#AEB2C0",
+        "cursor": "default",
+        "pointerEvents": "none"
       },
       "false": {}
     }
@@ -96,15 +104,11 @@ export const Item = styled(
 export const Label = styled(
   "div",
   {
-  "paddingTop": 6,
-  "paddingBottom": 6,
-  "paddingLeft": 12,
-  "paddingRight": 12,
-  "fontSize": 11,
+  "padding": "6px 8px",
+  "fontSize": 12,
+  "lineHeight": "16px",
   "fontWeight": 600,
-  "color": "#9ca3af",
-  "textTransform": "uppercase",
-  "letterSpacing": "0.05em",
+  "color": "#AEB2C0",
   "variants": {},
   "compoundVariants": [],
   "defaultVariants": {}
@@ -142,7 +146,7 @@ export const Separator = styled(
   "height": 1,
   "marginY": 4,
   "marginX": 0,
-  "background": "#374151",
+  "background": "#E9EAEF",
   "variants": {},
   "compoundVariants": [],
   "defaultVariants": {}

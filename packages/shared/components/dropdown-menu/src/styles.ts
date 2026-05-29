@@ -1,3 +1,23 @@
+/**
+ * Ported from @mirohq/design-system DropdownMenu, medium size.
+ *
+ * Token → literal mapping (web tokens, light theme):
+ *   $50            → 4px                   (space, border-radius)
+ *   $100           → 8px                   (space)
+ *   $125           → 500px                 (sizes — 125 * 4)
+ *   $150           → 12px                  (space)
+ *   $300           → 24px                  (space)
+ *   $background-neutrals-container → #FFFFFF
+ *   $background-primary-subtle-hover → #E8ECFC   (blue-150)
+ *   $background-primary-subtle-active → #D9DFFC  (blue-200)
+ *   $text-neutrals → #222428                (gray-900)
+ *   $text-neutrals-disabled → #AEB2C0       (gray-350)
+ *   $text-primary-hover  → #314CD9          (blue-550)
+ *   $text-primary-active → #2A41B6          (blue-600)
+ *   $shadows-50          → 0 4px 16px #05003812
+ *   $border-neutrals-strong-subtle → #E9EAEF (gray-150)  (separator)
+ */
+
 export const positioner = {
   position: "fixed",
   width: 0,
@@ -16,14 +36,16 @@ export const positioner = {
 export const content = {
   position: "absolute",
   pointerEvents: "auto",
-  background: "#1f2937",
-  color: "#fff",
-  borderRadius: 6,
-  paddingY: 4,
-  paddingX: 0,
-  fontSize: 13,
+  background: "#FFFFFF",
+  color: "#222428",
+  borderRadius: 4,
+  padding: "12px 12px",
+  fontSize: 14,
+  lineHeight: "20px",
   minWidth: 180,
-  boxShadow: "0 10px 30px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.15)",
+  maxWidth: 500,
+  boxShadow: "0 4px 16px #05003812",
+  outline: "1px solid transparent",
   variants: {
     side: {
       top: { bottom: "100%" },
@@ -38,20 +60,35 @@ export const content = {
 };
 
 export const item = {
-  display: "flex",
+  boxSizing: "border-box",
+  display: "grid",
+  gridTemplateColumns: "auto 1fr auto",
+  gridTemplateAreas: '"left-slot item-text right-slot"',
   alignItems: "center",
-  paddingY: 6,
-  paddingX: 12,
-  cursor: "default",
+  gap: 8,
+  padding: "10px 8px",
+  fontSize: 14,
+  lineHeight: "20px",
+  color: "#222428",
+  borderRadius: 4,
+  position: "relative",
   userSelect: "none",
+  cursor: "pointer",
   outline: "none",
   variants: {
     highlighted: {
-      true: { background: "#374151" },
+      true: {
+        background: "#E8ECFC",
+        color: "#314CD9",
+      },
       false: { background: "transparent" },
     },
     disabled: {
-      true: { opacity: 0.5, cursor: "not-allowed" },
+      true: {
+        color: "#AEB2C0",
+        cursor: "default",
+        pointerEvents: "none",
+      },
       false: {},
     },
   },
@@ -65,18 +102,16 @@ export const separator = {
   height: 1,
   marginY: 4,
   marginX: 0,
-  background: "#374151",
+  background: "#E9EAEF",
   variants: {},
 };
 
 export const label = {
-  paddingY: 6,
-  paddingX: 12,
-  fontSize: 11,
+  padding: "6px 8px",
+  fontSize: 12,
+  lineHeight: "16px",
   fontWeight: 600,
-  color: "#9ca3af",
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
+  color: "#AEB2C0",
   variants: {},
 };
 

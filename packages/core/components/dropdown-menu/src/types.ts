@@ -53,6 +53,15 @@ export interface DropdownMenuProps {
 // Item-level props (each Item the consumer renders supplies these)
 // -----------------------------------------------------------------------------
 
+/**
+ * The event object passed to an item's `onSelect`. Consumers can call
+ * `preventDefault()` to keep the menu open on activation.
+ */
+export interface DropdownMenuSelectEvent {
+  preventDefault: () => void;
+  defaultPrevented: boolean;
+}
+
 export interface DropdownMenuItemProps {
   /** Stable identifier within this menu. */
   value: string;
@@ -63,8 +72,16 @@ export interface DropdownMenuItemProps {
   kind?: "item" | "checkbox" | "radio";
   /** For checkbox items. */
   checked?: boolean | "indeterminate";
-  /** Activation callback. */
-  onSelect?: () => void;
+  /**
+   * Override the default close-on-select behavior for this item.
+   * Default: regular items close, checkbox/radio items don't.
+   */
+  closeOnSelect?: boolean;
+  /**
+   * Activation callback. Receives an event; call `preventDefault()` to
+   * keep the menu open regardless of the default close behavior.
+   */
+  onSelect?: (event: DropdownMenuSelectEvent) => void;
 }
 
 // -----------------------------------------------------------------------------
@@ -82,6 +99,13 @@ export interface DropdownMenuContext {
   typeaheadBuffer: string;
   /** Time of last typeahead key — adapters compare to clear the buffer. */
   typeaheadLastTime: number;
+  /**
+   * Set when the menu opens via a keyboard intent ("first" from
+   * ArrowDown/Enter/Space, "last" from ArrowUp). The render layer fires
+   * an `items.ready` event once items have mounted; the machine applies
+   * the highlight then.
+   */
+  pendingHighlight: "first" | "last" | null;
 }
 
 // -----------------------------------------------------------------------------

@@ -8,14 +8,16 @@ import { resolveStyle, type TranslatedNativeStyle } from "@render-experiment/sty
 export const content: TranslatedNativeStyle = {
   "base": {
     "position": "absolute",
-    "backgroundColor": "#1f2937",
-    "color": "#fff",
-    "borderRadius": 6,
-    "paddingVertical": 4,
-    "paddingHorizontal": 0,
-    "fontSize": 13,
+    "backgroundColor": "#FFFFFF",
+    "color": "#222428",
+    "borderRadius": 4,
+    "padding": "12px 12px",
+    "fontSize": 14,
+    "lineHeight": "20px",
     "minWidth": 180,
-    "boxShadow": "0 10px 30px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.15)"
+    "maxWidth": 500,
+    "boxShadow": "0 4px 16px #05003812",
+    "outline": "1px solid transparent"
   },
   "variants": {
     "side": {
@@ -60,16 +62,25 @@ export function resolveGroup(selections: Record<string, string> = {}) {
 // Source: shared/components/dropdown-menu/src/styles → item
 export const item: TranslatedNativeStyle = {
   "base": {
-    "display": "flex",
+    "boxSizing": "border-box",
+    "display": "grid",
+    "gridTemplateColumns": "auto 1fr auto",
+    "gridTemplateAreas": "\"left-slot item-text right-slot\"",
     "alignItems": "center",
-    "paddingVertical": 6,
-    "paddingHorizontal": 12,
+    "gap": 8,
+    "padding": "10px 8px",
+    "fontSize": 14,
+    "lineHeight": "20px",
+    "color": "#222428",
+    "borderRadius": 4,
+    "position": "relative",
     "outline": "none"
   },
   "variants": {
     "highlighted": {
       "true": {
-        "backgroundColor": "#374151"
+        "backgroundColor": "#E8ECFC",
+        "color": "#314CD9"
       },
       "false": {
         "backgroundColor": "transparent"
@@ -77,7 +88,7 @@ export const item: TranslatedNativeStyle = {
     },
     "disabled": {
       "true": {
-        "opacity": 0.5
+        "color": "#AEB2C0"
       },
       "false": {}
     }
@@ -96,13 +107,11 @@ export function resolveItem(selections: Record<string, string> = {}) {
 // Source: shared/components/dropdown-menu/src/styles → label
 export const label: TranslatedNativeStyle = {
   "base": {
-    "paddingVertical": 6,
-    "paddingHorizontal": 12,
-    "fontSize": 11,
+    "padding": "6px 8px",
+    "fontSize": 12,
+    "lineHeight": "16px",
     "fontWeight": 600,
-    "color": "#9ca3af",
-    "textTransform": "uppercase",
-    "letterSpacing": "0.05em"
+    "color": "#AEB2C0"
   },
   "variants": {},
   "compoundVariants": [],
@@ -142,7 +151,7 @@ export const separator: TranslatedNativeStyle = {
     "height": 1,
     "marginVertical": 4,
     "marginHorizontal": 0,
-    "backgroundColor": "#374151"
+    "backgroundColor": "#E9EAEF"
   },
   "variants": {},
   "compoundVariants": [],

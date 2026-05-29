@@ -24,7 +24,7 @@ import type {
   DropdownMenuItemPart,
   DropdownMenuItemProps,
 } from "./types";
-import { PRINTABLE_KEY_RE } from "./utils";
+import { makeSelectEvent, PRINTABLE_KEY_RE } from "./utils";
 
 export const connectDropdownMenu = connector<
   DropdownMenuState,
@@ -46,9 +46,16 @@ export const connectDropdownMenu = connector<
         case "ArrowDown":
         case "Enter":
         case " ":
+          // preventDefault stops the browser from:
+          //  - submitting an enclosing form on Enter
+          //  - synthesizing a keyup-driven click on Space (which would
+          //    re-toggle and close the menu we just opened)
+          //  - scrolling the page on ArrowDown
+          event.preventDefault?.();
           if (!open) send({ type: "trigger.key.open", items });
           break;
         case "ArrowUp":
+          event.preventDefault?.();
           if (!open) send({ type: "trigger.key.open.last", items });
           break;
       }
@@ -58,6 +65,9 @@ export const connectDropdownMenu = connector<
     id: triggerId,
     expanded: open,
     role: "button",
+    "aria-haspopup": "menu",
+    "aria-controls": open ? contentId : undefined,
+    "data-state": open ? "open" : "closed",
   };
 
   const contentHandlers: EventBindings = {
@@ -66,27 +76,36 @@ export const connectDropdownMenu = connector<
       const k = event.key;
       switch (k) {
         case "ArrowDown":
+          event.preventDefault?.();
           send({ type: "arrow.down", items });
           break;
         case "ArrowUp":
+          event.preventDefault?.();
           send({ type: "arrow.up", items });
           break;
         case "Home":
+          event.preventDefault?.();
           send({ type: "home", items });
           break;
         case "End":
+          event.preventDefault?.();
           send({ type: "end", items });
           break;
         case "Enter":
+          event.preventDefault?.();
           send({ type: "enter", items });
           break;
         case " ":
+          event.preventDefault?.();
           send({ type: "space", items });
           break;
         case "Escape":
           // Handled by trackEscapeKey effect; render layer just lets it bubble.
           break;
         case "Tab":
+          // Don't preventDefault: the browser's Tab handling moves focus
+          // to the next focusable, which is exactly what we want after
+          // closing.
           send({ type: "close" });
           break;
         default:
@@ -111,11 +130,51 @@ export const connectDropdownMenu = connector<
     role: "menu",
     focusable: true,
     labelledBy: triggerId,
+    "data-state": open ? "open" : "closed",
+    "data-orientation": "vertical",
+    "data-side": placementToSide(r.positioning.placement),
   };
 
   const getItem = (item: DropdownMenuItemProps): DropdownMenuItemPart => {
     const highlighted = context.highlightedValue === item.value;
     const isToggleKind = item.kind === "checkbox" || item.kind === "radio";
+
+    // data-state for toggle items reflects checked. For regular items
+    // it tracks the parent menu's open/closed (the item is only ever
+    // mounted while the menu is open, so it's always "open" here).
+    let dataState: string;
+    if (isToggleKind) {
+      dataState =
+        item.checked === true
+          ? "checked"
+          : item.checked === "indeterminate"
+            ? "indeterminate"
+            : "unchecked";
+    } else {
+      dataState = "open";
+    }
+
+    const itemAttrs: AttrBindings = {
+      id: `dropdown-menu:${r.id}:item:${item.value}`,
+      role:
+        item.kind === "checkbox"
+          ? "menuitemcheckbox"
+          : item.kind === "radio"
+            ? "menuitemradio"
+            : "menuitem",
+      disabled: item.disabled,
+      selected: isToggleKind ? item.checked === true : highlighted,
+      // Items are not tab stops — the content surface owns the single
+      // tab stop and arrow-key navigation is roving (managed by the
+      // machine via `highlightedValue`). Tab leaves the menu instead of
+      // walking through items.
+      focusable: false,
+      "data-state": dataState,
+      "data-orientation": "vertical",
+      ...(highlighted ? { "data-highlighted": "" } : {}),
+      ...(item.disabled ? { "data-disabled": "" } : {}),
+    };
+
     return {
       highlighted,
       variants: {
@@ -125,11 +184,19 @@ export const connectDropdownMenu = connector<
       handlers: {
         onPress: () => {
           if (item.disabled) return;
+          // Invoke onSelect synchronously here so the guard
+          // shouldCloseOnSelect can read event.defaultPrevented before
+          // deciding whether to close. The machine still receives
+          // selectEvent so the guard has access to the same instance.
+          const selectEvent = makeSelectEvent();
+          item.onSelect?.(selectEvent);
           send({
             type: "item.click",
             value: item.value,
             onSelect: item.onSelect,
-            closeOnSelect: isToggleKind ? false : undefined,
+            selectEvent,
+            closeOnSelect:
+              item.closeOnSelect ?? (isToggleKind ? false : undefined),
             items,
           });
         },
@@ -141,20 +208,7 @@ export const connectDropdownMenu = connector<
           send({ type: "item.pointerleave", value: item.value, items });
         },
       },
-      attrs: {
-        id: `dropdown-menu:${r.id}:item:${item.value}`,
-        role:
-          item.kind === "checkbox"
-            ? "menuitemcheckbox"
-            : item.kind === "radio"
-              ? "menuitemradio"
-              : "menuitem",
-        disabled: item.disabled,
-        // `selected` reflects highlight for regular items; for checkbox/radio
-        // it's the persisted check state.
-        selected: isToggleKind ? item.checked === true : highlighted,
-        focusable: !item.disabled,
-      },
+      attrs: itemAttrs,
     };
   };
 
@@ -184,6 +238,13 @@ export const connectDropdownMenu = connector<
     getItem,
 
     withItems(nextItems) {
+      // Resolve a pending trigger-key open intent now that items are known.
+      // The machine sets `pendingHighlight` on `trigger.key.open[.last]`,
+      // then the render layer hands the items list through withItems —
+      // this fires `items.ready` to apply the highlight.
+      if (open && context.pendingHighlight && nextItems.length > 0) {
+        send({ type: "items.ready", items: nextItems });
+      }
       return connectDropdownMenu({ state, context, props, send })(nextItems);
     },
   };
