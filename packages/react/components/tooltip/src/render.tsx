@@ -15,9 +15,9 @@ import {
   type TooltipApi,
   type TooltipProps,
 } from "@render-experiment/tooltip-core";
-import { useTooltipApi } from "./api";
+import { useTooltipApi } from "./generated/api";
 import { TooltipContextRef, useTooltipContext } from "./context";
-import * as Styled from "./elements";
+import * as Styled from "./generated/elements";
 import { anchorOf, cloneOnly, getChildRef, mergeRefs } from "./utils";
 
 // -----------------------------------------------------------------------------

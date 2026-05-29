@@ -29,8 +29,8 @@ import {
   type TooltipApi,
   type TooltipProps,
 } from "@render-experiment/tooltip-core";
-import { createTooltipBridge } from "./api";
-import * as Styled from "./elements";
+import { createTooltipBridge } from "./generated/api";
+import * as Styled from "./generated/elements";
 import { anchorOf, boundsToRect, edgePinOffset } from "./utils";
 
 export interface CreateTooltipOptions extends Omit<TooltipProps, "id"> {

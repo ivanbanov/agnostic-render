@@ -12,7 +12,7 @@ import {
   type DropdownMenuProps,
   type DropdownMenuState,
 } from "@render-experiment/dropdown-menu-core";
-import { dropdownMenuAdapter } from "./adapter";
+import { dropdownMenuAdapter } from "../adapter";
 
 const dropdownMenuMachineWithAdapter = withAdapter(dropdownMenuMachine, dropdownMenuAdapter);
 

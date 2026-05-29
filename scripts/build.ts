@@ -11,9 +11,10 @@
  *   - utils.ts            — component-local helpers (when needed)
  *   - index.ts            — public reexports
  *
- * Generated files (overwritten on every run, marked with a header):
- *   - elements.ts         — one styled wrapper or style record per *Style spec
- *   - api.ts              — useXxxApi (wires the machine to the adapter)
+ * Generated files (overwritten on every run, marked with a header,
+ * live under each adapter's `src/generated/`):
+ *   - generated/elements.ts  — one styled wrapper or style record per *Style spec
+ *   - generated/api.ts       — useXxxApi (wires the machine to the adapter)
  *
  * Convention contract:
  *   - core folder name = component slug (kebab-case): "tooltip" / "dropdown-menu"
@@ -209,7 +210,7 @@ import {
   type ${pascal}Props,
   type ${pascal}State,
 } from "@render-experiment/${slug}-core";
-import { ${camel}Adapter } from "./adapter";
+import { ${camel}Adapter } from "../adapter";
 
 const ${camel}MachineWithAdapter = withAdapter(${camel}Machine, ${camel}Adapter);
 
@@ -271,7 +272,7 @@ import {
   type ${pascal}Props,
   type ${pascal}State,
 } from "@render-experiment/${slug}-core";
-import { ${camel}Adapter } from "./adapter";
+import { ${camel}Adapter } from "../adapter";
 
 const ${camel}MachineWithAdapter = withAdapter(${camel}Machine, ${camel}Adapter);
 
@@ -344,7 +345,7 @@ import {
   type ${pascal}Props,
   type ${pascal}State,
 } from "@render-experiment/${slug}-core";
-import { ${camel}Adapter } from "./adapter";
+import { ${camel}Adapter } from "../adapter";
 
 const ${camel}MachineWithAdapter = withAdapter(${camel}Machine, ${camel}Adapter);
 
@@ -394,20 +395,23 @@ export async function buildComponent(component: DiscoveredComponent) {
 
   if (existsSync(component.reactSrc)) {
     writeFile(
-      resolve(component.reactSrc, "elements.ts"),
+      resolve(component.reactSrc, "generated/elements.ts"),
       emitReactElements(component, core.styles),
     );
-    writeFile(resolve(component.reactSrc, "api.ts"), emitReactApi(component));
+    writeFile(
+      resolve(component.reactSrc, "generated/api.ts"),
+      emitReactApi(component),
+    );
     targets.push("react");
   }
 
   if (existsSync(component.nativeSrc)) {
     writeFile(
-      resolve(component.nativeSrc, "elements.ts"),
+      resolve(component.nativeSrc, "generated/elements.ts"),
       emitNativeElements(component, core.styles),
     );
     writeFile(
-      resolve(component.nativeSrc, "api.ts"),
+      resolve(component.nativeSrc, "generated/api.ts"),
       emitNativeApi(component),
     );
     targets.push("native");
@@ -415,11 +419,11 @@ export async function buildComponent(component: DiscoveredComponent) {
 
   if (existsSync(component.pixiSrc)) {
     writeFile(
-      resolve(component.pixiSrc, "elements.ts"),
+      resolve(component.pixiSrc, "generated/elements.ts"),
       emitPixiElements(component, core.styles),
     );
     writeFile(
-      resolve(component.pixiSrc, "api.ts"),
+      resolve(component.pixiSrc, "generated/api.ts"),
       emitPixiApi(component),
     );
     targets.push("pixi");

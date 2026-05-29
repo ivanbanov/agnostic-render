@@ -12,7 +12,7 @@ import {
   type TooltipProps,
   type TooltipState,
 } from "@render-experiment/tooltip-core";
-import { tooltipAdapter } from "./adapter";
+import { tooltipAdapter } from "../adapter";
 
 const tooltipMachineWithAdapter = withAdapter(tooltipMachine, tooltipAdapter);
 

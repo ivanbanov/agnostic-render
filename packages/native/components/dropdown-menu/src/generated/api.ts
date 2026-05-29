@@ -3,7 +3,7 @@
 // To change this file, edit the core spec it derives from and rerun `pnpm codegen`.
 
 import { withAdapter } from "@render-experiment/machine-core";
-import { useMachine } from "@render-experiment/machine-react";
+import { useMachine } from "@render-experiment/machine-native";
 import {
   connectDropdownMenu,
   dropdownMenuMachine,
@@ -12,11 +12,11 @@ import {
   type DropdownMenuProps,
   type DropdownMenuState,
 } from "@render-experiment/dropdown-menu-core";
-import { dropdownMenuAdapter } from "./adapter";
+import { dropdownMenuAdapter } from "../adapter";
 
 const dropdownMenuMachineWithAdapter = withAdapter(dropdownMenuMachine, dropdownMenuAdapter);
 
-/** Wire the core machine to React and return the connect() API. */
+/** Wire the core machine to native and return the connect() API. */
 export function useDropdownMenuApi(props: DropdownMenuProps): DropdownMenuApi {
   const machine = useMachine<DropdownMenuMachineContext, DropdownMenuProps>(
     dropdownMenuMachineWithAdapter,
