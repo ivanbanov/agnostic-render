@@ -24,11 +24,10 @@
 
 import type { Container } from "pixi.js";
 import { normalize, type PixiListenerPair } from "@render-experiment/machine-pixi";
-import {
-  placementToSide,
-  type DropdownMenuApi,
-  type DropdownMenuProps,
-  type DropdownMenuItemProps,
+import type {
+  DropdownMenuApi,
+  DropdownMenuProps,
+  DropdownMenuItemProps,
 } from "@render-experiment/dropdown-menu-core";
 import type { StyledNode } from "@render-experiment/style-engine-pixi";
 import { createDropdownMenuBridge } from "./generated/api";
@@ -198,11 +197,7 @@ export function createDropdownMenu(
       for (const { event, listener } of pairs) {
         node.root.on(event as never, listener as never);
       }
-      // Apply highlighted variant.
-      node.apply({
-        highlighted: part.highlighted ? "true" : "false",
-        disabled: entry.disabled ? "true" : "false",
-      });
+      node.apply(part.variants as unknown as Record<string, string>);
       return pairs;
     });
   };
@@ -284,7 +279,7 @@ export function createDropdownMenu(
     positionerNode.root.x = anchor.x;
     positionerNode.root.y = anchor.y;
 
-    const side = placementToSide(api.content.positioning.placement);
+    const { side } = api.content.variants;
     const align = (api.content.positioning.placement.split("-")[1] ?? undefined) as
       | "start"
       | "end"
@@ -296,7 +291,7 @@ export function createDropdownMenu(
     contentNode.root.x = offset.x;
     contentNode.root.y = offset.y;
 
-    contentNode.apply({ side });
+    contentNode.apply(api.content.variants as unknown as Record<string, string>);
     positionerNode.apply({ anchored: "true" });
   };
 

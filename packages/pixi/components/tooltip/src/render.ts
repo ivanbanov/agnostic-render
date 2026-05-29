@@ -24,11 +24,7 @@
 
 import type { Container } from "pixi.js";
 import { normalize, type PixiListenerPair } from "@render-experiment/machine-pixi";
-import {
-  placementToSide,
-  type TooltipApi,
-  type TooltipProps,
-} from "@render-experiment/tooltip-core";
+import type { TooltipApi, TooltipProps } from "@render-experiment/tooltip-core";
 import { createTooltipBridge } from "./generated/api";
 import * as Styled from "./generated/elements";
 import { anchorOf, boundsToRect, edgePinOffset } from "./utils";
@@ -143,7 +139,7 @@ export function createTooltip(options: CreateTooltipOptions): TooltipHandle {
     positionerNode.root.x = anchor.x;
     positionerNode.root.y = anchor.y;
 
-    const side = placementToSide(api.content.positioning.placement);
+    const { side, red } = api.content.variants;
     const align = (api.content.positioning.placement.split("-")[1] ?? undefined) as
       | "start"
       | "end"
@@ -158,9 +154,9 @@ export function createTooltip(options: CreateTooltipOptions): TooltipHandle {
     contentRoot.x = offset.x;
     contentRoot.y = offset.y;
 
-    // Apply the "side" variant if we own the styled content (string mode).
+    // Apply variants if we own the styled content (string-content mode).
     if (contentNode) {
-      contentNode.apply({ side });
+      contentNode.apply({ side, red });
     }
     positionerNode.apply({ anchored: "true" });
   };

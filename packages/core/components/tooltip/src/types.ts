@@ -52,6 +52,18 @@ export type TooltipState = "closed" | "opening" | "open" | "closing";
 // Connect API (consumed by adapter render layer)
 // -----------------------------------------------------------------------------
 
+/**
+ * Variant prop set the content part renders with. Computed once in the
+ * connect (in terms of state + props) so every adapter consumes the
+ * same shape. Adapters spread it on their styled element:
+ *
+ *   <Styled.Content {...api.content.variants} ... />
+ */
+export interface TooltipContentVariants {
+  side: "top" | "bottom" | "left" | "right";
+  red: "true" | "false";
+}
+
 export interface TooltipApi {
   open: boolean;
   state: TooltipState;
@@ -60,6 +72,7 @@ export interface TooltipApi {
   content: {
     handlers: EventBindings;
     attrs: AttrBindings;
+    variants: TooltipContentVariants;
     positioning: PositioningOptions;
     rendered: boolean;
   };

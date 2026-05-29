@@ -11,6 +11,7 @@
 
 import {
   connector,
+  placementToSide,
   type AttrBindings,
   type EventBindings,
 } from "@render-experiment/machine-core";
@@ -117,6 +118,10 @@ export const connectDropdownMenu = connector<
     const isToggleKind = item.kind === "checkbox" || item.kind === "radio";
     return {
       highlighted,
+      variants: {
+        highlighted: highlighted ? "true" : "false",
+        disabled: item.disabled ? "true" : "false",
+      },
       handlers: {
         onPress: () => {
           if (item.disabled) return;
@@ -165,6 +170,9 @@ export const connectDropdownMenu = connector<
     content: {
       handlers: contentHandlers,
       attrs: contentAttrs,
+      variants: {
+        side: placementToSide(r.positioning.placement),
+      },
       positioning: r.positioning,
       rendered: open,
     },

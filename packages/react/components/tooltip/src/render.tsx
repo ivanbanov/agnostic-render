@@ -9,7 +9,6 @@ import {
 } from "react";
 import { mergeProps, normalize } from "@render-experiment/machine-react";
 import {
-  placementToSide,
   tooltipProps as resolveProps,
   type ResolvedTooltipProps,
   type TooltipApi,
@@ -154,7 +153,6 @@ function PositionedContent({
 
   const handlerProps = normalize(api.content.handlers as unknown as Record<string, unknown>);
   const attrProps = normalize(api.content.attrs as unknown as Record<string, unknown>);
-  const side = placementToSide(api.content.positioning.placement);
 
   // Two runtime numbers — that's the irreducible minimum. Everything else
   // is variants on the styled element.
@@ -164,13 +162,13 @@ function PositionedContent({
   // non-handler conflicts; both handlers fire when both sides have them.
   const merged = mergeProps(consumerProps, { ...handlerProps, ...attrProps });
 
+  // ctxProps is read for parity with native/pixi adapters that still
+  // need ResolvedTooltipProps; here `red` flows through api.content.variants.
+  void ctxProps;
+
   return (
     <Styled.Positioner anchored={anchor ? "true" : "false"} css={anchorCoords}>
-      <Styled.Content
-        {...merged}
-        side={side}
-        red={ctxProps.red ? "true" : "false"}
-      >
+      <Styled.Content {...merged} {...api.content.variants}>
         {children}
       </Styled.Content>
     </Styled.Positioner>

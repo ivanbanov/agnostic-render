@@ -44,7 +44,6 @@ import {
 } from "react-native";
 import { mergeProps, normalize } from "@render-experiment/machine-native";
 import {
-  placementToSide,
   tooltipProps as resolveProps,
   type ResolvedTooltipProps,
   type TooltipApi,
@@ -180,7 +179,7 @@ export function TooltipContent(props: TooltipContentProps) {
   const { api, props: ctxProps, anchor } = useTooltipCtxOrThrow();
 
   const rendered = api.content.rendered;
-  const side = placementToSide(api.content.positioning.placement);
+  const { side, red } = api.content.variants;
 
   // Wire Android back button to close (mirror of trackEscapeKey on web).
   useEffect(() => {
@@ -195,7 +194,7 @@ export function TooltipContent(props: TooltipContentProps) {
   if (!rendered) return null;
 
   const positionerStyle = resolvePositioner({ anchored: anchor ? "true" : "false" });
-  const contentStyle = resolveContent({ side, red: ctxProps.red ? "true" : "false" });
+  const contentStyle = resolveContent({ side, red });
 
   // Convert anchor center → absolute coords for the positioner.
   const positionedStyle = anchor
@@ -236,7 +235,7 @@ export function TooltipContent(props: TooltipContentProps) {
 // Equivalent of RN's edge-pinning trick: shift the content so the pinned
 // edge sits on the anchor point.
 function anchorContentTransform(
-  side: ReturnType<typeof placementToSide>,
+  side: "top" | "bottom" | "left" | "right",
 ): { transform?: Array<{ translateX?: number; translateY?: number }> } {
   switch (side) {
     case "top":

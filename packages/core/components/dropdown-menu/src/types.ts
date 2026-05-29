@@ -96,8 +96,27 @@ export interface DropdownMenuPart {
   attrs: AttrBindings;
 }
 
+/**
+ * Variant prop set the content part renders with. Computed once in the
+ * connect; adapters spread it on the styled element.
+ */
+export interface DropdownMenuContentVariants {
+  side: "top" | "bottom" | "left" | "right";
+}
+
+/**
+ * Variant prop set the item part renders with. `highlighted` is also
+ * exposed as a boolean for adapters that branch on it; `variants` is
+ * the styled-element-friendly string shape.
+ */
+export interface DropdownMenuItemVariants {
+  highlighted: "true" | "false";
+  disabled: "true" | "false";
+}
+
 export interface DropdownMenuItemPart extends DropdownMenuPart {
   highlighted: boolean;
+  variants: DropdownMenuItemVariants;
 }
 
 export interface DropdownMenuApi {
@@ -107,6 +126,7 @@ export interface DropdownMenuApi {
 
   trigger: DropdownMenuPart;
   content: DropdownMenuPart & {
+    variants: DropdownMenuContentVariants;
     positioning: PositioningOptions;
     rendered: boolean;
   };

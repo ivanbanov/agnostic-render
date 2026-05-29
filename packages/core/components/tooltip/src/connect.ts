@@ -12,7 +12,10 @@
  *   - props.ts    — resolver for raw props
  */
 
-import { connector } from "@render-experiment/machine-core";
+import {
+  connector,
+  placementToSide,
+} from "@render-experiment/machine-core";
 import { tooltipProps } from "./props";
 import type {
   TooltipApi,
@@ -94,6 +97,10 @@ export const connectTooltip = connector<
       attrs: {
         id: contentId,
         role: "tooltip",
+      },
+      variants: {
+        side: placementToSide(r.positioning.placement),
+        red: r.red ? "true" : "false",
       },
       positioning: r.positioning,
       rendered: open,

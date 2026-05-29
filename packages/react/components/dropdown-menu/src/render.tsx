@@ -12,7 +12,6 @@ import {
 } from "react";
 import { mergeProps, normalize } from "@render-experiment/machine-react";
 import {
-  placementToSide,
   type DropdownMenuApi,
   type DropdownMenuProps,
 } from "@render-experiment/dropdown-menu-core";
@@ -181,7 +180,6 @@ function PositionedContent({
   const attrProps = normalize(
     apiWithItems.content.attrs as unknown as Record<string, unknown>,
   );
-  const side = placementToSide(apiWithItems.content.positioning.placement);
   const anchorCoords = anchor ? { top: anchor.y, left: anchor.x } : undefined;
 
   const merged = mergeProps(consumerProps, { ...handlerProps, ...attrProps });
@@ -190,7 +188,7 @@ function PositionedContent({
     <Styled.Positioner anchored={anchor ? "true" : "false"} css={anchorCoords}>
       <Styled.Content
         {...merged}
-        side={side}
+        {...apiWithItems.content.variants}
         ref={contentRef}
       >
         <DropdownMenuCurrentApiRef.Provider value={apiWithItems}>
@@ -255,11 +253,7 @@ function ItemBase({
   const merged = mergeProps(consumerProps, machineProps);
 
   return (
-    <Styled.Item
-      {...merged}
-      highlighted={part.highlighted ? "true" : "false"}
-      disabled={disabled ? "true" : "false"}
-    >
+    <Styled.Item {...merged} {...part.variants}>
       <DropdownMenuItemCheckedRef.Provider value={checked ?? false}>
         {children}
       </DropdownMenuItemCheckedRef.Provider>

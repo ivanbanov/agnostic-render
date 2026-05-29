@@ -47,7 +47,6 @@ import {
 } from "react-native";
 import { mergeProps, normalize } from "@render-experiment/machine-native";
 import {
-  placementToSide,
   type DropdownMenuProps,
 } from "@render-experiment/dropdown-menu-core";
 import { useDropdownMenuApi } from "./generated/api";
@@ -176,7 +175,6 @@ export function DropdownMenuContent(props: DropdownMenuContentProps) {
 
   const registry = useDropdownMenuItemRegistry();
   const rendered = api.content.rendered;
-  const side = placementToSide(api.content.positioning.placement);
 
   // Subscribe to registry mutations so items show up after first paint.
   const [, forceUpdate] = useState(0);
@@ -203,7 +201,7 @@ export function DropdownMenuContent(props: DropdownMenuContentProps) {
   const positionerStyle = resolvePositioner({
     anchored: anchor ? "true" : "false",
   });
-  const contentStyle = resolveContent({ side });
+  const contentStyle = resolveContent(apiWithItems.content.variants);
   const positionedStyle = anchor
     ? {
         ...positionerStyle,
@@ -294,10 +292,7 @@ function ItemBase({
     part.handlers as unknown as Record<string, unknown>,
   );
 
-  const itemStyle = resolveItem({
-    highlighted: part.highlighted ? "true" : "false",
-    disabled: disabled ? "true" : "false",
-  });
+  const itemStyle = resolveItem(part.variants);
 
   const machineProps: Record<string, unknown> = {
     onPress: () => {
