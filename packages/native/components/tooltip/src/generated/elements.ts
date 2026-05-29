@@ -4,7 +4,7 @@
 
 import { resolveStyle, type TranslatedNativeStyle } from "@render-experiment/style-engine-native";
 
-// Source: core/components/tooltip/src/shared/styles → content
+// Source: shared/components/tooltip/src/styles → content
 export const content: TranslatedNativeStyle = {
   "base": {
     "position": "absolute",
@@ -48,7 +48,7 @@ export function resolveContent(selections: Record<string, string> = {}) {
   return resolveStyle(content, selections);
 }
 
-// Source: core/components/tooltip/src/shared/styles → positioner
+// Source: shared/components/tooltip/src/styles → positioner
 export const positioner: TranslatedNativeStyle = {
   "base": {
     "position": "fixed",

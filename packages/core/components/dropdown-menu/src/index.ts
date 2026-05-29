@@ -16,7 +16,7 @@ export * from "./machine";
 export * from "./store";
 export * from "./connect";
 export * from "./parts";
-export * as styles from "./shared/styles";
+export * as styles from "@render-experiment/dropdown-menu-shared";
 export * from "./utils";
 export {
   placementToSide,

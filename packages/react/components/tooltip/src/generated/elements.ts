@@ -4,7 +4,7 @@
 
 import { styled } from "@render-experiment/style-engine-react";
 
-// Source: core/components/tooltip/src/shared/styles → content
+// Source: shared/components/tooltip/src/styles → content
 export const Content = styled(
   "div",
   {
@@ -48,7 +48,7 @@ export const Content = styled(
 } as any,
 );
 
-// Source: core/components/tooltip/src/shared/styles → positioner
+// Source: shared/components/tooltip/src/styles → positioner
 export const Positioner = styled(
   "div",
   {

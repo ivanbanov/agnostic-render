@@ -1,5 +1,5 @@
 {
-  "name": "@render-experiment/dropdown-menu-core",
+  "name": "@render-experiment/tooltip-shared",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,7 +9,6 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@render-experiment/machine-core": "workspace:*",
-    "@render-experiment/dropdown-menu-shared": "workspace:*"
+    "@render-experiment/machine-core": "workspace:*"
   }
 }

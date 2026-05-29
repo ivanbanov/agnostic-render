@@ -4,7 +4,7 @@
 
 import { styled } from "@render-experiment/style-engine-pixi";
 
-// Source: core/components/dropdown-menu/src/shared/styles → content (primitive: graphics)
+// Source: shared/components/dropdown-menu/src/styles → content (primitive: graphics)
 export const Content = styled("graphics", {
   "base": {
     "position": "absolute",
@@ -40,7 +40,7 @@ export const Content = styled("graphics", {
   }
 });
 
-// Source: core/components/dropdown-menu/src/shared/styles → group (primitive: container)
+// Source: shared/components/dropdown-menu/src/styles → group (primitive: container)
 export const Group = styled("container", {
   "base": {
     "display": "block"
@@ -50,7 +50,7 @@ export const Group = styled("container", {
   "defaultVariants": {}
 });
 
-// Source: core/components/dropdown-menu/src/shared/styles → item (primitive: graphics)
+// Source: shared/components/dropdown-menu/src/styles → item (primitive: graphics)
 export const Item = styled("graphics", {
   "base": {
     "display": "flex",
@@ -85,7 +85,7 @@ export const Item = styled("graphics", {
   }
 });
 
-// Source: core/components/dropdown-menu/src/shared/styles → label (primitive: text)
+// Source: shared/components/dropdown-menu/src/styles → label (primitive: text)
 export const Label = styled("text", {
   "base": {
     "paddingY": 6,
@@ -101,7 +101,7 @@ export const Label = styled("text", {
   "defaultVariants": {}
 });
 
-// Source: core/components/dropdown-menu/src/shared/styles → positioner (primitive: container)
+// Source: shared/components/dropdown-menu/src/styles → positioner (primitive: container)
 export const Positioner = styled("container", {
   "base": {
     "position": "fixed",
@@ -124,7 +124,7 @@ export const Positioner = styled("container", {
   }
 });
 
-// Source: core/components/dropdown-menu/src/shared/styles → separator (primitive: graphics)
+// Source: shared/components/dropdown-menu/src/styles → separator (primitive: graphics)
 export const Separator = styled("graphics", {
   "base": {
     "height": 1,
