@@ -11,10 +11,10 @@
 
 import {
   connector,
-  placementToSide,
   type AttrBindings,
   type EventBindings,
 } from "@render-experiment/machine-core";
+import { placementToSide } from "@render-experiment/utils";
 import { dropdownMenuProps } from "./props";
 import type {
   DropdownMenuApi,

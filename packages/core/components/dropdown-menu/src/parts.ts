@@ -5,7 +5,12 @@
  * Types: each part's variant prop type. Paint lives in
  * @render-experiment/dropdown-menu-shared. Parts with no variants
  * (separator, label, group) don't get a type export.
+ *
+ * Variant types are component-scoped (DropdownMenuContentVariants, …)
+ * so the barrel's `export *` doesn't collide with other components.
  */
+
+import type { Side } from "@render-experiment/utils";
 
 export const parts = [
   "positioner",
@@ -17,15 +22,15 @@ export const parts = [
 ] as const;
 export type Part = (typeof parts)[number];
 
-export type PositionerVariants = {
+export type DropdownMenuPositionerVariants = {
   anchored: "true" | "false";
 };
 
-export type ContentVariants = {
-  side: "top" | "bottom" | "left" | "right";
+export type DropdownMenuContentVariants = {
+  side: Side;
 };
 
-export type ItemVariants = {
+export type DropdownMenuItemVariants = {
   highlighted: "true" | "false";
   disabled: "true" | "false";
 };

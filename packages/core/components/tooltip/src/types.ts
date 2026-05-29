@@ -6,11 +6,12 @@
  * those live next to the state machine in machine.ts.
  */
 
+import type { Part } from "@render-experiment/machine-core";
 import type {
-  Part,
   Placement,
   PositioningOptions,
-} from "@render-experiment/machine-core";
+} from "@render-experiment/utils";
+import type { TooltipContentVariants } from "./parts";
 
 export type { Placement, PositioningOptions };
 
@@ -50,18 +51,6 @@ export type TooltipState = "closed" | "opening" | "open" | "closing";
 // -----------------------------------------------------------------------------
 // Connect API (consumed by adapter render layer)
 // -----------------------------------------------------------------------------
-
-/**
- * Variant prop set the content part renders with. Computed once in the
- * connect (in terms of state + props) so every adapter consumes the
- * same shape. Adapters spread it on their styled element:
- *
- *   <Styled.Content {...api.content.variants} ... />
- */
-export interface TooltipContentVariants {
-  side: "top" | "bottom" | "left" | "right";
-  red: "true" | "false";
-}
 
 export interface TooltipApi {
   open: boolean;

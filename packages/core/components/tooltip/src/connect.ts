@@ -12,10 +12,8 @@
  *   - props.ts    — resolver for raw props
  */
 
-import {
-  connector,
-  placementToSide,
-} from "@render-experiment/machine-core";
+import { connector } from "@render-experiment/machine-core";
+import { placementToSide } from "@render-experiment/utils";
 import { tooltipProps } from "./props";
 import type {
   TooltipApi,

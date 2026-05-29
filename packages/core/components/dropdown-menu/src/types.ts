@@ -9,12 +9,15 @@
  * No defaults, no implementation — those live in props.ts and machine.ts.
  */
 
+import type { AttrBindings, Part } from "@render-experiment/machine-core";
 import type {
-  AttrBindings,
-  Part,
   Placement,
   PositioningOptions,
-} from "@render-experiment/machine-core";
+} from "@render-experiment/utils";
+import type {
+  DropdownMenuContentVariants,
+  DropdownMenuItemVariants,
+} from "./parts";
 
 export type { Placement, PositioningOptions };
 
@@ -90,23 +93,6 @@ export type DropdownMenuState = "idle" | "open";
 // -----------------------------------------------------------------------------
 // Connect API
 // -----------------------------------------------------------------------------
-
-/**
- * Variant prop set the content part renders with. Computed once in the
- * connect; adapters spread it on the styled element.
- */
-export interface DropdownMenuContentVariants {
-  side: "top" | "bottom" | "left" | "right";
-}
-
-/**
- * Variant prop set the item part renders with. `highlighted` is also
- * exposed as a boolean on the part for adapters that branch on it.
- */
-export interface DropdownMenuItemVariants {
-  highlighted: "true" | "false";
-  disabled: "true" | "false";
-}
 
 export type DropdownMenuItemPart = Part<
   DropdownMenuItemVariants,
