@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shallowEqual } from "../shallow-equal";
+import { shallowEqual } from "../src/shallow-equal";
 
 describe("shallowEqual", () => {
   describe("primitives", () => {

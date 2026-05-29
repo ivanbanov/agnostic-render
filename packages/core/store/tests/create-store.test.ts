@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createStore } from "../create-store";
+import { createStore } from "../src/create-store";
 
 describe("createStore", () => {
   describe("initialization", () => {

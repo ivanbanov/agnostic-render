@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import { createStore, shallowEqual } from "@render-experiment/store";
-import { useStore } from "../use-store";
+import { useStore } from "../src/use-store";
 
 describe("useStore", () => {
   it("returns the current state", () => {

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { shallowEqual } from "@render-experiment/store";
-import { createStoreProvider } from "../provider";
+import { createStoreProvider } from "../src/provider";
 
 interface TestState {
   count: number;
