@@ -11,7 +11,7 @@
 
 import type {
   AttrBindings,
-  EventBindings,
+  Part,
   Placement,
   PositioningOptions,
 } from "@render-experiment/machine-core";
@@ -91,11 +91,6 @@ export type DropdownMenuState = "idle" | "open";
 // Connect API
 // -----------------------------------------------------------------------------
 
-export interface DropdownMenuPart {
-  handlers: EventBindings;
-  attrs: AttrBindings;
-}
-
 /**
  * Variant prop set the content part renders with. Computed once in the
  * connect; adapters spread it on the styled element.
@@ -106,38 +101,36 @@ export interface DropdownMenuContentVariants {
 
 /**
  * Variant prop set the item part renders with. `highlighted` is also
- * exposed as a boolean for adapters that branch on it; `variants` is
- * the styled-element-friendly string shape.
+ * exposed as a boolean on the part for adapters that branch on it.
  */
 export interface DropdownMenuItemVariants {
   highlighted: "true" | "false";
   disabled: "true" | "false";
 }
 
-export interface DropdownMenuItemPart extends DropdownMenuPart {
-  highlighted: boolean;
-  variants: DropdownMenuItemVariants;
-}
+export type DropdownMenuItemPart = Part<
+  DropdownMenuItemVariants,
+  { highlighted: boolean }
+>;
 
 export interface DropdownMenuApi {
   open: boolean;
-  state: DropdownMenuState;
   setOpen: (next: boolean) => void;
 
-  trigger: DropdownMenuPart;
-  content: DropdownMenuPart & {
-    variants: DropdownMenuContentVariants;
-    positioning: PositioningOptions;
-    rendered: boolean;
+  parts: {
+    trigger: Part;
+    content: Part<
+      DropdownMenuContentVariants,
+      { positioning: PositioningOptions; rendered: boolean }
+    >;
+    /** Static parts — same attrs for every render call. */
+    separator: { attrs: AttrBindings };
+    label: { attrs: AttrBindings };
+    group: { attrs: AttrBindings };
   };
 
   /** Per-item part producer. */
   getItem: (item: DropdownMenuItemProps) => DropdownMenuItemPart;
-
-  /** Static parts — same attrs for every render call. */
-  separator: { attrs: AttrBindings };
-  label: { attrs: AttrBindings };
-  group: { attrs: AttrBindings };
 
   /**
    * Re-derive the api with the ordered list of menu items wired into the

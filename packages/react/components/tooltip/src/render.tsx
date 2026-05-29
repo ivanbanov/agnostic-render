@@ -69,8 +69,8 @@ export function TooltipTrigger(props: TooltipTriggerProps) {
   };
 
   const machineProps = {
-    ...normalize(api.trigger.handlers as unknown as Record<string, unknown>),
-    ...normalize(api.trigger.attrs as unknown as Record<string, unknown>),
+    ...normalize(api.parts.trigger.handlers as unknown as Record<string, unknown>),
+    ...normalize(api.parts.trigger.attrs as unknown as Record<string, unknown>),
   };
 
   const merged = mergeProps(
@@ -108,7 +108,7 @@ export interface TooltipContentProps
 export function TooltipContent(props: TooltipContentProps) {
   const { children, ...consumerProps } = props;
   const { api, props: ctxProps, triggerRef } = useTooltipContext();
-  if (!api.content.rendered) return null;
+  if (!api.parts.content.rendered) return null;
   return (
     <PositionedContent
       api={api}
@@ -140,7 +140,7 @@ function PositionedContent({
     const measure = () => {
       const trigger = triggerRef.current;
       if (!trigger) return;
-      setAnchor(anchorOf(trigger.getBoundingClientRect(), api.content.positioning));
+      setAnchor(anchorOf(trigger.getBoundingClientRect(), api.parts.content.positioning));
     };
     measure();
     window.addEventListener("scroll", measure, true);
@@ -149,10 +149,10 @@ function PositionedContent({
       window.removeEventListener("scroll", measure, true);
       window.removeEventListener("resize", measure);
     };
-  }, [api.content.positioning, triggerRef]);
+  }, [api.parts.content.positioning, triggerRef]);
 
-  const handlerProps = normalize(api.content.handlers as unknown as Record<string, unknown>);
-  const attrProps = normalize(api.content.attrs as unknown as Record<string, unknown>);
+  const handlerProps = normalize(api.parts.content.handlers as unknown as Record<string, unknown>);
+  const attrProps = normalize(api.parts.content.attrs as unknown as Record<string, unknown>);
 
   // Two runtime numbers — that's the irreducible minimum. Everything else
   // is variants on the styled element.
@@ -163,12 +163,12 @@ function PositionedContent({
   const merged = mergeProps(consumerProps, { ...handlerProps, ...attrProps });
 
   // ctxProps is read for parity with native/pixi adapters that still
-  // need ResolvedTooltipProps; here `red` flows through api.content.variants.
+  // need ResolvedTooltipProps; here `red` flows through api.parts.content.variants.
   void ctxProps;
 
   return (
     <Styled.Positioner anchored={anchor ? "true" : "false"} css={anchorCoords}>
-      <Styled.Content {...merged} {...api.content.variants}>
+      <Styled.Content {...merged} {...api.parts.content.variants}>
         {children}
       </Styled.Content>
     </Styled.Positioner>

@@ -160,26 +160,28 @@ export const connectDropdownMenu = connector<
 
   return {
     open,
-    state,
     setOpen(next) {
       if (open === next) return;
       send({ type: next ? "open" : "close" });
     },
 
-    trigger: { handlers: triggerHandlers, attrs: triggerAttrs },
-    content: {
-      handlers: contentHandlers,
-      attrs: contentAttrs,
-      variants: {
-        side: placementToSide(r.positioning.placement),
+    parts: {
+      trigger: { handlers: triggerHandlers, attrs: triggerAttrs },
+      content: {
+        handlers: contentHandlers,
+        attrs: contentAttrs,
+        variants: {
+          side: placementToSide(r.positioning.placement),
+        },
+        positioning: r.positioning,
+        rendered: open,
       },
-      positioning: r.positioning,
-      rendered: open,
+      separator: { attrs: { role: "separator" } },
+      label: { attrs: { role: "presentation" } },
+      group: { attrs: { role: "group" } },
     },
+
     getItem,
-    separator: { attrs: { role: "separator" } },
-    label: { attrs: { role: "presentation" } },
-    group: { attrs: { role: "group" } },
 
     withItems(nextItems) {
       return connectDropdownMenu({ state, context, props, send })(nextItems);

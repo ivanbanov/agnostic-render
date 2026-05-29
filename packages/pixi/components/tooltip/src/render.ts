@@ -101,7 +101,7 @@ export function createTooltip(options: CreateTooltipOptions): TooltipHandle {
   };
   const attachTriggerListeners = (api: TooltipApi) => {
     detachTriggerListeners();
-    const pairs = normalize(api.trigger.handlers as unknown as Record<string, unknown>);
+    const pairs = normalize(api.parts.trigger.handlers as unknown as Record<string, unknown>);
     for (const { event, listener } of pairs) {
       trigger.on(event as never, listener as never);
     }
@@ -119,7 +119,7 @@ export function createTooltip(options: CreateTooltipOptions): TooltipHandle {
   };
   const attachContentListeners = (api: TooltipApi) => {
     detachContentListeners();
-    const pairs = normalize(api.content.handlers as unknown as Record<string, unknown>);
+    const pairs = normalize(api.parts.content.handlers as unknown as Record<string, unknown>);
     if (pairs.length === 0) return;
     contentRoot.eventMode = "static";
     for (const { event, listener } of pairs) {
@@ -135,12 +135,12 @@ export function createTooltip(options: CreateTooltipOptions): TooltipHandle {
   const positionOverlay = (api: TooltipApi) => {
     const bounds = trigger.getBounds();
     const rect = boundsToRect(bounds);
-    const anchor = anchorOf(rect, api.content.positioning);
+    const anchor = anchorOf(rect, api.parts.content.positioning);
     positionerNode.root.x = anchor.x;
     positionerNode.root.y = anchor.y;
 
-    const { side, red } = api.content.variants;
-    const align = (api.content.positioning.placement.split("-")[1] ?? undefined) as
+    const { side, red } = api.parts.content.variants;
+    const align = (api.parts.content.positioning.placement.split("-")[1] ?? undefined) as
       | "start"
       | "end"
       | undefined;
@@ -169,7 +169,7 @@ export function createTooltip(options: CreateTooltipOptions): TooltipHandle {
     const api = bridge.getApi();
     attachTriggerListeners(api);
 
-    if (api.content.rendered) {
+    if (api.parts.content.rendered) {
       mount();
       attachContentListeners(api);
       positionOverlay(api);

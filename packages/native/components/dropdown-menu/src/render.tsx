@@ -136,7 +136,7 @@ export function DropdownMenuTrigger(props: DropdownMenuTriggerProps) {
   );
 
   const normalized = normalize(
-    api.trigger.handlers as unknown as Record<string, unknown>,
+    api.parts.trigger.handlers as unknown as Record<string, unknown>,
   );
 
   const machineProps: Record<string, unknown> = {
@@ -174,7 +174,7 @@ export function DropdownMenuContent(props: DropdownMenuContentProps) {
   void triggerRef;
 
   const registry = useDropdownMenuItemRegistry();
-  const rendered = api.content.rendered;
+  const rendered = api.parts.content.rendered;
 
   // Subscribe to registry mutations so items show up after first paint.
   const [, forceUpdate] = useState(0);
@@ -201,12 +201,12 @@ export function DropdownMenuContent(props: DropdownMenuContentProps) {
   const positionerStyle = resolvePositioner({
     anchored: anchor ? "true" : "false",
   });
-  const contentStyle = resolveContent(apiWithItems.content.variants);
+  const contentStyle = resolveContent(apiWithItems.parts.content.variants);
   const positionedStyle = anchor
     ? {
         ...positionerStyle,
         left: anchor.x,
-        top: anchor.y + anchor.height + apiWithItems.content.positioning.offset.main,
+        top: anchor.y + anchor.height + apiWithItems.parts.content.positioning.offset.main,
       }
     : positionerStyle;
 

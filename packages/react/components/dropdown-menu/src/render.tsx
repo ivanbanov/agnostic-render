@@ -76,8 +76,8 @@ export function DropdownMenuTrigger(props: DropdownMenuTriggerProps) {
   };
 
   const machineProps = {
-    ...normalize(api.trigger.handlers as unknown as Record<string, unknown>),
-    ...normalize(api.trigger.attrs as unknown as Record<string, unknown>),
+    ...normalize(api.parts.trigger.handlers as unknown as Record<string, unknown>),
+    ...normalize(api.parts.trigger.attrs as unknown as Record<string, unknown>),
   };
 
   const merged = mergeProps(consumerProps as Record<string, unknown>, machineProps);
@@ -101,7 +101,7 @@ export interface DropdownMenuContentProps
 export function DropdownMenuContent(props: DropdownMenuContentProps) {
   const { children, ...consumerProps } = props;
   const { api, triggerRef } = useDropdownMenuContext();
-  if (!api.content.rendered) return null;
+  if (!api.parts.content.rendered) return null;
   return (
     <PositionedContent
       api={api}
@@ -141,7 +141,7 @@ function PositionedContent({
       const trigger = triggerRef.current;
       if (!trigger) return;
       setAnchor(
-        anchorOf(trigger.getBoundingClientRect(), api.content.positioning),
+        anchorOf(trigger.getBoundingClientRect(), api.parts.content.positioning),
       );
     };
     measure();
@@ -151,7 +151,7 @@ function PositionedContent({
       window.removeEventListener("scroll", measure, true);
       window.removeEventListener("resize", measure);
     };
-  }, [api.content.positioning, triggerRef]);
+  }, [api.parts.content.positioning, triggerRef]);
 
   // Focus the content on open so keyboard handlers attach to it.
   useLayoutEffect(() => {
@@ -175,10 +175,10 @@ function PositionedContent({
   const apiWithItems = api.withItems(items);
 
   const handlerProps = normalize(
-    apiWithItems.content.handlers as unknown as Record<string, unknown>,
+    apiWithItems.parts.content.handlers as unknown as Record<string, unknown>,
   );
   const attrProps = normalize(
-    apiWithItems.content.attrs as unknown as Record<string, unknown>,
+    apiWithItems.parts.content.attrs as unknown as Record<string, unknown>,
   );
   const anchorCoords = anchor ? { top: anchor.y, left: anchor.x } : undefined;
 
@@ -188,7 +188,7 @@ function PositionedContent({
     <Styled.Positioner anchored={anchor ? "true" : "false"} css={anchorCoords}>
       <Styled.Content
         {...merged}
-        {...apiWithItems.content.variants}
+        {...apiWithItems.parts.content.variants}
         ref={contentRef}
       >
         <DropdownMenuCurrentApiRef.Provider value={apiWithItems}>
@@ -412,7 +412,7 @@ export type DropdownMenuSeparatorProps = ComponentPropsWithoutRef<"div">;
 export function DropdownMenuSeparator(props: DropdownMenuSeparatorProps) {
   const { api } = useDropdownMenuContext();
   const attrProps = normalize(
-    api.separator.attrs as unknown as Record<string, unknown>,
+    api.parts.separator.attrs as unknown as Record<string, unknown>,
   );
   const merged = mergeProps(props as Record<string, unknown>, attrProps);
   return <Styled.Separator {...merged} />;
@@ -427,7 +427,7 @@ export function DropdownMenuLabel(props: DropdownMenuLabelProps) {
   const { children, ...consumerProps } = props;
   const { api } = useDropdownMenuContext();
   const attrProps = normalize(
-    api.label.attrs as unknown as Record<string, unknown>,
+    api.parts.label.attrs as unknown as Record<string, unknown>,
   );
   const merged = mergeProps(consumerProps as Record<string, unknown>, attrProps);
   return <Styled.Label {...merged}>{children}</Styled.Label>;
@@ -442,7 +442,7 @@ export function DropdownMenuGroup(props: DropdownMenuGroupProps) {
   const { children, ...consumerProps } = props;
   const { api } = useDropdownMenuContext();
   const attrProps = normalize(
-    api.group.attrs as unknown as Record<string, unknown>,
+    api.parts.group.attrs as unknown as Record<string, unknown>,
   );
   const merged = mergeProps(consumerProps as Record<string, unknown>, attrProps);
   return <Styled.Group {...merged}>{children}</Styled.Group>;

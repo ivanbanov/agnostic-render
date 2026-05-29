@@ -38,72 +38,73 @@ export const connectTooltip = connector<
 
   return {
     open,
-    state,
     setOpen(next) {
       if (open === next) return;
       send({ type: next ? "open" : "close" });
     },
-    trigger: {
-      handlers: {
-        onPointerMove: (event) => {
-          if (event?.defaultPrevented) return;
-          if (r.disabled) return;
-          if (event?.pointerType === "touch") return;
-          send({ type: "pointer.move" });
+    parts: {
+      trigger: {
+        handlers: {
+          onPointerMove: (event) => {
+            if (event?.defaultPrevented) return;
+            if (r.disabled) return;
+            if (event?.pointerType === "touch") return;
+            send({ type: "pointer.move" });
+          },
+          onPointerLeave: () => {
+            if (r.disabled) return;
+            send({ type: "pointer.leave" });
+          },
+          onPointerDown: (event) => {
+            if (event?.defaultPrevented) return;
+            if (r.disabled) return;
+            if (event?.button !== undefined && event.button !== 0) return;
+            if (!r.closeOnPointerDown) return;
+            send({ type: "close", src: "trigger.pointerdown" });
+          },
+          onPress: (event) => {
+            if (event?.defaultPrevented) return;
+            if (r.disabled) return;
+            if (!r.closeOnClick) return;
+            send({ type: "close", src: "trigger.click" });
+          },
+          onFocus: () => {
+            if (r.disabled) return;
+            send({ type: "open", src: "trigger.focus" });
+          },
+          onBlur: () => {
+            if (r.disabled) return;
+            send({ type: "close", src: "trigger.blur" });
+          },
         },
-        onPointerLeave: () => {
-          if (r.disabled) return;
-          send({ type: "pointer.leave" });
-        },
-        onPointerDown: (event) => {
-          if (event?.defaultPrevented) return;
-          if (r.disabled) return;
-          if (event?.button !== undefined && event.button !== 0) return;
-          if (!r.closeOnPointerDown) return;
-          send({ type: "close", src: "trigger.pointerdown" });
-        },
-        onPress: (event) => {
-          if (event?.defaultPrevented) return;
-          if (r.disabled) return;
-          if (!r.closeOnClick) return;
-          send({ type: "close", src: "trigger.click" });
-        },
-        onFocus: () => {
-          if (r.disabled) return;
-          send({ type: "open", src: "trigger.focus" });
-        },
-        onBlur: () => {
-          if (r.disabled) return;
-          send({ type: "close", src: "trigger.blur" });
-        },
-      },
-      attrs: {
-        id: triggerId,
-        describedBy: open ? contentId : undefined,
-        disabled: r.disabled,
-      },
-    },
-    content: {
-      handlers: {
-        onPointerEnter: () => {
-          if (!r.interactive) return;
-          send({ type: "content.pointer.move" });
-        },
-        onPointerLeave: () => {
-          if (!r.interactive) return;
-          send({ type: "content.pointer.leave" });
+        attrs: {
+          id: triggerId,
+          describedBy: open ? contentId : undefined,
+          disabled: r.disabled,
         },
       },
-      attrs: {
-        id: contentId,
-        role: "tooltip",
+      content: {
+        handlers: {
+          onPointerEnter: () => {
+            if (!r.interactive) return;
+            send({ type: "content.pointer.move" });
+          },
+          onPointerLeave: () => {
+            if (!r.interactive) return;
+            send({ type: "content.pointer.leave" });
+          },
+        },
+        attrs: {
+          id: contentId,
+          role: "tooltip",
+        },
+        variants: {
+          side: placementToSide(r.positioning.placement),
+          red: r.red ? "true" : "false",
+        },
+        positioning: r.positioning,
+        rendered: open,
       },
-      variants: {
-        side: placementToSide(r.positioning.placement),
-        red: r.red ? "true" : "false",
-      },
-      positioning: r.positioning,
-      rendered: open,
     },
   };
 });

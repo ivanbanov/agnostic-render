@@ -17,7 +17,7 @@
  * Differences vs React:
  *   - Items are an upfront data array, not children + a registry.
  *   - Keyboard (Arrow / Enter / Home / End / typeahead) is window-level and
- *     dispatched to api.trigger.handlers.onKeyDown / api.content.handlers.onKeyDown
+ *     dispatched to api.parts.trigger.handlers.onKeyDown / api.parts.content.handlers.onKeyDown
  *     directly (Pixi has no per-node key events).
  *   - Outside-pointerdown to close lives in the render layer (stage events).
  */
@@ -166,7 +166,7 @@ export function createDropdownMenu(
   };
   const attachTrigger = (api: DropdownMenuApi) => {
     detachTrigger();
-    const pairs = normalize(api.trigger.handlers as unknown as Record<string, unknown>);
+    const pairs = normalize(api.parts.trigger.handlers as unknown as Record<string, unknown>);
     for (const { event, listener } of pairs) {
       trigger.on(event as never, listener as never);
     }
@@ -216,7 +216,7 @@ export function createDropdownMenu(
       // closed, trigger handles ArrowDown/Enter/Space to open.
       const latest = bridge.getApi().withItems(currentItemProps());
       const handler = (
-        latest.open ? latest.content.handlers : latest.trigger.handlers
+        latest.open ? latest.parts.content.handlers : latest.parts.trigger.handlers
       ).onKeyDown as ((e: KeyboardEvent) => void) | undefined;
       handler?.(event);
     };
@@ -275,12 +275,12 @@ export function createDropdownMenu(
 
   const positionOverlay = (api: DropdownMenuApi) => {
     const rect = boundsToRect(trigger.getBounds());
-    const anchor = anchorOf(rect, api.content.positioning);
+    const anchor = anchorOf(rect, api.parts.content.positioning);
     positionerNode.root.x = anchor.x;
     positionerNode.root.y = anchor.y;
 
-    const { side } = api.content.variants;
-    const align = (api.content.positioning.placement.split("-")[1] ?? undefined) as
+    const { side } = api.parts.content.variants;
+    const align = (api.parts.content.positioning.placement.split("-")[1] ?? undefined) as
       | "start"
       | "end"
       | undefined;
@@ -291,7 +291,7 @@ export function createDropdownMenu(
     contentNode.root.x = offset.x;
     contentNode.root.y = offset.y;
 
-    contentNode.apply(api.content.variants as unknown as Record<string, string>);
+    contentNode.apply(api.parts.content.variants as unknown as Record<string, string>);
     positionerNode.apply({ anchored: "true" });
   };
 
@@ -311,7 +311,7 @@ export function createDropdownMenu(
     const api = bridge.getApi().withItems(currentItemProps());
     attachTrigger(api);
 
-    if (api.content.rendered) {
+    if (api.parts.content.rendered) {
       mount();
       attachItems(api);
       attachKeyListener();

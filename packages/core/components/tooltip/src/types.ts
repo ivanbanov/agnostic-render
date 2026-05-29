@@ -7,8 +7,7 @@
  */
 
 import type {
-  AttrBindings,
-  EventBindings,
+  Part,
   Placement,
   PositioningOptions,
 } from "@render-experiment/machine-core";
@@ -66,14 +65,12 @@ export interface TooltipContentVariants {
 
 export interface TooltipApi {
   open: boolean;
-  state: TooltipState;
   setOpen: (next: boolean) => void;
-  trigger: { handlers: EventBindings; attrs: AttrBindings };
-  content: {
-    handlers: EventBindings;
-    attrs: AttrBindings;
-    variants: TooltipContentVariants;
-    positioning: PositioningOptions;
-    rendered: boolean;
+  parts: {
+    trigger: Part;
+    content: Part<
+      TooltipContentVariants,
+      { positioning: PositioningOptions; rendered: boolean }
+    >;
   };
 }
