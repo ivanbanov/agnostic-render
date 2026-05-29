@@ -9,9 +9,10 @@
  *   - utils.ts    — PRINTABLE_KEY_RE and item helpers
  */
 
-import type {
-  AttrBindings,
-  EventBindings,
+import {
+  connector,
+  type AttrBindings,
+  type EventBindings,
 } from "@render-experiment/machine-core";
 import { dropdownMenuProps } from "./props";
 import type {
@@ -24,22 +25,12 @@ import type {
 } from "./types";
 import { PRINTABLE_KEY_RE } from "./utils";
 
-export function connect(
-  state: DropdownMenuState,
-  context: DropdownMenuContext,
-  props: DropdownMenuProps,
-  send: (event: { type: string; [key: string]: unknown }) => void,
-): DropdownMenuApi {
-  return makeApi(state, context, props, send, []);
-}
-
-function makeApi(
-  state: DropdownMenuState,
-  context: DropdownMenuContext,
-  props: DropdownMenuProps,
-  send: (event: { type: string; [key: string]: unknown }) => void,
-  items: MenuItemProps[],
-): DropdownMenuApi {
+export const connect = connector<
+  DropdownMenuState,
+  DropdownMenuContext,
+  DropdownMenuProps,
+  DropdownMenuApi
+>()(({ state, context, props, send }, items: MenuItemProps[] = []): DropdownMenuApi => {
   const r = dropdownMenuProps(props);
   const open = state === "open";
 
@@ -183,7 +174,7 @@ function makeApi(
     group: { attrs: { role: "group" } },
 
     withItems(nextItems) {
-      return makeApi(state, context, props, send, nextItems);
+      return connect({ state, context, props, send })(nextItems);
     },
   };
-}
+});

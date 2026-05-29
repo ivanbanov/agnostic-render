@@ -36,11 +36,11 @@ export function createDropdownMenuBridge(props: DropdownMenuProps): DropdownMenu
   return {
     runtime,
     getApi: () =>
-      connectDropdownMenu(
-        machine.getState() as DropdownMenuState,
-        machine.getContext(),
-        machine.getProps(),
-        machine.send,
-      ),
+      connectDropdownMenu({
+        state: machine.getState() as DropdownMenuState,
+        context: machine.getContext(),
+        props: machine.getProps(),
+        send: machine.send,
+      })(),
   };
 }

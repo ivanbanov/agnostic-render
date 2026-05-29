@@ -22,10 +22,10 @@ export function useDropdownMenuApi(props: DropdownMenuProps): DropdownMenuApi {
     dropdownMenuMachineWithAdapter,
     props,
   );
-  return connectDropdownMenu(
-    machine.getState() as DropdownMenuState,
-    machine.getContext(),
-    machine.getProps(),
-    machine.send,
-  );
+  return connectDropdownMenu({
+    state: machine.getState() as DropdownMenuState,
+    context: machine.getContext(),
+    props: machine.getProps(),
+    send: machine.send,
+  })();
 }

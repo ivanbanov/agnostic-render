@@ -36,11 +36,11 @@ export function createTooltipBridge(props: TooltipProps): TooltipBridge {
   return {
     runtime,
     getApi: () =>
-      connectTooltip(
-        machine.getState() as TooltipState,
-        machine.getContext(),
-        machine.getProps(),
-        machine.send,
-      ),
+      connectTooltip({
+        state: machine.getState() as TooltipState,
+        context: machine.getContext(),
+        props: machine.getProps(),
+        send: machine.send,
+      })(),
   };
 }

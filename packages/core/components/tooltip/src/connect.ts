@@ -12,6 +12,7 @@
  *   - props.ts    — resolver for raw props
  */
 
+import { connector } from "@render-experiment/machine-core";
 import { tooltipProps } from "./props";
 import type {
   TooltipApi,
@@ -20,12 +21,12 @@ import type {
   TooltipState,
 } from "./types";
 
-export function connect(
-  state: TooltipState,
-  context: TooltipContext,
-  props: TooltipProps,
-  send: (event: { type: string; [key: string]: unknown }) => void,
-): TooltipApi {
+export const connect = connector<
+  TooltipState,
+  TooltipContext,
+  TooltipProps,
+  TooltipApi
+>()(({ state, context, props, send }) => {
   void context;
   const r = tooltipProps(props);
   const open = state === "open" || state === "closing";
@@ -98,4 +99,4 @@ export function connect(
       rendered: open,
     },
   };
-}
+});

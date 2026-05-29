@@ -219,12 +219,12 @@ export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
     ${camel}MachineWithAdapter,
     props,
   );
-  return connect${pascal}(
-    machine.getState() as ${pascal}State,
-    machine.getContext(),
-    machine.getProps(),
-    machine.send,
-  );
+  return connect${pascal}({
+    state: machine.getState() as ${pascal}State,
+    context: machine.getContext(),
+    props: machine.getProps(),
+    send: machine.send,
+  })();
 }
 `;
 }
@@ -281,12 +281,12 @@ export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
     ${camel}MachineWithAdapter,
     props,
   );
-  return connect${pascal}(
-    machine.getState() as ${pascal}State,
-    machine.getContext(),
-    machine.getProps(),
-    machine.send,
-  );
+  return connect${pascal}({
+    state: machine.getState() as ${pascal}State,
+    context: machine.getContext(),
+    props: machine.getProps(),
+    send: machine.send,
+  })();
 }
 `;
 }
@@ -368,12 +368,12 @@ export function create${pascal}Bridge(props: ${pascal}Props): ${pascal}Bridge {
   return {
     runtime,
     getApi: () =>
-      connect${pascal}(
-        machine.getState() as ${pascal}State,
-        machine.getContext(),
-        machine.getProps(),
-        machine.send,
-      ),
+      connect${pascal}({
+        state: machine.getState() as ${pascal}State,
+        context: machine.getContext(),
+        props: machine.getProps(),
+        send: machine.send,
+      })(),
   };
 }
 `;
