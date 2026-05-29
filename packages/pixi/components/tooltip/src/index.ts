@@ -1,5 +1,4 @@
-export { createTooltip } from "./render";
-export type { CreateTooltipOptions, TooltipHandle } from "./render";
+export * from "./render";
 export type {
   Placement,
   PositioningOptions,

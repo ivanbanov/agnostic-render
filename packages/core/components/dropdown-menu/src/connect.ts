@@ -20,17 +20,17 @@ import type {
   DropdownMenuContext,
   DropdownMenuProps,
   DropdownMenuState,
-  MenuItemPart,
-  MenuItemProps,
+  DropdownMenuItemPart,
+  DropdownMenuItemProps,
 } from "./types";
 import { PRINTABLE_KEY_RE } from "./utils";
 
-export const connect = connector<
+export const connectDropdownMenu = connector<
   DropdownMenuState,
   DropdownMenuContext,
   DropdownMenuProps,
   DropdownMenuApi
->()(({ state, context, props, send }, items: MenuItemProps[] = []): DropdownMenuApi => {
+>()(({ state, context, props, send }, items: DropdownMenuItemProps[] = []): DropdownMenuApi => {
   const r = dropdownMenuProps(props);
   const open = state === "open";
 
@@ -112,7 +112,7 @@ export const connect = connector<
     labelledBy: triggerId,
   };
 
-  const getItem = (item: MenuItemProps): MenuItemPart => {
+  const getItem = (item: DropdownMenuItemProps): DropdownMenuItemPart => {
     const highlighted = context.highlightedValue === item.value;
     const isToggleKind = item.kind === "checkbox" || item.kind === "radio";
     return {
@@ -174,7 +174,7 @@ export const connect = connector<
     group: { attrs: { role: "group" } },
 
     withItems(nextItems) {
-      return connect({ state, context, props, send })(nextItems);
+      return connectDropdownMenu({ state, context, props, send })(nextItems);
     },
   };
 });

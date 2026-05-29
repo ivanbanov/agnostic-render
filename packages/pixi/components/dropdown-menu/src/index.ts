@@ -1,14 +1,9 @@
-export { createDropdownMenu } from "./render";
-export type {
-  CreateDropdownMenuOptions,
-  DropdownMenuHandle,
-  DropdownMenuItemConfig,
-} from "./render";
+export * from "./render";
 export type {
   DropdownMenuApi,
+  DropdownMenuItemProps,
   DropdownMenuProps,
   DropdownMenuState,
-  MenuItemProps,
   Placement,
   PositioningOptions,
 } from "@render-experiment/dropdown-menu-core";

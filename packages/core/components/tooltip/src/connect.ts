@@ -21,7 +21,7 @@ import type {
   TooltipState,
 } from "./types";
 
-export const connect = connector<
+export const connectTooltip = connector<
   TooltipState,
   TooltipContext,
   TooltipProps,

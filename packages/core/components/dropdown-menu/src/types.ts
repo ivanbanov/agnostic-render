@@ -12,30 +12,11 @@
 import type {
   AttrBindings,
   EventBindings,
+  Placement,
+  PositioningOptions,
 } from "@render-experiment/machine-core";
 
-// -----------------------------------------------------------------------------
-// Positioning (logical — same shape as tooltip)
-// -----------------------------------------------------------------------------
-
-export type Placement =
-  | "top"
-  | "top-start"
-  | "top-end"
-  | "bottom"
-  | "bottom-start"
-  | "bottom-end"
-  | "left"
-  | "left-start"
-  | "left-end"
-  | "right"
-  | "right-start"
-  | "right-end";
-
-export interface PositioningOptions {
-  placement: Placement;
-  offset: { main: number; cross: number };
-}
+export type { Placement, PositioningOptions };
 
 // -----------------------------------------------------------------------------
 // Caller-facing props (Radix-shaped)
@@ -69,7 +50,7 @@ export interface DropdownMenuProps {
 // Item-level props (each Item the consumer renders supplies these)
 // -----------------------------------------------------------------------------
 
-export interface MenuItemProps {
+export interface DropdownMenuItemProps {
   /** Stable identifier within this menu. */
   value: string;
   /** Visual text for typeahead matching; defaults to `value` if absent. */
@@ -110,12 +91,12 @@ export type DropdownMenuState = "idle" | "open";
 // Connect API
 // -----------------------------------------------------------------------------
 
-export interface MenuPart {
+export interface DropdownMenuPart {
   handlers: EventBindings;
   attrs: AttrBindings;
 }
 
-export interface MenuItemPart extends MenuPart {
+export interface DropdownMenuItemPart extends DropdownMenuPart {
   highlighted: boolean;
 }
 
@@ -124,14 +105,14 @@ export interface DropdownMenuApi {
   state: DropdownMenuState;
   setOpen: (next: boolean) => void;
 
-  trigger: MenuPart;
-  content: MenuPart & {
+  trigger: DropdownMenuPart;
+  content: DropdownMenuPart & {
     positioning: PositioningOptions;
     rendered: boolean;
   };
 
   /** Per-item part producer. */
-  getItem: (item: MenuItemProps) => MenuItemPart;
+  getItem: (item: DropdownMenuItemProps) => DropdownMenuItemPart;
 
   /** Static parts — same attrs for every render call. */
   separator: { attrs: AttrBindings };
@@ -144,5 +125,5 @@ export interface DropdownMenuApi {
    * it's about to render so that ARROW_DOWN, typeahead, etc. can compute
    * "next item" without storing the list inside the machine context.
    */
-  withItems: (items: MenuItemProps[]) => DropdownMenuApi;
+  withItems: (items: DropdownMenuItemProps[]) => DropdownMenuApi;
 }

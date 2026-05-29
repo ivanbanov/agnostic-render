@@ -46,22 +46,6 @@ export const DropdownMenu = Object.assign(DropdownMenuRoot, {
   Group: DropdownMenuGroup,
 });
 
-export type {
-  DropdownMenuCheckboxItemProps,
-  DropdownMenuContentProps,
-  DropdownMenuGroupProps,
-  DropdownMenuItemIndicatorProps,
-  DropdownMenuItemProps,
-  DropdownMenuLabelProps,
-  DropdownMenuRadioGroupProps,
-  DropdownMenuRadioItemProps,
-  DropdownMenuRootProps,
-  DropdownMenuTriggerProps,
-} from "./render";
-
-export { useDropdownMenuApi } from "./api";
-export {
-  useDropdownMenuContext,
-  DropdownMenuContextRef,
-} from "./context";
-export type { DropdownMenuContextValue } from "./context";
+export * from "./render";
+export * from "./generated/api";
+export * from "./context";

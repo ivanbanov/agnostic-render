@@ -2,7 +2,7 @@ import { createContext, useContext, type MutableRefObject } from "react";
 import { View } from "react-native";
 import type {
   DropdownMenuApi,
-  MenuItemProps,
+  DropdownMenuItemProps,
 } from "@render-experiment/dropdown-menu-core";
 
 export interface DropdownMenuContextValue {
@@ -31,16 +31,16 @@ export function useDropdownMenuContext(): DropdownMenuContextValue {
 // Items registry — same shape as the React DOM adapter.
 // -----------------------------------------------------------------------------
 
-export interface ItemRegistry {
-  register: (item: MenuItemProps, key: string) => () => void;
-  read: () => MenuItemProps[];
+export interface DropdownMenuItemRegistry {
+  register: (item: DropdownMenuItemProps, key: string) => () => void;
+  read: () => DropdownMenuItemProps[];
   subscribe: (listener: () => void) => () => void;
 }
 
-export const ItemRegistryRef = createContext<ItemRegistry | null>(null);
+export const DropdownMenuItemRegistryRef = createContext<DropdownMenuItemRegistry | null>(null);
 
-export function useItemRegistry(): ItemRegistry {
-  const ctx = useContext(ItemRegistryRef);
+export function useDropdownMenuItemRegistry(): DropdownMenuItemRegistry {
+  const ctx = useContext(DropdownMenuItemRegistryRef);
   if (!ctx) {
     throw new Error(
       "DropdownMenu.Item must be used inside <DropdownMenu.Content>",
@@ -49,8 +49,8 @@ export function useItemRegistry(): ItemRegistry {
   return ctx;
 }
 
-export function createItemRegistry(): ItemRegistry {
-  const items = new Map<string, MenuItemProps>();
+export function createDropdownMenuItemRegistry(): DropdownMenuItemRegistry {
+  const items = new Map<string, DropdownMenuItemProps>();
   const listeners = new Set<() => void>();
   const notify = () => listeners.forEach((l) => l());
   return {
@@ -74,10 +74,10 @@ export function createItemRegistry(): ItemRegistry {
 // Items-aware api
 // -----------------------------------------------------------------------------
 
-export const CurrentApiRef = createContext<DropdownMenuApi | null>(null);
+export const DropdownMenuCurrentApiRef = createContext<DropdownMenuApi | null>(null);
 
-export function useCurrentApi(): DropdownMenuApi {
-  const ctx = useContext(CurrentApiRef);
+export function useDropdownMenuCurrentApi(): DropdownMenuApi {
+  const ctx = useContext(DropdownMenuCurrentApiRef);
   if (!ctx) {
     throw new Error(
       "DropdownMenu items must be used inside <DropdownMenu.Content>",
@@ -90,19 +90,19 @@ export function useCurrentApi(): DropdownMenuApi {
 // RadioGroup / ItemChecked
 // -----------------------------------------------------------------------------
 
-export interface RadioGroupValue {
+export interface DropdownMenuRadioGroupValue {
   value: string | undefined;
   onValueChange: (next: string) => void;
 }
 
-export const RadioGroupContextRef = createContext<RadioGroupValue | null>(null);
+export const DropdownMenuRadioGroupContextRef = createContext<DropdownMenuRadioGroupValue | null>(null);
 
-export function useRadioGroup(): RadioGroupValue | null {
-  return useContext(RadioGroupContextRef);
+export function useDropdownMenuRadioGroup(): DropdownMenuRadioGroupValue | null {
+  return useContext(DropdownMenuRadioGroupContextRef);
 }
 
-export const ItemCheckedRef = createContext<boolean | "indeterminate">(false);
+export const DropdownMenuItemCheckedRef = createContext<boolean | "indeterminate">(false);
 
-export function useItemChecked() {
-  return useContext(ItemCheckedRef);
+export function useDropdownMenuItemChecked() {
+  return useContext(DropdownMenuItemCheckedRef);
 }

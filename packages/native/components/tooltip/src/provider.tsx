@@ -9,20 +9,20 @@
  *
  * The provider renders an absolutely-positioned, pointer-events-passthrough
  * View on top of children. Tooltip.Content nodes register themselves via
- * the PortalContext; the provider re-renders to display them.
+ * the TooltipPortalContext; the provider re-renders to display them.
  */
 import { useCallback, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
-import { PortalContext, type PortalEntry } from "./context";
+import { TooltipPortalContext, type TooltipPortalEntry } from "./context";
 
 export interface TooltipProviderProps {
   children: ReactNode;
 }
 
 export function TooltipProvider({ children }: TooltipProviderProps) {
-  const [entries, setEntries] = useState<PortalEntry[]>([]);
+  const [entries, setEntries] = useState<TooltipPortalEntry[]>([]);
 
-  const mount = useCallback((entry: PortalEntry) => {
+  const mount = useCallback((entry: TooltipPortalEntry) => {
     setEntries((prev) => {
       const without = prev.filter((e) => e.id !== entry.id);
       return [...without, entry];
@@ -34,7 +34,7 @@ export function TooltipProvider({ children }: TooltipProviderProps) {
   }, []);
 
   return (
-    <PortalContext.Provider value={{ mount, unmount }}>
+    <TooltipPortalContext.Provider value={{ mount, unmount }}>
       <View style={styles.root}>
         {children}
         <View
@@ -50,7 +50,7 @@ export function TooltipProvider({ children }: TooltipProviderProps) {
           ))}
         </View>
       </View>
-    </PortalContext.Provider>
+    </TooltipPortalContext.Provider>
   );
 }
 

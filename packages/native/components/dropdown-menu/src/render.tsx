@@ -50,20 +50,20 @@ import {
   placementToSide,
   type DropdownMenuProps,
 } from "@render-experiment/dropdown-menu-core";
-import { useDropdownMenuApi } from "./api";
+import { useDropdownMenuApi } from "./generated/api";
 import {
-  CurrentApiRef,
+  DropdownMenuCurrentApiRef,
   DropdownMenuContextRef,
-  ItemCheckedRef,
-  ItemRegistryRef,
-  RadioGroupContextRef,
-  createItemRegistry,
-  useCurrentApi,
+  DropdownMenuItemCheckedRef,
+  DropdownMenuItemRegistryRef,
+  DropdownMenuRadioGroupContextRef,
+  createDropdownMenuItemRegistry,
+  useDropdownMenuCurrentApi,
   useDropdownMenuContext,
-  useItemChecked,
-  useItemRegistry,
-  useRadioGroup,
-  type RadioGroupValue,
+  useDropdownMenuItemChecked,
+  useDropdownMenuItemRegistry,
+  useDropdownMenuRadioGroup,
+  type DropdownMenuRadioGroupValue,
 } from "./context";
 import {
   resolveContent,
@@ -72,7 +72,7 @@ import {
   resolveLabel,
   resolvePositioner,
   resolveSeparator,
-} from "./elements";
+} from "./generated/elements";
 
 // =============================================================================
 // <DropdownMenu> — root provider
@@ -91,16 +91,16 @@ export function DropdownMenuRoot(props: DropdownMenuRootProps) {
   const triggerRef = useRef<View | null>(null);
   const [anchor, setAnchor] =
     useState<DropdownMenuRootContextAnchor>(null);
-  const itemRegistry = useMemo(createItemRegistry, []);
+  const itemRegistry = useMemo(createDropdownMenuItemRegistry, []);
   const api = useDropdownMenuApi({ id, ...rest });
 
   return (
     <DropdownMenuContextRef.Provider
       value={{ api, triggerRef, anchor, setAnchor }}
     >
-      <ItemRegistryRef.Provider value={itemRegistry}>
+      <DropdownMenuItemRegistryRef.Provider value={itemRegistry}>
         {children}
-      </ItemRegistryRef.Provider>
+      </DropdownMenuItemRegistryRef.Provider>
     </DropdownMenuContextRef.Provider>
   );
 }
@@ -174,7 +174,7 @@ export function DropdownMenuContent(props: DropdownMenuContentProps) {
   const { api, anchor, triggerRef } = useDropdownMenuContext();
   void triggerRef;
 
-  const registry = useItemRegistry();
+  const registry = useDropdownMenuItemRegistry();
   const rendered = api.content.rendered;
   const side = placementToSide(api.content.positioning.placement);
 
@@ -237,9 +237,9 @@ export function DropdownMenuContent(props: DropdownMenuContentProps) {
       />
       <View style={positionedStyle} pointerEvents="box-none">
         <View {...(merged as ViewProps)}>
-          <CurrentApiRef.Provider value={apiWithItems}>
+          <DropdownMenuCurrentApiRef.Provider value={apiWithItems}>
             {children}
-          </CurrentApiRef.Provider>
+          </DropdownMenuCurrentApiRef.Provider>
         </View>
       </View>
     </>
@@ -271,8 +271,8 @@ function ItemBase({
   children,
   consumerProps,
 }: ItemBaseProps) {
-  const api = useCurrentApi();
-  const registry = useItemRegistry();
+  const api = useDropdownMenuCurrentApi();
+  const registry = useDropdownMenuItemRegistry();
   const itemKey = useId();
 
   useLayoutEffect(() => {
@@ -311,11 +311,11 @@ function ItemBase({
 
   return (
     <Pressable {...(merged as PressableProps)}>
-      <ItemCheckedRef.Provider value={checked ?? false}>
+      <DropdownMenuItemCheckedRef.Provider value={checked ?? false}>
         {renderTextSafe(children, {
           color: (itemStyle.color as string) ?? "#fff",
         })}
-      </ItemCheckedRef.Provider>
+      </DropdownMenuItemCheckedRef.Provider>
     </Pressable>
   );
 }
@@ -395,14 +395,14 @@ export function DropdownMenuRadioGroup({
   onValueChange,
   children,
 }: DropdownMenuRadioGroupProps) {
-  const ctxValue = useMemo<RadioGroupValue>(
+  const ctxValue = useMemo<DropdownMenuRadioGroupValue>(
     () => ({ value, onValueChange: onValueChange ?? (() => undefined) }),
     [value, onValueChange],
   );
   return (
-    <RadioGroupContextRef.Provider value={ctxValue}>
+    <DropdownMenuRadioGroupContextRef.Provider value={ctxValue}>
       {children}
-    </RadioGroupContextRef.Provider>
+    </DropdownMenuRadioGroupContextRef.Provider>
   );
 }
 
@@ -417,7 +417,7 @@ export interface DropdownMenuRadioItemProps
 
 export function DropdownMenuRadioItem(props: DropdownMenuRadioItemProps) {
   const { value, textValue, disabled, onSelect, children, ...consumerProps } = props;
-  const radioGroup = useRadioGroup();
+  const radioGroup = useDropdownMenuRadioGroup();
   const checked = radioGroup?.value === value;
   const handleSelect = () => {
     onSelect?.();
@@ -445,7 +445,7 @@ export interface DropdownMenuItemIndicatorProps {
 export function DropdownMenuItemIndicator({
   children,
 }: DropdownMenuItemIndicatorProps) {
-  const checked = useItemChecked();
+  const checked = useDropdownMenuItemChecked();
   if (!checked) return null;
   return (
     <Text style={{ marginRight: 6, color: "#fff" }}>

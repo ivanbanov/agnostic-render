@@ -1,56 +1,33 @@
 /**
  * DropdownMenu — component-level helpers.
  *
- * Pure functions: placement → variant key, item-list walkers (step,
- * firstEnabled, lastEnabled), typeahead matching, and the printable-
- * character regex. None of these touch the machine or any substrate;
- * they're algorithmic utilities consumed by machine actions and the
- * connect function.
+ * Pure functions: item-list walkers (step, firstEnabled, lastEnabled),
+ * typeahead matching, and the printable-character regex. None of these
+ * touch the machine or any substrate; they're algorithmic utilities
+ * consumed by machine actions and the connect function.
+ *
+ * Placement vocabulary (Placement, PositioningOptions, placementToSide)
+ * lives in machine-core and is re-exported by the package barrel.
  */
 
-import type { Placement } from "./types";
-import type { MenuItemProps } from "./types";
-
-// -----------------------------------------------------------------------------
-// Placement
-// -----------------------------------------------------------------------------
-
-const sideMap: Record<Placement, "top" | "bottom" | "left" | "right"> = {
-  top: "top",
-  "top-start": "top",
-  "top-end": "top",
-  bottom: "bottom",
-  "bottom-start": "bottom",
-  "bottom-end": "bottom",
-  left: "left",
-  "left-start": "left",
-  "left-end": "left",
-  right: "right",
-  "right-start": "right",
-  "right-end": "right",
-};
-
-/** Convert a logical placement to the variant key `content` exposes. */
-export function placementToSide(p: Placement): "top" | "bottom" | "left" | "right" {
-  return sideMap[p];
-}
+import type { DropdownMenuItemProps } from "./types";
 
 // -----------------------------------------------------------------------------
 // Item walker helpers
 // -----------------------------------------------------------------------------
 
 /** Read the `items` payload from an event passed to a machine action. */
-export function readItems(event: unknown): MenuItemProps[] {
+export function readItems(event: unknown): DropdownMenuItemProps[] {
   const items = (event as { items?: unknown } | undefined)?.items;
   if (!Array.isArray(items)) return [];
-  return items as MenuItemProps[];
+  return items as DropdownMenuItemProps[];
 }
 
-export function firstEnabled(items: MenuItemProps[]): MenuItemProps | undefined {
+export function firstEnabled(items: DropdownMenuItemProps[]): DropdownMenuItemProps | undefined {
   return items.find((i) => !i.disabled);
 }
 
-export function lastEnabled(items: MenuItemProps[]): MenuItemProps | undefined {
+export function lastEnabled(items: DropdownMenuItemProps[]): DropdownMenuItemProps | undefined {
   for (let i = items.length - 1; i >= 0; i--) {
     if (!items[i]!.disabled) return items[i];
   }
@@ -62,11 +39,11 @@ export function lastEnabled(items: MenuItemProps[]): MenuItemProps | undefined {
  * other end when `loop` is true.
  */
 export function step(
-  items: MenuItemProps[],
+  items: DropdownMenuItemProps[],
   current: string | null,
   direction: 1 | -1,
   loop: boolean,
-): MenuItemProps | undefined {
+): DropdownMenuItemProps | undefined {
   if (items.length === 0) return undefined;
   if (current == null) {
     return direction === 1 ? firstEnabled(items) : lastEnabled(items);
@@ -88,14 +65,14 @@ export function step(
  * buffers find the first prefix match.
  */
 export function typeaheadFind(
-  items: MenuItemProps[],
+  items: DropdownMenuItemProps[],
   buffer: string,
   current: string | null,
-): MenuItemProps | undefined {
+): DropdownMenuItemProps | undefined {
   if (!buffer) return undefined;
   const lcBuffer = buffer.toLowerCase();
   const enabled = items.filter((i) => !i.disabled);
-  const startsWith = (item: MenuItemProps) =>
+  const startsWith = (item: DropdownMenuItemProps) =>
     (item.textValue ?? item.value).toLowerCase().startsWith(lcBuffer);
 
   // Single-char advance from current: cycle past current to the next match.

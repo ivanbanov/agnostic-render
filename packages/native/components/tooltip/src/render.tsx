@@ -50,8 +50,8 @@ import {
   type TooltipApi,
   type TooltipProps,
 } from "@render-experiment/tooltip-core";
-import { useTooltipApi } from "./api";
-import { resolveContent, resolvePositioner } from "./elements";
+import { useTooltipApi } from "./generated/api";
+import { resolveContent, resolvePositioner } from "./generated/elements";
 
 // -----------------------------------------------------------------------------
 // Internal context — Trigger and Content read api + triggerRef + anchor

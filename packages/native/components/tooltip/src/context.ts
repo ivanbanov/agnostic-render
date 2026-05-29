@@ -16,24 +16,24 @@
  */
 import { createContext, useContext, type ReactNode } from "react";
 
-export interface PortalEntry {
+export interface TooltipPortalEntry {
   id: string;
   node: ReactNode;
 }
 
-export interface PortalContextValue {
+export interface TooltipPortalContextValue {
   /** Mount a tooltip node into the provider's slot. */
-  mount: (entry: PortalEntry) => void;
+  mount: (entry: TooltipPortalEntry) => void;
   /** Unmount by id. */
   unmount: (id: string) => void;
 }
 
-export const PortalContext = createContext<PortalContextValue | null>(null);
+export const TooltipPortalContext = createContext<TooltipPortalContextValue | null>(null);
 
 /**
  * Returns the provider's portal API or null if no provider is mounted.
  * Callers fall back to inline rendering when null.
  */
-export function usePortal(): PortalContextValue | null {
-  return useContext(PortalContext);
+export function useTooltipPortal(): TooltipPortalContextValue | null {
+  return useContext(TooltipPortalContext);
 }

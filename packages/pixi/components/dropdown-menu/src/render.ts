@@ -28,19 +28,19 @@ import {
   placementToSide,
   type DropdownMenuApi,
   type DropdownMenuProps,
-  type MenuItemProps,
+  type DropdownMenuItemProps,
 } from "@render-experiment/dropdown-menu-core";
 import type { StyledNode } from "@render-experiment/style-engine-pixi";
-import { createDropdownMenuBridge } from "./api";
-import * as Styled from "./elements";
+import { createDropdownMenuBridge } from "./generated/api";
+import * as Styled from "./generated/elements";
 import { anchorOf, boundsToRect, edgePinOffset } from "./utils";
 
 // -----------------------------------------------------------------------------
-// Item config — superset of MenuItemProps with display label + separator entry.
+// Item config — superset of DropdownMenuItemProps with display label + separator entry.
 // -----------------------------------------------------------------------------
 
 export type DropdownMenuItemConfig =
-  | (MenuItemProps & { label: string })
+  | (DropdownMenuItemProps & { label: string })
   | { kind: "separator" }
   | { kind: "label"; label: string };
 
@@ -63,7 +63,7 @@ const nextId = () => `pixi-dropdown-menu-${++idCounter}`;
 
 function isItem(
   entry: DropdownMenuItemConfig,
-): entry is MenuItemProps & { label: string } {
+): entry is DropdownMenuItemProps & { label: string } {
   return !("kind" in entry) || (entry.kind !== "separator" && entry.kind !== "label");
 }
 
@@ -301,12 +301,12 @@ export function createDropdownMenu(
   };
 
   // -------------------------------------------------------------------
-  // Items extraction: just the MenuItemProps part of itemConfigs, in
+  // Items extraction: just the DropdownMenuItemProps part of itemConfigs, in
   // visual order. The machine uses this list for keyboard nav + typeahead.
   // -------------------------------------------------------------------
 
-  const currentItemProps = (): MenuItemProps[] =>
-    itemConfigs.filter(isItem) as MenuItemProps[];
+  const currentItemProps = (): DropdownMenuItemProps[] =>
+    itemConfigs.filter(isItem) as DropdownMenuItemProps[];
 
   // -------------------------------------------------------------------
   // Sync — pull latest api, re-attach handlers, mount/unmount, position.

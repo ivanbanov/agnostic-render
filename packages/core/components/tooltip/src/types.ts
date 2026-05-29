@@ -9,30 +9,11 @@
 import type {
   AttrBindings,
   EventBindings,
+  Placement,
+  PositioningOptions,
 } from "@render-experiment/machine-core";
 
-// -----------------------------------------------------------------------------
-// Positioning
-// -----------------------------------------------------------------------------
-
-export type Placement =
-  | "top"
-  | "top-start"
-  | "top-end"
-  | "bottom"
-  | "bottom-start"
-  | "bottom-end"
-  | "left"
-  | "left-start"
-  | "left-end"
-  | "right"
-  | "right-start"
-  | "right-end";
-
-export interface PositioningOptions {
-  placement: Placement;
-  offset: { main: number; cross: number };
-}
+export type { Placement, PositioningOptions };
 
 // -----------------------------------------------------------------------------
 // Caller-facing props
