@@ -6,9 +6,9 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@render-experiment/shared": resolve(
+      "@render-experiment/utils": resolve(
         __dirname,
-        "../../packages/shared/src",
+        "../../packages/shared/utils/src",
       ),
       "@render-experiment/tooltip-shared": resolve(
         __dirname,

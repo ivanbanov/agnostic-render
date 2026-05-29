@@ -4,9 +4,9 @@ import { resolve } from "node:path";
 export default defineConfig({
   resolve: {
     alias: {
-      "@render-experiment/shared": resolve(
+      "@render-experiment/utils": resolve(
         __dirname,
-        "../../packages/shared/src",
+        "../../packages/shared/utils/src",
       ),
       "@render-experiment/tooltip-shared": resolve(
         __dirname,
