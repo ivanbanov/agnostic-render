@@ -28,19 +28,15 @@
  *   - index.ts    — public exports
  */
 
-import type { MachineConfig } from '@render-experiment/machine-core'
+import { setup } from '@render-experiment/machine-core'
 import { TYPEAHEAD_RESET_MS } from './props'
 import { dropdownMenuStore } from './store'
-import type { DropdownMenuContext, DropdownMenuEvent, DropdownMenuMachineProps } from './types'
+import type { DropdownMenuSchema } from './types'
 import { firstEnabled, lastEnabled, makeSelectEvent, step, typeaheadFind } from './utils'
 
 // Receives already-resolved config (defaults applied at the adapter entry),
 // so every prop is concrete and read directly off `props`.
-export const dropdownMenuMachine: MachineConfig<
-  DropdownMenuContext,
-  DropdownMenuMachineProps,
-  DropdownMenuEvent
-> = {
+export const dropdownMenuMachine = setup<DropdownMenuSchema>().createMachine({
   initial: props => ((props.open ?? props.defaultOpen) ? 'open' : 'closed'),
 
   context: props => ({
@@ -271,4 +267,4 @@ export const dropdownMenuMachine: MachineConfig<
       },
     },
   },
-}
+})

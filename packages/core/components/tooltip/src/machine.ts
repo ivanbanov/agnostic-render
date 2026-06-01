@@ -28,11 +28,11 @@
  *   - index.ts    — public exports
  */
 
-import type { MachineConfig } from '@render-experiment/machine-core'
+import { setup } from '@render-experiment/machine-core'
 import { tooltipStore } from './store'
-import type { TooltipContext, TooltipEvent, TooltipMachineProps } from './types'
+import type { TooltipSchema } from './types'
 
-export const tooltipMachine: MachineConfig<TooltipContext, TooltipMachineProps, TooltipEvent> = {
+export const tooltipMachine = setup<TooltipSchema>().createMachine({
   initial: props => ((props.open ?? props.defaultOpen) ? 'open' : 'closed'),
 
   context: props => ({
@@ -173,4 +173,4 @@ export const tooltipMachine: MachineConfig<TooltipContext, TooltipMachineProps, 
       },
     },
   },
-}
+})

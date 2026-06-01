@@ -185,6 +185,57 @@ export type DropdownMenuEvent =
 export type DropdownMenuState = 'closed' | 'open'
 
 // -----------------------------------------------------------------------------
+// Machine vocabulary (the Schema)
+// -----------------------------------------------------------------------------
+
+/** Every action name the machine references. */
+export type DropdownMenuActions =
+  | 'invokeOnOpen'
+  | 'invokeOnClose'
+  | 'setGlobalId'
+  | 'clearGlobalId'
+  | 'clearHighlight'
+  | 'highlightItem'
+  | 'clearHighlightIfMatch'
+  | 'suspendPointer'
+  | 'resumePointer'
+  | 'setPendingFirst'
+  | 'setPendingLast'
+  | 'clearPendingHighlight'
+  | 'applyPendingHighlight'
+  | 'highlightFirst'
+  | 'highlightLast'
+  | 'highlightNext'
+  | 'highlightPrev'
+  | 'clickHighlightedItem'
+  | 'typeaheadMatch'
+
+/** Every guard name the machine references. */
+export type DropdownMenuGuards = 'shouldCloseOnSelect'
+
+/** Every effect name the machine references. */
+export type DropdownMenuEffects = 'trackEscapeKey' | 'trackGlobalStore'
+
+/**
+ * Single source of truth for the dropdown-menu machine — wired into
+ * `setup<DropdownMenuSchema>().createMachine({ ... })`. The compiler enforces:
+ *   - every name referenced in `entry / exit / actions / effects / guard`
+ *     belongs to one of these unions
+ *   - every transition `target` is a declared `state`
+ *   - `implementations.{actions,guards,effects}` are exhaustive — missing
+ *     keys fail, extra keys fail
+ */
+export type DropdownMenuSchema = {
+  context: DropdownMenuContext
+  props: DropdownMenuMachineProps
+  event: DropdownMenuEvent
+  state: DropdownMenuState
+  actions: DropdownMenuActions
+  guards: DropdownMenuGuards
+  effects: DropdownMenuEffects
+}
+
+// -----------------------------------------------------------------------------
 // Connect API
 // -----------------------------------------------------------------------------
 

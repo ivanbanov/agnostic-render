@@ -136,6 +136,50 @@ export type TooltipEvent =
   | { type: 'escape'; src?: string }
 
 // -----------------------------------------------------------------------------
+// Machine vocabulary (the Schema)
+// -----------------------------------------------------------------------------
+
+/** Every action name the machine references. */
+export type TooltipActions =
+  | 'invokeOnOpen'
+  | 'invokeOnClose'
+  | 'setPointerMoveOpened'
+  | 'clearPointerMoveOpened'
+  | 'setInstantOpen'
+  | 'clearInstantOpen'
+  | 'setGlobalId'
+  | 'clearGlobalId'
+
+/** Every guard name the machine references. */
+export type TooltipGuards = 'shouldSkipDelay' | 'isHoverableContent'
+
+/** Every effect name the machine references. */
+export type TooltipEffects =
+  | 'waitForOpenDelay'
+  | 'waitForCloseDelay'
+  | 'trackEscapeKey'
+  | 'trackGlobalStore'
+
+/**
+ * Single source of truth for the tooltip machine — wired into
+ * `setup<TooltipSchema>().createMachine({ ... })`. The compiler enforces:
+ *   - every name referenced in `entry / exit / actions / effects / guard`
+ *     belongs to one of these unions
+ *   - every transition `target` is a declared `state`
+ *   - `implementations.{actions,guards,effects}` are exhaustive — missing
+ *     keys fail, extra keys fail
+ */
+export type TooltipSchema = {
+  context: TooltipContext
+  props: TooltipMachineProps
+  event: TooltipEvent
+  state: TooltipState
+  actions: TooltipActions
+  guards: TooltipGuards
+  effects: TooltipEffects
+}
+
+// -----------------------------------------------------------------------------
 // Connect API (consumed by adapter render layer)
 // -----------------------------------------------------------------------------
 
