@@ -8,10 +8,11 @@ import type { Adapter } from '@render-experiment/machine-core'
 import {
   tooltipProps,
   type TooltipContext,
+  type TooltipEvent,
   type TooltipProps,
 } from '@render-experiment/tooltip-core'
 
-export const tooltipAdapter: Adapter<TooltipContext, TooltipProps> = {
+export const tooltipAdapter: Adapter<TooltipContext, TooltipProps, TooltipEvent> = {
   trackEscapeKey: ({ props, send }) => {
     const r = tooltipProps(props)
     if (!r.closeOnEscape) return

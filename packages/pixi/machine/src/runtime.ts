@@ -13,10 +13,19 @@
  * Subscribers compare the counter and decide whether to re-derive
  * the connect() API.
  */
-import { createMachine, type Machine, type MachineConfig } from '@render-experiment/machine-core'
+import {
+  createMachine,
+  type EventObject,
+  type Machine,
+  type MachineConfig,
+} from '@render-experiment/machine-core'
 
-export interface MachineRuntime<TContext extends object, TProps extends object> {
-  machine: Machine<TContext, TProps>
+export interface MachineRuntime<
+  TContext extends object,
+  TProps extends object,
+  TEvent extends EventObject = EventObject,
+> {
+  machine: Machine<TContext, TProps, TEvent>
   /** Register a listener invoked on every state or context change. */
   subscribe: (listener: () => void) => () => void
   /** Push new props into the machine (controlled mode, callback freshness). */
@@ -25,10 +34,14 @@ export interface MachineRuntime<TContext extends object, TProps extends object> 
   dispose: () => void
 }
 
-export function createMachineRuntime<TContext extends object, TProps extends object>(
-  config: MachineConfig<TContext, TProps>,
+export function createMachineRuntime<
+  TContext extends object,
+  TProps extends object,
+  TEvent extends EventObject = EventObject,
+>(
+  config: MachineConfig<TContext, TProps, TEvent>,
   props: TProps,
-): MachineRuntime<TContext, TProps> {
+): MachineRuntime<TContext, TProps, TEvent> {
   const machine = createMachine(config, props)
   machine.start()
 

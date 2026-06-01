@@ -16,13 +16,6 @@ import type { DropdownMenuItemProps } from './types'
 // Item walker helpers
 // -----------------------------------------------------------------------------
 
-/** Read the `items` payload from an event passed to a machine action. */
-export function readItems(event: unknown): DropdownMenuItemProps[] {
-  const items = (event as { items?: unknown } | undefined)?.items
-  if (!Array.isArray(items)) return []
-  return items as DropdownMenuItemProps[]
-}
-
 export function firstEnabled(items: DropdownMenuItemProps[]): DropdownMenuItemProps | undefined {
   return items.find(i => !i.disabled)
 }

@@ -88,6 +88,25 @@ export interface TooltipContext {
 export type TooltipState = 'closed' | 'opening' | 'open' | 'closing'
 
 // -----------------------------------------------------------------------------
+// Events
+// -----------------------------------------------------------------------------
+
+/**
+ * Every event the tooltip machine accepts. `src` is an opaque trace tag
+ * used in debugging logs / DevTools breadcrumbs.
+ */
+export type TooltipEvent =
+  | { type: 'open'; src?: string }
+  | { type: 'close'; src?: string }
+  | { type: 'pointer.move' }
+  | { type: 'pointer.leave' }
+  | { type: 'content.pointer.move' }
+  | { type: 'content.pointer.leave' }
+  | { type: 'after.openDelay' }
+  | { type: 'after.closeDelay' }
+  | { type: 'escape'; src?: string }
+
+// -----------------------------------------------------------------------------
 // Connect API (consumed by adapter render layer)
 // -----------------------------------------------------------------------------
 

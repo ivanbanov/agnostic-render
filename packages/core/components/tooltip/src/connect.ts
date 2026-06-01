@@ -18,7 +18,7 @@
 import { connector } from '@render-experiment/machine-core'
 import { placementToSide } from '@render-experiment/utils'
 import { tooltipProps } from './props'
-import type { TooltipApi, TooltipContext, TooltipProps, TooltipState } from './types'
+import type { TooltipApi, TooltipContext, TooltipEvent, TooltipProps, TooltipState } from './types'
 
 /** Map machine state → data-state value (matches Radix). */
 function dataStateFor(
@@ -29,12 +29,13 @@ function dataStateFor(
   return context.hasInstantOpen ? 'instant-open' : 'delayed-open'
 }
 
-export const connectTooltip = connector<TooltipState, TooltipContext, TooltipProps, TooltipApi>()(({
-  state,
-  context,
-  props,
-  send,
-}) => {
+export const connectTooltip = connector<
+  TooltipState,
+  TooltipContext,
+  TooltipProps,
+  TooltipApi,
+  TooltipEvent
+>()(({ state, context, props, send }) => {
   const r = tooltipProps(props)
   const open = state === 'open' || state === 'closing'
   const triggerId = `tooltip:${r.id}:trigger`

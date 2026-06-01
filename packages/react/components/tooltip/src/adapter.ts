@@ -10,10 +10,11 @@ import type { Adapter } from '@render-experiment/machine-core'
 import {
   tooltipProps,
   type TooltipContext,
+  type TooltipEvent,
   type TooltipProps,
 } from '@render-experiment/tooltip-core'
 
-export const tooltipAdapter: Adapter<TooltipContext, TooltipProps> = {
+export const tooltipAdapter: Adapter<TooltipContext, TooltipProps, TooltipEvent> = {
   // Listen for Escape while the tooltip is open. Capture-phase so we run
   // before consumer popovers/dialogs that might also listen.
   //

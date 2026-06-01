@@ -31,10 +31,14 @@
 import type { MachineConfig } from '@render-experiment/machine-core'
 import { dropdownMenuProps, TYPEAHEAD_RESET_MS } from './props'
 import { dropdownMenuStore } from './store'
-import type { DropdownMenuContext, DropdownMenuProps } from './types'
-import { firstEnabled, lastEnabled, makeSelectEvent, readItems, step, typeaheadFind } from './utils'
+import type { DropdownMenuContext, DropdownMenuEvent, DropdownMenuProps } from './types'
+import { firstEnabled, lastEnabled, makeSelectEvent, step, typeaheadFind } from './utils'
 
-export const dropdownMenuMachine: MachineConfig<DropdownMenuContext, DropdownMenuProps> = {
+export const dropdownMenuMachine: MachineConfig<
+  DropdownMenuContext,
+  DropdownMenuProps,
+  DropdownMenuEvent
+> = {
   initial: props => {
     const r = dropdownMenuProps(props)
     return (r.open ?? r.defaultOpen) ? 'open' : 'closed'
@@ -112,13 +116,13 @@ export const dropdownMenuMachine: MachineConfig<DropdownMenuContext, DropdownMen
   implementations: {
     guards: {
       shouldCloseOnSelect: ({ props, event }) => {
+        // Only meaningful for `item.click`. Guarding by type also narrows
+        // the payload so `selectEvent` / `closeOnSelect` are typed.
+        if (event.type !== 'item.click') return false
         // Consumer can cancel close via onSelect(event).preventDefault().
-        const selectEvent = event.selectEvent as { defaultPrevented?: boolean } | undefined
-        if (selectEvent?.defaultPrevented) return false
+        if (event.selectEvent.defaultPrevented) return false
         // Per-item override (false for checkbox/radio); otherwise resolved prop.
-        const itemCloseOnSelect = event.closeOnSelect as boolean | undefined
-        if (itemCloseOnSelect === false) return false
-        if (itemCloseOnSelect === true) return true
+        if (event.closeOnSelect !== undefined) return event.closeOnSelect
         return dropdownMenuProps(props).closeOnSelect
       },
     },
@@ -145,14 +149,13 @@ export const dropdownMenuMachine: MachineConfig<DropdownMenuContext, DropdownMen
       },
       highlightItem: ({ context, setContext, event }) => {
         if (context.suspendPointer) return
-        const value = event.value as string | undefined
-        if (typeof value !== 'string') return
-        setContext({ highlightedValue: value })
+        if (event.type !== 'item.pointermove') return
+        setContext({ highlightedValue: event.value })
       },
       clearHighlightIfMatch: ({ context, setContext, event }) => {
         if (context.suspendPointer) return
-        const value = event.value as string | undefined
-        if (typeof value === 'string' && context.highlightedValue === value) {
+        if (event.type !== 'item.pointerleave') return
+        if (context.highlightedValue === event.value) {
           setContext({ highlightedValue: null })
         }
       },
@@ -174,8 +177,11 @@ export const dropdownMenuMachine: MachineConfig<DropdownMenuContext, DropdownMen
       },
       applyPendingHighlight: ({ context, setContext, event }) => {
         if (!context.pendingHighlight) return
-        const items = readItems(event)
-        const next = context.pendingHighlight === 'first' ? firstEnabled(items) : lastEnabled(items)
+        if (!('items' in event)) return
+        const next =
+          context.pendingHighlight === 'first'
+            ? firstEnabled(event.items)
+            : lastEnabled(event.items)
         if (next) {
           setContext({
             highlightedValue: next.value,
@@ -185,29 +191,29 @@ export const dropdownMenuMachine: MachineConfig<DropdownMenuContext, DropdownMen
       },
 
       highlightFirst: ({ setContext, event }) => {
-        const items = readItems(event)
-        const next = firstEnabled(items)
+        if (!('items' in event)) return
+        const next = firstEnabled(event.items)
         if (next) setContext({ highlightedValue: next.value })
       },
       highlightLast: ({ setContext, event }) => {
-        const items = readItems(event)
-        const next = lastEnabled(items)
+        if (!('items' in event)) return
+        const next = lastEnabled(event.items)
         if (next) setContext({ highlightedValue: next.value })
       },
       highlightNext: ({ context, setContext, props, event }) => {
-        const items = readItems(event)
-        const next = step(items, context.highlightedValue, 1, dropdownMenuProps(props).loop)
+        if (!('items' in event)) return
+        const next = step(event.items, context.highlightedValue, 1, dropdownMenuProps(props).loop)
         if (next) setContext({ highlightedValue: next.value })
       },
       highlightPrev: ({ context, setContext, props, event }) => {
-        const items = readItems(event)
-        const next = step(items, context.highlightedValue, -1, dropdownMenuProps(props).loop)
+        if (!('items' in event)) return
+        const next = step(event.items, context.highlightedValue, -1, dropdownMenuProps(props).loop)
         if (next) setContext({ highlightedValue: next.value })
       },
 
       clickHighlightedItem: ({ context, send, event }) => {
-        const items = readItems(event)
-        const current = items.find(i => i.value === context.highlightedValue)
+        if (!('items' in event)) return
+        const current = event.items.find(i => i.value === context.highlightedValue)
         if (!current || current.disabled) return
         // Invoke onSelect synchronously so the guard can read
         // event.defaultPrevented — matches the pointer-click path in
@@ -224,20 +230,20 @@ export const dropdownMenuMachine: MachineConfig<DropdownMenuContext, DropdownMen
           closeOnSelect:
             current.closeOnSelect ??
             (current.kind === 'checkbox' || current.kind === 'radio' ? false : undefined),
-          items,
+          items: event.items,
         })
       },
 
       typeaheadMatch: ({ context, setContext, event }) => {
-        const items = readItems(event)
-        const char = (event.char as string | undefined)?.toLowerCase()
+        if (event.type !== 'typeahead.char') return
+        const char = event.char.toLowerCase()
         if (!char) return
 
         const now = Date.now()
         const expired = now - context.typeaheadLastTime > TYPEAHEAD_RESET_MS
         const buffer = expired ? char : context.typeaheadBuffer + char
 
-        const match = typeaheadFind(items, buffer, context.highlightedValue)
+        const match = typeaheadFind(event.items, buffer, context.highlightedValue)
         if (match) {
           setContext({
             typeaheadBuffer: buffer,

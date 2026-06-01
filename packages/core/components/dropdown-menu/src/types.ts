@@ -111,6 +111,48 @@ export interface DropdownMenuContext {
 }
 
 // -----------------------------------------------------------------------------
+// Events
+// -----------------------------------------------------------------------------
+
+/**
+ * Every event the dropdown machine accepts. Items are threaded through
+ * the render layer (not stored in machine context), so most events carry
+ * the current item snapshot.
+ */
+export type DropdownMenuEvent =
+  // Opening — closed → open
+  | { type: 'open' }
+  | { type: 'trigger.click'; items: DropdownMenuItemProps[] }
+  | { type: 'trigger.key.open'; items: DropdownMenuItemProps[] }
+  | { type: 'trigger.key.open.last'; items: DropdownMenuItemProps[] }
+  // Closing — open → closed
+  | { type: 'close'; src?: string }
+  | { type: 'escape'; src?: string }
+  // Item interaction
+  | { type: 'item.pointermove'; value: string; items: DropdownMenuItemProps[] }
+  | { type: 'item.pointerleave'; value: string; items: DropdownMenuItemProps[] }
+  | {
+      type: 'item.click'
+      value: string
+      onSelect?: (event: DropdownMenuSelectEvent) => void
+      selectEvent: DropdownMenuSelectEvent
+      closeOnSelect: boolean | undefined
+      items: DropdownMenuItemProps[]
+    }
+  // Keyboard navigation inside the open menu
+  | { type: 'arrow.down'; items: DropdownMenuItemProps[] }
+  | { type: 'arrow.up'; items: DropdownMenuItemProps[] }
+  | { type: 'home'; items: DropdownMenuItemProps[] }
+  | { type: 'end'; items: DropdownMenuItemProps[] }
+  | { type: 'enter'; items: DropdownMenuItemProps[] }
+  | { type: 'space'; items: DropdownMenuItemProps[] }
+  | { type: 'typeahead.char'; char: string; items: DropdownMenuItemProps[] }
+  // Pointer-vs-keyboard highlight arbitration
+  | { type: 'pointer.resume' }
+  // Items registry notifies the machine after first paint
+  | { type: 'items.ready'; items: DropdownMenuItemProps[] }
+
+// -----------------------------------------------------------------------------
 // States
 // -----------------------------------------------------------------------------
 

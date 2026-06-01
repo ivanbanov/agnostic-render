@@ -27,9 +27,9 @@
 import type { MachineConfig } from '@render-experiment/machine-core'
 import { tooltipProps } from './props'
 import { tooltipStore } from './store'
-import type { TooltipContext, TooltipProps } from './types'
+import type { TooltipContext, TooltipEvent, TooltipProps } from './types'
 
-export const tooltipMachine: MachineConfig<TooltipContext, TooltipProps> = {
+export const tooltipMachine: MachineConfig<TooltipContext, TooltipProps, TooltipEvent> = {
   initial: props => {
     const r = tooltipProps(props)
     return (r.open ?? r.defaultOpen) ? 'open' : 'closed'

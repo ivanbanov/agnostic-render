@@ -205,16 +205,20 @@ import {
   ${camel}Machine,
   type ${pascal}Api,
   type ${pascal}Context as ${pascal}MachineContext,
+  type ${pascal}Event,
   type ${pascal}Props,
   type ${pascal}State,
 } from "@render-experiment/${slug}-core";
 import { ${camel}Adapter } from "../adapter";
 
-const ${camel}MachineWithAdapter = withAdapter(${camel}Machine, ${camel}Adapter);
+const ${camel}MachineWithAdapter = withAdapter<${pascal}MachineContext, ${pascal}Props, ${pascal}Event>(
+  ${camel}Machine,
+  ${camel}Adapter,
+);
 
 /** Wire the core machine to React and return the connect() API. */
 export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
-  return useApi<${pascal}MachineContext, ${pascal}Props, ${pascal}State, ${pascal}Api>(
+  return useApi<${pascal}MachineContext, ${pascal}Props, ${pascal}State, ${pascal}Api, ${pascal}Event>(
     ${camel}MachineWithAdapter,
     props,
     connect${pascal},
@@ -265,16 +269,20 @@ import {
   ${camel}Machine,
   type ${pascal}Api,
   type ${pascal}Context as ${pascal}MachineContext,
+  type ${pascal}Event,
   type ${pascal}Props,
   type ${pascal}State,
 } from "@render-experiment/${slug}-core";
 import { ${camel}Adapter } from "../adapter";
 
-const ${camel}MachineWithAdapter = withAdapter(${camel}Machine, ${camel}Adapter);
+const ${camel}MachineWithAdapter = withAdapter<${pascal}MachineContext, ${pascal}Props, ${pascal}Event>(
+  ${camel}Machine,
+  ${camel}Adapter,
+);
 
 /** Wire the core machine to native and return the connect() API. */
 export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
-  return useApi<${pascal}MachineContext, ${pascal}Props, ${pascal}State, ${pascal}Api>(
+  return useApi<${pascal}MachineContext, ${pascal}Props, ${pascal}State, ${pascal}Api, ${pascal}Event>(
     ${camel}MachineWithAdapter,
     props,
     connect${pascal},
@@ -333,22 +341,26 @@ import {
   ${camel}Machine,
   type ${pascal}Api,
   type ${pascal}Context as ${pascal}MachineContext,
+  type ${pascal}Event,
   type ${pascal}Props,
   type ${pascal}State,
 } from "@render-experiment/${slug}-core";
 import { ${camel}Adapter } from "../adapter";
 
-const ${camel}MachineWithAdapter = withAdapter(${camel}Machine, ${camel}Adapter);
+const ${camel}MachineWithAdapter = withAdapter<${pascal}MachineContext, ${pascal}Props, ${pascal}Event>(
+  ${camel}Machine,
+  ${camel}Adapter,
+);
 
 /**
  * Pixi version: not a hook (no React). Returns a runtime + a getApi()
  * that's cached by the machine's version counter — calls are cheap as
  * long as nothing has changed.
  */
-export type ${pascal}Bridge = Runtime<${pascal}MachineContext, ${pascal}Props, ${pascal}Api>;
+export type ${pascal}Bridge = Runtime<${pascal}MachineContext, ${pascal}Props, ${pascal}Api, ${pascal}Event>;
 
 export function create${pascal}Bridge(props: ${pascal}Props): ${pascal}Bridge {
-  return createRuntime<${pascal}MachineContext, ${pascal}Props, ${pascal}State, ${pascal}Api>(
+  return createRuntime<${pascal}MachineContext, ${pascal}Props, ${pascal}State, ${pascal}Api, ${pascal}Event>(
     ${camel}MachineWithAdapter,
     props,
     connect${pascal},

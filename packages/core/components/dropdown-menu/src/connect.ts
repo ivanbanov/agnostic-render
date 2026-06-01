@@ -15,6 +15,7 @@ import { dropdownMenuProps } from './props'
 import type {
   DropdownMenuApi,
   DropdownMenuContext,
+  DropdownMenuEvent,
   DropdownMenuProps,
   DropdownMenuState,
   DropdownMenuItemPart,
@@ -26,7 +27,8 @@ export const connectDropdownMenu = connector<
   DropdownMenuState,
   DropdownMenuContext,
   DropdownMenuProps,
-  DropdownMenuApi
+  DropdownMenuApi,
+  DropdownMenuEvent
 >()(({ state, context, props, send }, items: DropdownMenuItemProps[] = []): DropdownMenuApi => {
   const r = dropdownMenuProps(props)
   const open = state === 'open'

@@ -12,21 +12,32 @@
  *   runtime.subscribe(() => positionOverlay(getApi()));
  */
 
-import type { Connect, MachineConfig } from '@render-experiment/machine-core'
+import type { Connect, EventObject, MachineConfig } from '@render-experiment/machine-core'
 import { createMachineRuntime, type MachineRuntime } from './runtime'
 
-export interface Runtime<TContext extends object, TProps extends object, TApi> {
-  runtime: MachineRuntime<TContext, TProps>
+export interface Runtime<
+  TContext extends object,
+  TProps extends object,
+  TApi,
+  TEvent extends EventObject = EventObject,
+> {
+  runtime: MachineRuntime<TContext, TProps, TEvent>
   /** Latest connect() output; cached by machine version. */
   getApi: () => TApi
 }
 
-export function createRuntime<TContext extends object, TProps extends object, TState, TApi>(
-  config: MachineConfig<TContext, TProps>,
+export function createRuntime<
+  TContext extends object,
+  TProps extends object,
+  TState,
+  TApi,
+  TEvent extends EventObject = EventObject,
+>(
+  config: MachineConfig<TContext, TProps, TEvent>,
   props: TProps,
-  connect: Connect<TState, TContext, TProps, TApi, []>,
-): Runtime<TContext, TProps, TApi> {
-  const runtime = createMachineRuntime<TContext, TProps>(config, props)
+  connect: Connect<TState, TContext, TProps, TApi, [], TEvent>,
+): Runtime<TContext, TProps, TApi, TEvent> {
+  const runtime = createMachineRuntime<TContext, TProps, TEvent>(config, props)
   const { machine } = runtime
 
   let cachedVersion = -1

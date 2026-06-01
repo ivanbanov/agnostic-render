@@ -8,10 +8,15 @@ import type { Adapter } from '@render-experiment/machine-core'
 import {
   dropdownMenuProps,
   type DropdownMenuContext,
+  type DropdownMenuEvent,
   type DropdownMenuProps,
 } from '@render-experiment/dropdown-menu-core'
 
-export const dropdownMenuAdapter: Adapter<DropdownMenuContext, DropdownMenuProps> = {
+export const dropdownMenuAdapter: Adapter<
+  DropdownMenuContext,
+  DropdownMenuProps,
+  DropdownMenuEvent
+> = {
   trackEscapeKey: ({ props, send }) => {
     if (!dropdownMenuProps(props).closeOnEscape) return
     const onKeyDown = (event: KeyboardEvent) => {
