@@ -11,12 +11,11 @@
 
 import { connector, type AttrBindings, type EventBindings } from '@render-experiment/machine-core'
 import { placementToSide } from '@render-experiment/utils'
-import { dropdownMenuProps } from './props'
 import type {
   DropdownMenuApi,
   DropdownMenuContext,
   DropdownMenuEvent,
-  DropdownMenuProps,
+  DropdownMenuMachineProps,
   DropdownMenuState,
   DropdownMenuItemPart,
   DropdownMenuItemProps,
@@ -26,11 +25,10 @@ import { makeSelectEvent, PRINTABLE_KEY_RE } from './utils'
 export const connectDropdownMenu = connector<
   DropdownMenuState,
   DropdownMenuContext,
-  DropdownMenuProps,
+  DropdownMenuMachineProps,
   DropdownMenuApi,
   DropdownMenuEvent
->()(({ state, context, props, send }, items: DropdownMenuItemProps[] = []): DropdownMenuApi => {
-  const r = dropdownMenuProps(props)
+>()(({ state, context, props: r, send }, items: DropdownMenuItemProps[] = []): DropdownMenuApi => {
   const open = state === 'open'
 
   const triggerId = `dropdown-menu:${r.id}:trigger`
@@ -131,7 +129,7 @@ export const connectDropdownMenu = connector<
     labelledBy: triggerId,
     'data-state': open ? 'open' : 'closed',
     'data-orientation': 'vertical',
-    'data-side': placementToSide(r.positioning.placement),
+    'data-side': placementToSide(r.placement),
   }
 
   const getItem = (item: DropdownMenuItemProps): DropdownMenuItemPart => {
@@ -224,9 +222,11 @@ export const connectDropdownMenu = connector<
         handlers: contentHandlers,
         attrs: contentAttrs,
         variants: {
-          side: placementToSide(r.positioning.placement),
+          side: placementToSide(r.placement),
         },
-        positioning: r.positioning,
+        placement: r.placement,
+        offsetX: r.offsetX,
+        offsetY: r.offsetY,
         rendered: open,
       },
       separator: { attrs: { role: 'separator' } },
@@ -244,7 +244,7 @@ export const connectDropdownMenu = connector<
       if (open && context.pendingHighlight && nextItems.length > 0) {
         send({ type: 'items.ready', items: nextItems })
       }
-      return connectDropdownMenu({ state, context, props, send })(nextItems)
+      return connectDropdownMenu({ state, context, props: r, send })(nextItems)
     },
   }
 })

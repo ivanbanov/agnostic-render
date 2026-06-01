@@ -12,7 +12,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react'
-import type { PositioningOptions } from '@render-experiment/dropdown-menu-core'
+import type { Placement } from '@render-experiment/dropdown-menu-core'
 
 export function cloneOnly(node: ReactNode, props: Record<string, unknown>) {
   const only = Children.only(node)
@@ -64,49 +64,51 @@ interface Rect {
   height: number
 }
 
-export function anchorOf(trigger: Rect, positioning: PositioningOptions): { x: number; y: number } {
-  const { placement } = positioning
-  const { main, cross } = positioning.offset
+/**
+ * Anchor point for the content, in viewport coords. `offsetX`/`offsetY`
+ * are SCREEN axes (they don't rotate with the side) and are added to the
+ * computed anchor after side/alignment positioning.
+ */
+export function anchorOf(
+  trigger: Rect,
+  placement: Placement,
+  offsetX: number,
+  offsetY: number,
+): { x: number; y: number } {
   const side = placement.split('-')[0] as 'top' | 'bottom' | 'left' | 'right'
   const align = placement.split('-')[1] as 'start' | 'end' | undefined
-  const sign = align === 'end' ? -1 : 1
 
+  let x: number
+  let y: number
   switch (side) {
-    case 'top': {
-      const x =
-        align === 'start'
-          ? trigger.left
-          : align === 'end'
-            ? trigger.right
-            : trigger.left + trigger.width / 2
-      return { x: x + cross * sign, y: trigger.top - main }
-    }
+    case 'top':
     case 'bottom': {
-      const x =
+      x =
         align === 'start'
           ? trigger.left
           : align === 'end'
             ? trigger.right
             : trigger.left + trigger.width / 2
-      return { x: x + cross * sign, y: trigger.bottom + main }
+      y = side === 'top' ? trigger.top : trigger.bottom
+      break
     }
-    case 'left': {
-      const y =
-        align === 'start'
-          ? trigger.top
-          : align === 'end'
-            ? trigger.bottom
-            : trigger.top + trigger.height / 2
-      return { x: trigger.left - main, y: y + cross * sign }
-    }
+    case 'left':
     case 'right': {
-      const y =
+      y =
         align === 'start'
           ? trigger.top
           : align === 'end'
             ? trigger.bottom
             : trigger.top + trigger.height / 2
-      return { x: trigger.right + main, y: y + cross * sign }
+      x = side === 'left' ? trigger.left : trigger.right
+      break
     }
   }
+  return { x: x + offsetX, y: y + offsetY }
+}
+
+/** Main-axis (anchor-perpendicular) offset for collision math, from screen X/Y. */
+export function mainOffsetFor(placement: Placement, offsetX: number, offsetY: number): number {
+  const side = placement.split('-')[0]
+  return side === 'left' || side === 'right' ? Math.abs(offsetX) : Math.abs(offsetY)
 }

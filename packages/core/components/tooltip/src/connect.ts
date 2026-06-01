@@ -17,8 +17,13 @@
 
 import { connector } from '@render-experiment/machine-core'
 import { placementToSide } from '@render-experiment/utils'
-import { tooltipProps } from './props'
-import type { TooltipApi, TooltipContext, TooltipEvent, TooltipProps, TooltipState } from './types'
+import type {
+  TooltipApi,
+  TooltipContext,
+  TooltipEvent,
+  TooltipMachineProps,
+  TooltipState,
+} from './types'
 
 /** Map machine state → data-state value (matches Radix). */
 function dataStateFor(
@@ -32,15 +37,14 @@ function dataStateFor(
 export const connectTooltip = connector<
   TooltipState,
   TooltipContext,
-  TooltipProps,
+  TooltipMachineProps,
   TooltipApi,
   TooltipEvent
->()(({ state, context, props, send }) => {
-  const r = tooltipProps(props)
+>()(({ state, context, props: r, send }) => {
   const open = state === 'open' || state === 'closing'
   const triggerId = `tooltip:${r.id}:trigger`
   const contentId = `tooltip:${r.id}:content`
-  const side = placementToSide(r.positioning.placement)
+  const side = placementToSide(r.placement)
   const dataState = dataStateFor(state, context)
 
   return {
@@ -97,7 +101,9 @@ export const connectTooltip = connector<
           'data-side': side,
         },
         variants: { side },
-        positioning: r.positioning,
+        placement: r.placement,
+        offsetX: r.offsetX,
+        offsetY: r.offsetY,
         rendered: open,
       },
     },

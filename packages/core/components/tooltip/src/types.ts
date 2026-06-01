@@ -9,10 +9,10 @@
  */
 
 import type { Part } from '@render-experiment/machine-core'
-import type { Placement, PositioningOptions } from '@render-experiment/utils'
+import type { Placement } from '@render-experiment/utils'
 import type { TooltipContentVariants } from './parts'
 
-export type { Placement, PositioningOptions }
+export type { Placement }
 
 // -----------------------------------------------------------------------------
 // Provider config (subset of TooltipProps; supplies defaults across many)
@@ -60,13 +60,42 @@ export interface TooltipProps extends TooltipProviderConfig {
   closeOnEscape?: boolean
   /** When true, all opens are suppressed. */
   disabled?: boolean
-  positioning?: Partial<PositioningOptions>
+  /** Preferred side/alignment. Default 'bottom'. */
+  placement?: Placement
+  /** Screen-horizontal offset from the anchor point, px. Default 0. */
+  offsetX?: number
+  /** Screen-vertical offset from the anchor point, px. Default 4. */
+  offsetY?: number
   onOpenChange?: (details: { open: boolean }) => void
   /**
    * Fires when Escape is pressed while open. Call `preventDefault()` to
    * keep the tooltip open. Closed-by-default behavior is preserved.
    */
   onEscapeKeyDown?: (event: TooltipEscapeKeyDownEvent) => void
+}
+
+/**
+ * Props after defaults are applied (`{ ...TOOLTIP_DEFAULTS, ...props }`),
+ * resolved once at the adapter entry. The machine and connect operate on
+ * this concrete shape and never re-resolve.
+ */
+export interface TooltipMachineProps {
+  id: string
+  /** Optional — no default; absent means uncontrolled. */
+  open?: boolean
+  defaultOpen: boolean
+  openDelay: number
+  closeDelay: number
+  skipDelayDuration: number
+  closeOnEscape: boolean
+  disableHoverableContent: boolean
+  disabled: boolean
+  placement: Placement
+  offsetX: number
+  offsetY: number
+  /** Optional — callbacks have no default. */
+  onOpenChange?: TooltipProps['onOpenChange']
+  onEscapeKeyDown?: TooltipProps['onEscapeKeyDown']
 }
 
 // -----------------------------------------------------------------------------
@@ -115,6 +144,9 @@ export interface TooltipApi {
   setOpen: (next: boolean) => void
   parts: {
     trigger: Part
-    content: Part<TooltipContentVariants, { positioning: PositioningOptions; rendered: boolean }>
+    content: Part<
+      TooltipContentVariants,
+      { placement: Placement; offsetX: number; offsetY: number; rendered: boolean }
+    >
   }
 }

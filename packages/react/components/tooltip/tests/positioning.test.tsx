@@ -150,7 +150,7 @@ afterEach(() => {
 describe('collision — side flips when clipped', () => {
   it("flips bottom → top when there's no room below the trigger", () => {
     render(
-      <Tooltip defaultOpen positioning={{ placement: 'bottom' }}>
+      <Tooltip defaultOpen placement='bottom'>
         <Tooltip.Trigger>
           <button>Trigger</button>
         </Tooltip.Trigger>
@@ -175,7 +175,7 @@ describe('collision — side flips when clipped', () => {
 
   it("flips right → left when there's no room to the right", () => {
     render(
-      <Tooltip defaultOpen positioning={{ placement: 'right' }}>
+      <Tooltip defaultOpen placement='right'>
         <Tooltip.Trigger>
           <button>Trigger</button>
         </Tooltip.Trigger>
@@ -196,7 +196,7 @@ describe('collision — side flips when clipped', () => {
 
   it('keeps the preferred side when it fits', () => {
     render(
-      <Tooltip defaultOpen positioning={{ placement: 'bottom' }}>
+      <Tooltip defaultOpen placement='bottom'>
         <Tooltip.Trigger>
           <button>Trigger</button>
         </Tooltip.Trigger>
@@ -224,7 +224,7 @@ describe('collision — side flips when clipped', () => {
 describe('trigger move — recompute on resize', () => {
   it("recomputes side when the trigger's ResizeObserver fires", () => {
     render(
-      <Tooltip defaultOpen positioning={{ placement: 'bottom' }}>
+      <Tooltip defaultOpen placement='bottom'>
         <Tooltip.Trigger>
           <button>Trigger</button>
         </Tooltip.Trigger>

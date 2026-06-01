@@ -21,12 +21,14 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  DROPDOWN_MENU_DEFAULTS,
   connectDropdownMenu,
   dropdownMenuMachine,
   dropdownMenuStore,
   type DropdownMenuApi,
   type DropdownMenuContext,
   type DropdownMenuItemProps,
+  type DropdownMenuMachineProps,
   type DropdownMenuProps,
   type DropdownMenuState,
 } from '@render-experiment/dropdown-menu-core'
@@ -45,8 +47,9 @@ const ITEMS: DropdownMenuItemProps[] = [
 ]
 
 function makeMachine(props: Partial<DropdownMenuProps> = {}) {
-  const full: DropdownMenuProps = { id: `dm${nextId++}`, ...props }
-  const machine = createMachine(dropdownMenuMachine, full)
+  const raw: DropdownMenuProps = { id: `dm${nextId++}`, ...props }
+  const config: DropdownMenuMachineProps = { ...DROPDOWN_MENU_DEFAULTS, ...raw }
+  const machine = createMachine(dropdownMenuMachine, config)
   machine.start()
   return machine
 }

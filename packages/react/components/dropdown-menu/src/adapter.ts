@@ -6,23 +6,22 @@
  * this map into the machine via withAdapter() before useMachine.
  */
 import type { Adapter } from '@render-experiment/machine-core'
-import {
-  dropdownMenuProps,
-  type DropdownMenuContext,
-  type DropdownMenuEvent,
-  type DropdownMenuProps,
+import type {
+  DropdownMenuContext,
+  DropdownMenuEvent,
+  DropdownMenuMachineProps,
 } from '@render-experiment/dropdown-menu-core'
 
 export const dropdownMenuAdapter: Adapter<
   DropdownMenuContext,
-  DropdownMenuProps,
+  DropdownMenuMachineProps,
   DropdownMenuEvent
 > = {
   // Capture-phase Escape closer so we run before nested popovers/dialogs
   // that might also be listening. Stops propagation so the menu's close
   // doesn't cascade upward.
   trackEscapeKey: ({ props, send }) => {
-    if (!dropdownMenuProps(props).closeOnEscape) return
+    if (!props.closeOnEscape) return
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
       event.stopPropagation()

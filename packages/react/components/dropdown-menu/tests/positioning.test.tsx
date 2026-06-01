@@ -135,7 +135,7 @@ afterEach(() => {
 describe('collision — side flips when clipped', () => {
   it("flips bottom → top when there's no room below the trigger", () => {
     render(
-      <DropdownMenu defaultOpen positioning={{ placement: 'bottom' }}>
+      <DropdownMenu defaultOpen placement='bottom'>
         <DropdownMenu.Trigger>
           <button>Open</button>
         </DropdownMenu.Trigger>
@@ -158,7 +158,7 @@ describe('collision — side flips when clipped', () => {
 
   it("flips right → left when there's no room to the right", () => {
     render(
-      <DropdownMenu defaultOpen positioning={{ placement: 'right' }}>
+      <DropdownMenu defaultOpen placement='right'>
         <DropdownMenu.Trigger>
           <button>Open</button>
         </DropdownMenu.Trigger>
@@ -181,7 +181,7 @@ describe('collision — side flips when clipped', () => {
 
   it('keeps the preferred side when it fits', () => {
     render(
-      <DropdownMenu defaultOpen positioning={{ placement: 'bottom' }}>
+      <DropdownMenu defaultOpen placement='bottom'>
         <DropdownMenu.Trigger>
           <button>Open</button>
         </DropdownMenu.Trigger>
@@ -211,7 +211,7 @@ describe('collision — side flips when clipped', () => {
 describe('trigger move — recompute on resize', () => {
   it("recomputes side when the trigger's ResizeObserver fires", () => {
     render(
-      <DropdownMenu defaultOpen positioning={{ placement: 'bottom' }}>
+      <DropdownMenu defaultOpen placement='bottom'>
         <DropdownMenu.Trigger>
           <button>Open</button>
         </DropdownMenu.Trigger>

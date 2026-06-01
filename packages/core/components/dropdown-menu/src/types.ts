@@ -10,10 +10,10 @@
  */
 
 import type { AttrBindings, Part } from '@render-experiment/machine-core'
-import type { Placement, PositioningOptions } from '@render-experiment/utils'
+import type { Placement } from '@render-experiment/utils'
 import type { DropdownMenuContentVariants, DropdownMenuItemVariants } from './parts'
 
-export type { Placement, PositioningOptions }
+export type { Placement }
 
 // -----------------------------------------------------------------------------
 // Caller-facing props (Radix-shaped)
@@ -48,7 +48,33 @@ export interface DropdownMenuProps {
    *  Accepted for Radix-API parity; v1 doesn't act on it. */
   dir?: 'ltr' | 'rtl'
 
-  positioning?: Partial<PositioningOptions>
+  /** Preferred side/alignment. Default 'bottom-start'. */
+  placement?: Placement
+  /** Screen-horizontal offset from the anchor point, px. Default 0. */
+  offsetX?: number
+  /** Screen-vertical offset from the anchor point, px. Default 4. */
+  offsetY?: number
+}
+
+/**
+ * Props after defaults are applied (`{ ...DROPDOWN_MENU_DEFAULTS, ...props }`),
+ * resolved once at the adapter entry. The machine and connect operate on
+ * this concrete shape and never re-resolve.
+ */
+export interface DropdownMenuMachineProps {
+  id: string
+  open?: boolean
+  defaultOpen: boolean
+  closeOnSelect: boolean
+  closeOnEscape: boolean
+  focusTrap: boolean
+  loop: boolean
+  typeahead: boolean
+  dir: 'ltr' | 'rtl'
+  placement: Placement
+  offsetX: number
+  offsetY: number
+  onOpenChange?: DropdownMenuProps['onOpenChange']
 }
 
 // -----------------------------------------------------------------------------
@@ -178,7 +204,7 @@ export interface DropdownMenuApi {
     trigger: Part
     content: Part<
       DropdownMenuContentVariants,
-      { positioning: PositioningOptions; rendered: boolean }
+      { placement: Placement; offsetX: number; offsetY: number; rendered: boolean }
     >
     /** Static parts — same attrs for every render call. */
     separator: { attrs: AttrBindings }

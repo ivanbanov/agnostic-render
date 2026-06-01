@@ -192,30 +192,35 @@ ${decls}
 
 function emitReactApi(component: DiscoveredComponent): string {
   const { pascal, slug, camel } = component
+  const CONST = slug.toUpperCase().replace(/-/g, '_')
   return `${ESLINT_DISABLE}
 import { withAdapter } from "@render-experiment/machine-core";
 import { useApi } from "@render-experiment/machine-react";
 import {
   connect${pascal},
   ${camel}Machine,
+  ${CONST}_DEFAULTS,
   type ${pascal}Api,
   type ${pascal}Context as ${pascal}MachineContext,
   type ${pascal}Event,
+  type ${pascal}MachineProps,
   type ${pascal}Props,
   type ${pascal}State,
 } from "@render-experiment/${slug}-core";
 import { ${camel}Adapter } from "../adapter";
 
-const ${camel}MachineWithAdapter = withAdapter<${pascal}MachineContext, ${pascal}Props, ${pascal}Event>(
+const ${camel}MachineWithAdapter = withAdapter<${pascal}MachineContext, ${pascal}MachineProps, ${pascal}Event>(
   ${camel}Machine,
   ${camel}Adapter,
 );
 
 /** Wire the core machine to React and return the connect() API. */
 export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
-  return useApi<${pascal}MachineContext, ${pascal}Props, ${pascal}State, ${pascal}Api, ${pascal}Event>(
+  // Resolve defaults ONCE here; the machine + connect receive concrete config.
+  const config: ${pascal}MachineProps = { ...${CONST}_DEFAULTS, ...props };
+  return useApi<${pascal}MachineContext, ${pascal}MachineProps, ${pascal}State, ${pascal}Api, ${pascal}Event>(
     ${camel}MachineWithAdapter,
-    props,
+    config,
     connect${pascal},
   );
 }
@@ -256,30 +261,35 @@ ${decls.join('\n\n')}
 
 function emitNativeApi(component: DiscoveredComponent): string {
   const { pascal, slug, camel } = component
+  const CONST = slug.toUpperCase().replace(/-/g, '_')
   return `${ESLINT_DISABLE}
 import { withAdapter } from "@render-experiment/machine-core";
 import { useApi } from "@render-experiment/machine-native";
 import {
   connect${pascal},
   ${camel}Machine,
+  ${CONST}_DEFAULTS,
   type ${pascal}Api,
   type ${pascal}Context as ${pascal}MachineContext,
   type ${pascal}Event,
+  type ${pascal}MachineProps,
   type ${pascal}Props,
   type ${pascal}State,
 } from "@render-experiment/${slug}-core";
 import { ${camel}Adapter } from "../adapter";
 
-const ${camel}MachineWithAdapter = withAdapter<${pascal}MachineContext, ${pascal}Props, ${pascal}Event>(
+const ${camel}MachineWithAdapter = withAdapter<${pascal}MachineContext, ${pascal}MachineProps, ${pascal}Event>(
   ${camel}Machine,
   ${camel}Adapter,
 );
 
 /** Wire the core machine to native and return the connect() API. */
 export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
-  return useApi<${pascal}MachineContext, ${pascal}Props, ${pascal}State, ${pascal}Api, ${pascal}Event>(
+  // Resolve defaults ONCE here; the machine + connect receive concrete config.
+  const config: ${pascal}MachineProps = { ...${CONST}_DEFAULTS, ...props };
+  return useApi<${pascal}MachineContext, ${pascal}MachineProps, ${pascal}State, ${pascal}Api, ${pascal}Event>(
     ${camel}MachineWithAdapter,
-    props,
+    config,
     connect${pascal},
   );
 }

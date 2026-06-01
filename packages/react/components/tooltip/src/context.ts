@@ -1,5 +1,5 @@
 import { createContext, useContext, type RefObject } from 'react'
-import type { ResolvedTooltipProps, TooltipApi } from '@render-experiment/tooltip-core'
+import type { TooltipApi, TooltipMachineProps } from '@render-experiment/tooltip-core'
 
 /**
  * React context for the tooltip — the root provides; Trigger/Content
@@ -14,7 +14,7 @@ import type { ResolvedTooltipProps, TooltipApi } from '@render-experiment/toolti
 
 export interface TooltipContextValue {
   api: TooltipApi
-  props: ResolvedTooltipProps
+  props: TooltipMachineProps
   triggerRef: RefObject<HTMLElement | null>
 }
 

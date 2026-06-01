@@ -79,7 +79,7 @@ export function App() {
 
       <section>
         <h2>Placement: right</h2>
-        <Tooltip positioning={{ placement: 'right' }}>
+        <Tooltip placement='right'>
           <Tooltip.Trigger>
             <button>right-placed</button>
           </Tooltip.Trigger>

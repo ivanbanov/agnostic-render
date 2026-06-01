@@ -3,6 +3,10 @@
  *
  * States: closed → opening → open → closing
  *
+ * Receives ALREADY-RESOLVED config (`TooltipMachineProps`) — defaults are
+ * applied once at the adapter entry, so every field on `props` is concrete
+ * and read directly.
+ *
  * Feature parity with the SPEC.md contract:
  *   - openDelay / closeDelay (Provider-inheritable, Root override)
  *   - skipDelayDuration window (per-tooltip; Provider-inheritable)
@@ -18,27 +22,23 @@
  *
  * Sibling files:
  *   - types.ts    — public types
- *   - props.ts    — defaults + resolver
+ *   - props.ts    — defaults (resolution is a spread at the adapter entry)
  *   - store.ts    — global singleton state
  *   - connect.ts  — logical surface (handlers + attrs)
  *   - index.ts    — public exports
  */
 
 import type { MachineConfig } from '@render-experiment/machine-core'
-import { tooltipProps } from './props'
 import { tooltipStore } from './store'
-import type { TooltipContext, TooltipEvent, TooltipProps } from './types'
+import type { TooltipContext, TooltipEvent, TooltipMachineProps } from './types'
 
-export const tooltipMachine: MachineConfig<TooltipContext, TooltipProps, TooltipEvent> = {
-  initial: props => {
-    const r = tooltipProps(props)
-    return (r.open ?? r.defaultOpen) ? 'open' : 'closed'
-  },
+export const tooltipMachine: MachineConfig<TooltipContext, TooltipMachineProps, TooltipEvent> = {
+  initial: props => ((props.open ?? props.defaultOpen) ? 'open' : 'closed'),
 
   context: props => ({
     hasPointerMoveOpened: false,
     hasInstantOpen: false,
-    placement: tooltipProps(props).positioning.placement,
+    placement: props.placement,
   }),
 
   states: {
@@ -111,15 +111,15 @@ export const tooltipMachine: MachineConfig<TooltipContext, TooltipProps, Tooltip
     guards: {
       shouldSkipDelay: () => tooltipStore.isInSkipWindow(),
       /** Inverse of disableHoverableContent — pointer can dwell on Content. */
-      isHoverableContent: ({ props }) => !tooltipProps(props).disableHoverableContent,
+      isHoverableContent: ({ props }) => !props.disableHoverableContent,
     },
 
     actions: {
       invokeOnOpen: ({ props }) => {
-        tooltipProps(props).onOpenChange?.({ open: true })
+        props.onOpenChange?.({ open: true })
       },
       invokeOnClose: ({ props }) => {
-        tooltipProps(props).onOpenChange?.({ open: false })
+        props.onOpenChange?.({ open: false })
       },
       setPointerMoveOpened: ({ setContext }) => {
         setContext({ hasPointerMoveOpened: true })
@@ -134,15 +134,14 @@ export const tooltipMachine: MachineConfig<TooltipContext, TooltipProps, Tooltip
         setContext({ hasInstantOpen: false })
       },
       setGlobalId: ({ props }) => {
-        const { id, skipDelayDuration } = tooltipProps(props)
+        const { id, skipDelayDuration } = props
         tooltipStore.setOpen(id)
         if (skipDelayDuration > 0) {
           tooltipStore.startSkipWindow(skipDelayDuration)
         }
       },
       clearGlobalId: ({ props }) => {
-        const { id } = tooltipProps(props)
-        if (tooltipStore.get().openId === id) {
+        if (tooltipStore.get().openId === props.id) {
           tooltipStore.setOpen(null)
         }
       },
@@ -150,18 +149,12 @@ export const tooltipMachine: MachineConfig<TooltipContext, TooltipProps, Tooltip
 
     effects: {
       waitForOpenDelay: ({ props, send }) => {
-        const id = setTimeout(
-          () => send({ type: 'after.openDelay' }),
-          tooltipProps(props).openDelay,
-        )
+        const id = setTimeout(() => send({ type: 'after.openDelay' }), props.openDelay)
         return () => clearTimeout(id)
       },
 
       waitForCloseDelay: ({ props, send }) => {
-        const id = setTimeout(
-          () => send({ type: 'after.closeDelay' }),
-          tooltipProps(props).closeDelay,
-        )
+        const id = setTimeout(() => send({ type: 'after.closeDelay' }), props.closeDelay)
         return () => clearTimeout(id)
       },
 
@@ -171,7 +164,7 @@ export const tooltipMachine: MachineConfig<TooltipContext, TooltipProps, Tooltip
       trackEscapeKey: () => undefined,
 
       trackGlobalStore: ({ props, send }) => {
-        const { id } = tooltipProps(props)
+        const { id } = props
         return tooltipStore.subscribe(() => {
           if (tooltipStore.get().openId !== id && tooltipStore.get().openId !== null) {
             send({ type: 'close', src: 'store.id.change' })

@@ -194,7 +194,7 @@ export function DropdownMenuContent(props: DropdownMenuContentProps) {
     ? {
         ...positionerStyle,
         left: anchor.x,
-        top: anchor.y + anchor.height + apiWithItems.parts.content.positioning.offset.main,
+        top: anchor.y + anchor.height + apiWithItems.parts.content.offsetY,
       }
     : positionerStyle
 

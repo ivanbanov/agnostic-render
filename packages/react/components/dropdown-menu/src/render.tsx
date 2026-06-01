@@ -33,7 +33,7 @@ import {
   type DropdownMenuRadioGroupValue,
 } from './context'
 import * as Styled from './generated/elements'
-import { anchorOf, cloneOnly, getChildRef, mergeRefs } from './utils'
+import { anchorOf, cloneOnly, getChildRef, mainOffsetFor, mergeRefs } from './utils'
 
 // =============================================================================
 // <DropdownMenu> — provider, owns the machine + items registry
@@ -148,23 +148,18 @@ function PositionedContent({
       const contentRect = contentRef.current?.getBoundingClientRect() ?? null
 
       const preferred = api.parts.content.variants.side
+      const { placement, offsetX, offsetY } = api.parts.content
       const next = pickSide(
         preferred,
         triggerRect,
         contentRect,
         { width: window.innerWidth, height: window.innerHeight },
-        api.parts.content.positioning.offset.main,
+        mainOffsetFor(placement, offsetX, offsetY),
       )
       setEffectiveSide(next)
 
-      const flippedPositioning = {
-        ...api.parts.content.positioning,
-        placement:
-          next === api.parts.content.variants.side
-            ? api.parts.content.positioning.placement
-            : (next as typeof api.parts.content.positioning.placement),
-      }
-      setAnchor(anchorOf(triggerRect, flippedPositioning))
+      const flippedPlacement = next === preferred ? placement : (next as typeof placement)
+      setAnchor(anchorOf(triggerRect, flippedPlacement, offsetX, offsetY))
     }
     measure()
     window.addEventListener('scroll', measure, true)
@@ -173,7 +168,13 @@ function PositionedContent({
       window.removeEventListener('scroll', measure, true)
       window.removeEventListener('resize', measure)
     }
-  }, [api.parts.content.positioning, api.parts.content.variants.side, triggerRef])
+  }, [
+    api.parts.content.placement,
+    api.parts.content.offsetX,
+    api.parts.content.offsetY,
+    api.parts.content.variants.side,
+    triggerRef,
+  ])
 
   // Trigger-move detection: ResizeObserver catches box changes that
   // don't trigger window scroll/resize.
@@ -186,26 +187,28 @@ function PositionedContent({
       if (!t) return
       const triggerRect = t.getBoundingClientRect()
       const contentRect = contentRef.current?.getBoundingClientRect() ?? null
+      const preferred = api.parts.content.variants.side
+      const { placement, offsetX, offsetY } = api.parts.content
       const next = pickSide(
-        api.parts.content.variants.side,
+        preferred,
         triggerRect,
         contentRect,
         { width: window.innerWidth, height: window.innerHeight },
-        api.parts.content.positioning.offset.main,
+        mainOffsetFor(placement, offsetX, offsetY),
       )
       setEffectiveSide(next)
-      const flippedPositioning = {
-        ...api.parts.content.positioning,
-        placement:
-          next === api.parts.content.variants.side
-            ? api.parts.content.positioning.placement
-            : (next as typeof api.parts.content.positioning.placement),
-      }
-      setAnchor(anchorOf(triggerRect, flippedPositioning))
+      const flippedPlacement = next === preferred ? placement : (next as typeof placement)
+      setAnchor(anchorOf(triggerRect, flippedPlacement, offsetX, offsetY))
     })
     ro.observe(trigger)
     return () => ro.disconnect()
-  }, [api.parts.content.positioning, api.parts.content.variants.side, triggerRef])
+  }, [
+    api.parts.content.placement,
+    api.parts.content.offsetX,
+    api.parts.content.offsetY,
+    api.parts.content.variants.side,
+    triggerRef,
+  ])
 
   // Viewport dismiss: close when the trigger scrolls out of view.
   useEffect(() => {

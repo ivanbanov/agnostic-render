@@ -386,7 +386,7 @@ describe('data attributes', () => {
 
   it('content reflects data-side', () => {
     render(
-      <Tooltip defaultOpen positioning={{ placement: 'right' }}>
+      <Tooltip defaultOpen placement='right'>
         <Tooltip.Trigger>
           <button>Trigger</button>
         </Tooltip.Trigger>

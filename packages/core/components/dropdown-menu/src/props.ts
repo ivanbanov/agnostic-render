@@ -1,19 +1,16 @@
 /**
- * DropdownMenu props — public types are in `./types`. This file owns the
- * runtime side of props:
+ * DropdownMenu defaults.
  *
- *   - DROPDOWN_MENU_DEFAULTS  — static fact, exported for inspection/docs
- *   - dropdownMenuProps()     — raw → resolved (defaults merged)
+ * Resolution is a plain object spread — `{ ...DROPDOWN_MENU_DEFAULTS, ...props }`
+ * applied ONCE at the adapter entry (generated api.ts). Every prop is flat,
+ * so a shallow spread fully resolves them; there is no merge function and no
+ * nested `positioning` object to deep-merge.
  *
  * Kept separate from machine.ts so a designer collaborator can read the
  * defaults in isolation, without scrolling past the state machine.
  */
 
-import type { DropdownMenuProps, Placement, PositioningOptions } from './types'
-
-// -----------------------------------------------------------------------------
-// Defaults
-// -----------------------------------------------------------------------------
+import type { Placement } from './types'
 
 export const DROPDOWN_MENU_DEFAULTS = {
   defaultOpen: false,
@@ -23,61 +20,11 @@ export const DROPDOWN_MENU_DEFAULTS = {
   loop: true,
   typeahead: true,
   dir: 'ltr' as const,
-  positioning: {
-    placement: 'bottom-start' as Placement,
-    offset: { main: 4, cross: 0 },
-  },
+  placement: 'bottom-start' as Placement,
+  /** Screen-axis offsets applied to the anchor point (px). */
+  offsetX: 0,
+  offsetY: 4,
 } as const
 
 /** Maximum gap between typeahead keypresses before the buffer resets. */
 export const TYPEAHEAD_RESET_MS = 500
-
-// -----------------------------------------------------------------------------
-// Resolved shape
-// -----------------------------------------------------------------------------
-
-/** Props after defaults are applied. Machine code only ever sees this
- * shape — every optional prop is concrete, positioning is fully populated. */
-export interface ResolvedDropdownMenuProps {
-  id: string
-  open: boolean | undefined
-  defaultOpen: boolean
-  closeOnSelect: boolean
-  closeOnEscape: boolean
-  focusTrap: boolean
-  loop: boolean
-  typeahead: boolean
-  dir: 'ltr' | 'rtl'
-  onOpenChange: DropdownMenuProps['onOpenChange']
-  positioning: PositioningOptions
-}
-
-// -----------------------------------------------------------------------------
-// Resolver
-// -----------------------------------------------------------------------------
-
-/**
- * Apply DROPDOWN_MENU_DEFAULTS to raw props. `positioning` is deep-merged
- * so passing `{ positioning: { placement } }` overrides only that field.
- */
-export function dropdownMenuProps(props: DropdownMenuProps): ResolvedDropdownMenuProps {
-  return {
-    id: props.id,
-    open: props.open,
-    defaultOpen: props.defaultOpen ?? DROPDOWN_MENU_DEFAULTS.defaultOpen,
-    closeOnSelect: props.closeOnSelect ?? DROPDOWN_MENU_DEFAULTS.closeOnSelect,
-    closeOnEscape: props.closeOnEscape ?? DROPDOWN_MENU_DEFAULTS.closeOnEscape,
-    focusTrap: props.focusTrap ?? DROPDOWN_MENU_DEFAULTS.focusTrap,
-    loop: props.loop ?? DROPDOWN_MENU_DEFAULTS.loop,
-    typeahead: props.typeahead ?? DROPDOWN_MENU_DEFAULTS.typeahead,
-    dir: props.dir ?? DROPDOWN_MENU_DEFAULTS.dir,
-    onOpenChange: props.onOpenChange,
-    positioning: {
-      placement: props.positioning?.placement ?? DROPDOWN_MENU_DEFAULTS.positioning.placement,
-      offset: {
-        main: props.positioning?.offset?.main ?? DROPDOWN_MENU_DEFAULTS.positioning.offset.main,
-        cross: props.positioning?.offset?.cross ?? DROPDOWN_MENU_DEFAULTS.positioning.offset.cross,
-      },
-    },
-  }
-}

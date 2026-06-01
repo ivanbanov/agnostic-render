@@ -25,10 +25,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   connectTooltip,
+  TOOLTIP_DEFAULTS,
   tooltipMachine,
   tooltipStore,
   type TooltipApi,
   type TooltipContext,
+  type TooltipMachineProps,
   type TooltipProps,
   type TooltipState,
 } from '@render-experiment/tooltip-core'
@@ -40,10 +42,12 @@ import { createMachine } from '@render-experiment/machine-core'
 
 let nextId = 0
 
-/** Build a started machine for a fresh tooltip instance. */
+/** Build a started machine for a fresh tooltip instance. Resolves defaults
+ * the same way the adapter entry does, so the machine gets concrete config. */
 function makeMachine(props: Partial<TooltipProps> = {}) {
-  const full: TooltipProps = { id: `t${nextId++}`, ...props }
-  const machine = createMachine(tooltipMachine, full)
+  const raw: TooltipProps = { id: `t${nextId++}`, ...props }
+  const config: TooltipMachineProps = { ...TOOLTIP_DEFAULTS, ...raw }
+  const machine = createMachine(tooltipMachine, config)
   machine.start()
   return machine
 }
@@ -275,7 +279,7 @@ describe('disabled', () => {
 
 describe('connect accessibility surface', () => {
   it('content carries role=tooltip and the resolved side', () => {
-    const m = makeMachine({ open: true, positioning: { placement: 'right' } })
+    const m = makeMachine({ open: true, placement: 'right' })
     const content = api(m).parts.content
     expect(content.attrs.role).toBe('tooltip')
     expect(content.attrs['data-side']).toBe('right')

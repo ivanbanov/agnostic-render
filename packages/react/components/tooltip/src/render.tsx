@@ -11,16 +11,16 @@ import {
 import { pickSide, type Side } from '@render-experiment/utils'
 import { mergeProps, normalize } from '@render-experiment/machine-react'
 import {
-  tooltipProps as resolveProps,
-  type ResolvedTooltipProps,
+  TOOLTIP_DEFAULTS,
   type TooltipApi,
+  type TooltipMachineProps,
   type TooltipProps,
 } from '@render-experiment/tooltip-core'
 import { useTooltipApi } from './generated/api'
 import { TooltipContextRef, useTooltipContext } from './context'
 import { useTooltipProviderConfig } from './provider'
 import * as Styled from './generated/elements'
-import { anchorOf, cloneOnly, getChildRef, mergeRefs } from './utils'
+import { anchorOf, cloneOnly, getChildRef, mainOffsetFor, mergeRefs } from './utils'
 
 // -----------------------------------------------------------------------------
 // <Tooltip> — provider, owns the machine
@@ -42,7 +42,8 @@ export function TooltipRoot(props: TooltipRootProps) {
 
   const triggerRef = useRef<HTMLElement | null>(null)
   const api = useTooltipApi(rawProps)
-  const resolved = resolveProps(rawProps)
+  // Resolve the same way the api hook does, for the context's config view.
+  const resolved: TooltipMachineProps = { ...TOOLTIP_DEFAULTS, ...rawProps }
 
   return (
     <TooltipContextRef.Provider value={{ api, props: resolved, triggerRef }}>
@@ -130,7 +131,7 @@ function PositionedContent({
   children,
 }: {
   api: TooltipApi
-  ctxProps: ResolvedTooltipProps
+  ctxProps: TooltipMachineProps
   consumerProps: Record<string, unknown>
   triggerRef: RefObject<HTMLElement | null>
   children: ReactNode
@@ -152,25 +153,19 @@ function PositionedContent({
       const contentRect = contentRef.current?.getBoundingClientRect() ?? null
 
       const preferred = api.parts.content.variants.side
+      const { placement, offsetX, offsetY } = api.parts.content
       const next = pickSide(
         preferred,
         triggerRect,
         contentRect,
         { width: window.innerWidth, height: window.innerHeight },
-        api.parts.content.positioning.offset.main,
+        mainOffsetFor(placement, offsetX, offsetY),
       )
       setEffectiveSide(next)
 
-      // Re-anchor against the (possibly flipped) side. Build a virtual
-      // PositioningOptions that mirrors the resolved side.
-      const flippedPositioning = {
-        ...api.parts.content.positioning,
-        placement:
-          next === api.parts.content.variants.side
-            ? api.parts.content.positioning.placement
-            : (next as typeof api.parts.content.positioning.placement),
-      }
-      setAnchor(anchorOf(triggerRect, flippedPositioning))
+      // Re-anchor against the (possibly flipped) side.
+      const flippedPlacement = next === preferred ? placement : (next as typeof placement)
+      setAnchor(anchorOf(triggerRect, flippedPlacement, offsetX, offsetY))
     }
 
     measure()
@@ -180,7 +175,13 @@ function PositionedContent({
       window.removeEventListener('scroll', measure, true)
       window.removeEventListener('resize', measure)
     }
-  }, [api.parts.content.positioning, api.parts.content.variants.side, triggerRef])
+  }, [
+    api.parts.content.placement,
+    api.parts.content.offsetX,
+    api.parts.content.offsetY,
+    api.parts.content.variants.side,
+    triggerRef,
+  ])
 
   // Trigger-move detection: a ResizeObserver on the trigger catches the
   // case where the trigger's box changes without a window scroll/resize.
@@ -195,26 +196,28 @@ function PositionedContent({
       if (!t) return
       const triggerRect = t.getBoundingClientRect()
       const contentRect = contentRef.current?.getBoundingClientRect() ?? null
+      const preferred = api.parts.content.variants.side
+      const { placement, offsetX, offsetY } = api.parts.content
       const next = pickSide(
-        api.parts.content.variants.side,
+        preferred,
         triggerRect,
         contentRect,
         { width: window.innerWidth, height: window.innerHeight },
-        api.parts.content.positioning.offset.main,
+        mainOffsetFor(placement, offsetX, offsetY),
       )
       setEffectiveSide(next)
-      const flippedPositioning = {
-        ...api.parts.content.positioning,
-        placement:
-          next === api.parts.content.variants.side
-            ? api.parts.content.positioning.placement
-            : (next as typeof api.parts.content.positioning.placement),
-      }
-      setAnchor(anchorOf(triggerRect, flippedPositioning))
+      const flippedPlacement = next === preferred ? placement : (next as typeof placement)
+      setAnchor(anchorOf(triggerRect, flippedPlacement, offsetX, offsetY))
     })
     ro.observe(trigger)
     return () => ro.disconnect()
-  }, [api.parts.content.positioning, api.parts.content.variants.side, triggerRef])
+  }, [
+    api.parts.content.placement,
+    api.parts.content.offsetX,
+    api.parts.content.offsetY,
+    api.parts.content.variants.side,
+    triggerRef,
+  ])
 
   // Viewport dismiss: close when the trigger scrolls out of view.
   // Implemented via IntersectionObserver so we don't need to poll.

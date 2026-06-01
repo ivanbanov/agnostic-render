@@ -44,9 +44,9 @@ import {
 } from 'react-native'
 import { mergeProps, normalize } from '@render-experiment/machine-native'
 import {
-  tooltipProps as resolveProps,
-  type ResolvedTooltipProps,
+  TOOLTIP_DEFAULTS,
   type TooltipApi,
+  type TooltipMachineProps,
   type TooltipProps,
 } from '@render-experiment/tooltip-core'
 import { useTooltipApi } from './generated/api'
@@ -59,7 +59,7 @@ import { useTooltipProviderConfig } from './context'
 
 interface TooltipCtxValue {
   api: TooltipApi
-  props: ResolvedTooltipProps
+  props: TooltipMachineProps
   triggerRef: React.MutableRefObject<View | null>
   anchor: { x: number; y: number; width: number; height: number } | null
   setAnchor: (a: { x: number; y: number; width: number; height: number } | null) => void
@@ -96,7 +96,7 @@ export function TooltipRoot(props: TooltipRootProps) {
   const [anchor, setAnchor] = useState<TooltipCtxValue['anchor']>(null)
   const rawProps: TooltipProps = { ...providerConfig, ...rest, id }
   const api = useTooltipApi(rawProps)
-  const resolved = resolveProps(rawProps)
+  const resolved: TooltipMachineProps = { ...TOOLTIP_DEFAULTS, ...rawProps }
 
   return (
     <TooltipCtx.Provider value={{ api, props: resolved, triggerRef, anchor, setAnchor, id }}>

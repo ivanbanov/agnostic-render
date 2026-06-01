@@ -29,25 +29,24 @@
  */
 
 import type { MachineConfig } from '@render-experiment/machine-core'
-import { dropdownMenuProps, TYPEAHEAD_RESET_MS } from './props'
+import { TYPEAHEAD_RESET_MS } from './props'
 import { dropdownMenuStore } from './store'
-import type { DropdownMenuContext, DropdownMenuEvent, DropdownMenuProps } from './types'
+import type { DropdownMenuContext, DropdownMenuEvent, DropdownMenuMachineProps } from './types'
 import { firstEnabled, lastEnabled, makeSelectEvent, step, typeaheadFind } from './utils'
 
+// Receives already-resolved config (defaults applied at the adapter entry),
+// so every prop is concrete and read directly off `props`.
 export const dropdownMenuMachine: MachineConfig<
   DropdownMenuContext,
-  DropdownMenuProps,
+  DropdownMenuMachineProps,
   DropdownMenuEvent
 > = {
-  initial: props => {
-    const r = dropdownMenuProps(props)
-    return (r.open ?? r.defaultOpen) ? 'open' : 'closed'
-  },
+  initial: props => ((props.open ?? props.defaultOpen) ? 'open' : 'closed'),
 
   context: props => ({
     highlightedValue: null,
     suspendPointer: false,
-    currentPlacement: dropdownMenuProps(props).positioning.placement,
+    currentPlacement: props.placement,
     typeaheadBuffer: '',
     typeaheadLastTime: 0,
     pendingHighlight: null,
@@ -123,22 +122,22 @@ export const dropdownMenuMachine: MachineConfig<
         if (event.selectEvent.defaultPrevented) return false
         // Per-item override (false for checkbox/radio); otherwise resolved prop.
         if (event.closeOnSelect !== undefined) return event.closeOnSelect
-        return dropdownMenuProps(props).closeOnSelect
+        return props.closeOnSelect
       },
     },
 
     actions: {
       invokeOnOpen: ({ props }) => {
-        dropdownMenuProps(props).onOpenChange?.({ open: true })
+        props.onOpenChange?.({ open: true })
       },
       invokeOnClose: ({ props }) => {
-        dropdownMenuProps(props).onOpenChange?.({ open: false })
+        props.onOpenChange?.({ open: false })
       },
       setGlobalId: ({ props }) => {
-        dropdownMenuStore.setOpen(dropdownMenuProps(props).id)
+        dropdownMenuStore.setOpen(props.id)
       },
       clearGlobalId: ({ props }) => {
-        const { id } = dropdownMenuProps(props)
+        const { id } = props
         if (dropdownMenuStore.get().openId === id) {
           dropdownMenuStore.setOpen(null)
         }
@@ -202,12 +201,12 @@ export const dropdownMenuMachine: MachineConfig<
       },
       highlightNext: ({ context, setContext, props, event }) => {
         if (!('items' in event)) return
-        const next = step(event.items, context.highlightedValue, 1, dropdownMenuProps(props).loop)
+        const next = step(event.items, context.highlightedValue, 1, props.loop)
         if (next) setContext({ highlightedValue: next.value })
       },
       highlightPrev: ({ context, setContext, props, event }) => {
         if (!('items' in event)) return
-        const next = step(event.items, context.highlightedValue, -1, dropdownMenuProps(props).loop)
+        const next = step(event.items, context.highlightedValue, -1, props.loop)
         if (next) setContext({ highlightedValue: next.value })
       },
 
@@ -262,7 +261,7 @@ export const dropdownMenuMachine: MachineConfig<
       trackEscapeKey: () => undefined,
 
       trackGlobalStore: ({ props, send }) => {
-        const { id } = dropdownMenuProps(props)
+        const { id } = props
         return dropdownMenuStore.subscribe(() => {
           const openId = dropdownMenuStore.get().openId
           if (openId !== id && openId !== null) {

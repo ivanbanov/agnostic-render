@@ -7,22 +7,20 @@
  * before useMachine.
  */
 import type { Adapter } from '@render-experiment/machine-core'
-import {
-  tooltipProps,
-  type TooltipContext,
-  type TooltipEvent,
-  type TooltipProps,
+import type {
+  TooltipContext,
+  TooltipEvent,
+  TooltipMachineProps,
 } from '@render-experiment/tooltip-core'
 
-export const tooltipAdapter: Adapter<TooltipContext, TooltipProps, TooltipEvent> = {
+export const tooltipAdapter: Adapter<TooltipContext, TooltipMachineProps, TooltipEvent> = {
   // Listen for Escape while the tooltip is open. Capture-phase so we run
   // before consumer popovers/dialogs that might also listen.
   //
   // Calls `onEscapeKeyDown` first with a small cancelable event so
   // consumers can `preventDefault()` to keep the tooltip open. If they
   // do, no close event is sent.
-  trackEscapeKey: ({ props, send }) => {
-    const r = tooltipProps(props)
+  trackEscapeKey: ({ props: r, send }) => {
     if (!r.closeOnEscape) return
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
