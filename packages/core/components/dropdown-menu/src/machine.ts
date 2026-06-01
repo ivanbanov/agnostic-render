@@ -1,7 +1,7 @@
 /**
  * DropdownMenu machine — substrate-agnostic state machine.
  *
- * States: idle → open → idle
+ * States: closed → open → closed
  *
  * Mirrors the W3C menu-button pattern + Radix's DropdownMenu behavior:
  *   - Click trigger to toggle
@@ -37,7 +37,7 @@ import { firstEnabled, lastEnabled, makeSelectEvent, readItems, step, typeaheadF
 export const dropdownMenuMachine: MachineConfig<DropdownMenuContext, DropdownMenuProps> = {
   initial: props => {
     const r = dropdownMenuProps(props)
-    return (r.open ?? r.defaultOpen) ? 'open' : 'idle'
+    return (r.open ?? r.defaultOpen) ? 'open' : 'closed'
   },
 
   context: props => ({
@@ -50,7 +50,7 @@ export const dropdownMenuMachine: MachineConfig<DropdownMenuContext, DropdownMen
   }),
 
   states: {
-    idle: {
+    closed: {
       entry: ['clearGlobalId', 'clearHighlight', 'clearPendingHighlight'],
       on: {
         'trigger.click': {
@@ -75,16 +75,16 @@ export const dropdownMenuMachine: MachineConfig<DropdownMenuContext, DropdownMen
     open: {
       effects: ['trackEscapeKey', 'trackGlobalStore'],
       on: {
-        close: { target: 'idle', actions: ['invokeOnClose'] },
-        'trigger.click': { target: 'idle', actions: ['invokeOnClose'] },
-        escape: { target: 'idle', actions: ['invokeOnClose'] },
+        close: { target: 'closed', actions: ['invokeOnClose'] },
+        'trigger.click': { target: 'closed', actions: ['invokeOnClose'] },
+        escape: { target: 'closed', actions: ['invokeOnClose'] },
 
         'item.pointermove': { actions: ['highlightItem'] },
         'item.pointerleave': { actions: ['clearHighlightIfMatch'] },
         'item.click': [
           {
             guard: 'shouldCloseOnSelect',
-            target: 'idle',
+            target: 'closed',
             // onSelect was already invoked synchronously at the connect's
             // call site so the guard could read event.defaultPrevented.
             actions: ['invokeOnClose'],

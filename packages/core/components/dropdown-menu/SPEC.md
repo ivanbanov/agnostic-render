@@ -30,7 +30,7 @@ scope for v1.
 
 ## States
 
-- **idle** — closed; no menu visible.
+- **closed** — no menu visible.
 - **open** — menu is mounted and one item may be highlighted.
 
 ## Behavior

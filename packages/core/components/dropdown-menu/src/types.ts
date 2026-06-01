@@ -114,7 +114,7 @@ export interface DropdownMenuContext {
 // States
 // -----------------------------------------------------------------------------
 
-export type DropdownMenuState = 'idle' | 'open'
+export type DropdownMenuState = 'closed' | 'open'
 
 // -----------------------------------------------------------------------------
 // Connect API

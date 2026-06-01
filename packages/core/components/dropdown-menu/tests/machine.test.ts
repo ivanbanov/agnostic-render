@@ -79,8 +79,8 @@ afterEach(() => {
 // -----------------------------------------------------------------------------
 
 describe('initial state', () => {
-  it('starts idle by default', () => {
-    expect(makeMachine().getState()).toBe('idle')
+  it('starts closed by default', () => {
+    expect(makeMachine().getState()).toBe('closed')
   })
 
   it('starts open when defaultOpen is true', () => {
@@ -137,13 +137,13 @@ describe('closing', () => {
   it('clicking the trigger while open closes', () => {
     const m = makeMachine({ defaultOpen: true })
     api(m).parts.trigger.handlers.onPress?.(undefined as never)
-    expect(m.getState()).toBe('idle')
+    expect(m.getState()).toBe('closed')
   })
 
   it('an `escape` event closes (what the Escape adapter sends)', () => {
     const m = makeMachine({ defaultOpen: true })
     m.send({ type: 'escape' })
-    expect(m.getState()).toBe('idle')
+    expect(m.getState()).toBe('closed')
   })
 })
 
@@ -227,7 +227,7 @@ describe('item activation', () => {
     api(m)
       .getItem(ITEMS[0])
       .handlers.onPress?.(undefined as never)
-    expect(m.getState()).toBe('idle')
+    expect(m.getState()).toBe('closed')
   })
 
   it('closeOnSelect=false on the root keeps the menu open after activation', () => {
@@ -297,7 +297,7 @@ describe('focusTrap', () => {
     // The view's keydown handler sends `close` on Tab in loose mode.
     const event = { key: 'Tab', preventDefault: vi.fn() }
     api(m).parts.content.handlers.onKeyDown?.(event as never)
-    expect(m.getState()).toBe('idle')
+    expect(m.getState()).toBe('closed')
     expect(event.preventDefault).not.toHaveBeenCalled()
   })
 
@@ -332,7 +332,7 @@ describe('mutual exclusion', () => {
     api(second).parts.trigger.handlers.onPress?.(undefined as never)
 
     expect(second.getState()).toBe('open')
-    expect(first.getState()).toBe('idle')
+    expect(first.getState()).toBe('closed')
   })
 })
 
