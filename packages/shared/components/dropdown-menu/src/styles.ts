@@ -1,23 +1,3 @@
-/**
- * Ported from @mirohq/design-system DropdownMenu, medium size.
- *
- * Token → literal mapping (web tokens, light theme):
- *   $50            → 4px                   (space, border-radius)
- *   $100           → 8px                   (space)
- *   $125           → 500px                 (sizes — 125 * 4)
- *   $150           → 12px                  (space)
- *   $300           → 24px                  (space)
- *   $background-neutrals-container → #FFFFFF
- *   $background-primary-subtle-hover → #E8ECFC   (blue-150)
- *   $background-primary-subtle-active → #D9DFFC  (blue-200)
- *   $text-neutrals → #222428                (gray-900)
- *   $text-neutrals-disabled → #AEB2C0       (gray-350)
- *   $text-primary-hover  → #314CD9          (blue-550)
- *   $text-primary-active → #2A41B6          (blue-600)
- *   $shadows-50          → 0 4px 16px #05003812
- *   $border-neutrals-strong-subtle → #E9EAEF (gray-150)  (separator)
- */
-
 export const positioner = {
   position: "fixed",
   width: 0,

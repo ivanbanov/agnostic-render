@@ -51,6 +51,7 @@ import {
 } from "@render-experiment/tooltip-core";
 import { useTooltipApi } from "./generated/api";
 import { resolveContent, resolvePositioner } from "./generated/elements";
+import { useTooltipProviderConfig } from "./context";
 
 // -----------------------------------------------------------------------------
 // Internal context — Trigger and Content read api + triggerRef + anchor
@@ -89,9 +90,11 @@ export function TooltipRoot(props: TooltipRootProps) {
   const autoId = useId();
   const id = providedId ?? autoId;
 
+  // Provider config supplies inheritable defaults. Root props override.
+  const providerConfig = useTooltipProviderConfig();
   const triggerRef = useRef<View | null>(null);
   const [anchor, setAnchor] = useState<TooltipCtxValue["anchor"]>(null);
-  const rawProps: TooltipProps = { id, ...rest };
+  const rawProps: TooltipProps = { ...providerConfig, ...rest, id };
   const api = useTooltipApi(rawProps);
   const resolved = resolveProps(rawProps);
 
@@ -113,8 +116,13 @@ export interface TooltipTriggerProps extends Omit<PressableProps, "children"> {
 }
 
 export function TooltipTrigger(props: TooltipTriggerProps) {
-  const { children, delayLongPress = 500, ...consumerProps } = props;
-  const { api, triggerRef, setAnchor } = useTooltipCtxOrThrow();
+  const { children, delayLongPress, ...consumerProps } = props;
+  const { api, props: ctxProps, triggerRef, setAnchor } = useTooltipCtxOrThrow();
+
+  // Map openDelay (resolved against Provider config + Root prop) to RN's
+  // delayLongPress. Explicit Trigger prop wins if the consumer set one.
+  const effectiveDelay =
+    delayLongPress ?? ctxProps.openDelay ?? 500;
 
   // Measure on layout so the anchor is current when the tooltip opens.
   const measure = useCallback(() => {
@@ -151,7 +159,7 @@ export function TooltipTrigger(props: TooltipTriggerProps) {
       // keep-open-while-held is the standard touch idiom.
       api.setOpen(false);
     },
-    delayLongPress,
+    delayLongPress: effectiveDelay,
   };
 
   const merged = mergeProps(consumerProps as Record<string, unknown>, machineProps);

@@ -15,9 +15,8 @@ export const content: TranslatedNativeStyle = {
     "borderRadius": 3,
     "fontSize": 14,
     "fontWeight": 400,
-    "lineHeight": "20px",
+    "lineHeight": 20,
     "fontFamily": "inherit",
-    "outline": "1px solid transparent",
     "zIndex": 2147483647
   },
   "variants": {
@@ -42,14 +41,14 @@ export const content: TranslatedNativeStyle = {
   }
 };
 
-export function resolveContent(selections: Record<string, string> = {}) {
+export function resolveContent(selections: Record<string, string | boolean> = {}) {
   return resolveStyle(content, selections);
 }
 
 // Source: shared/components/tooltip/src/styles → positioner
 export const positioner: TranslatedNativeStyle = {
   "base": {
-    "position": "fixed",
+    "position": "absolute",
     "width": 0,
     "height": 0
   },
@@ -65,6 +64,6 @@ export const positioner: TranslatedNativeStyle = {
   }
 };
 
-export function resolvePositioner(selections: Record<string, string> = {}) {
+export function resolvePositioner(selections: Record<string, string | boolean> = {}) {
   return resolveStyle(positioner, selections);
 }

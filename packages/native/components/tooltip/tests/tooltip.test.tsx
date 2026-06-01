@@ -1,26 +1,6 @@
-/**
- * React Native substrate tests for the Tooltip view.
- *
- * These assert the RN-specific behaviors the SPEC + render.tsx call out,
- * which the web tests can't cover:
- *   - Long-press opens (no hover model on RN).
- *   - Press-out closes (hold-to-show touch idiom).
- *   - Content renders inline only while open (no portal in v1).
- *   - Trigger carries RN accessibility props (via the native normalizer).
- *   - Android hardware back closes an open tooltip (BackHandler).
- *
- * The shared state-machine contract (delays, mutual exclusion, etc.) is
- * covered framework-free in core/components/tooltip/tests/machine.test.ts;
- * here we only verify the RN view wires that machine up correctly.
- */
 import { BackHandler } from "react-native";
 import { Text } from "react-native";
-import {
-  fireEvent,
-  render,
-  screen,
-  act,
-} from "@testing-library/react-native";
+import { fireEvent, render, screen, act } from "@testing-library/react-native";
 import { Tooltip } from "@render-experiment/tooltip-native";
 
 function renderTooltip(rootProps = {}) {
@@ -70,8 +50,7 @@ describe("RN tooltip — handler wiring on the trigger", () => {
     // walking the rendered tree (the consumer's <Text> is nested inside it).
     const root = screen.UNSAFE_root;
     const withLongPress = root.findAll(
-      (node: { props?: Record<string, unknown> }) =>
-        typeof node.props?.onLongPress === "function",
+      (node: { props?: Record<string, unknown> }) => typeof node.props?.onLongPress === "function",
     );
     expect(withLongPress.length).toBeGreaterThan(0);
 

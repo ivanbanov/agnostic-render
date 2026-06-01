@@ -11,15 +11,23 @@
  * View on top of children. Tooltip.Content nodes register themselves via
  * the TooltipPortalContext; the provider re-renders to display them.
  */
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
-import { TooltipPortalContext, type TooltipPortalEntry } from "./context";
+import type { TooltipProviderConfig } from "@render-experiment/tooltip-core";
+import {
+  TooltipPortalContext,
+  TooltipProviderConfigContext,
+  type TooltipPortalEntry,
+} from "./context";
 
-export interface TooltipProviderProps {
+export interface TooltipProviderProps extends TooltipProviderConfig {
   children: ReactNode;
 }
 
-export function TooltipProvider({ children }: TooltipProviderProps) {
+export function TooltipProvider({
+  children,
+  ...config
+}: TooltipProviderProps) {
   const [entries, setEntries] = useState<TooltipPortalEntry[]>([]);
 
   const mount = useCallback((entry: TooltipPortalEntry) => {
@@ -33,28 +41,48 @@ export function TooltipProvider({ children }: TooltipProviderProps) {
     setEntries((prev) => prev.filter((e) => e.id !== id));
   }, []);
 
+  // Stable config object — see notes in the React TooltipProvider.
+  const configValue = useMemo<TooltipProviderConfig>(
+    () => ({
+      openDelay: config.openDelay,
+      closeDelay: config.closeDelay,
+      skipDelayDuration: config.skipDelayDuration,
+      disableHoverableContent: config.disableHoverableContent,
+    }),
+    [
+      config.openDelay,
+      config.closeDelay,
+      config.skipDelayDuration,
+      config.disableHoverableContent,
+    ],
+  );
+
   return (
-    <TooltipPortalContext.Provider value={{ mount, unmount }}>
-      <View style={styles.root}>
-        {children}
-        <View
-          style={styles.overlay}
-          pointerEvents="box-none"
-          // Pointer-events: box-none lets touches pass through the overlay
-          // unless they hit a portal entry directly.
-        >
-          {entries.map((entry) => (
-            <View key={entry.id} style={StyleSheet.absoluteFill} pointerEvents="box-none">
-              {entry.node}
-            </View>
-          ))}
+    <TooltipProviderConfigContext.Provider value={configValue}>
+      <TooltipPortalContext.Provider value={{ mount, unmount }}>
+        <View style={styles.root}>
+          {children}
+          <View
+            style={styles.overlay}
+            pointerEvents="box-none"
+            // Pointer-events: box-none lets touches pass through the overlay
+            // unless they hit a portal entry directly.
+          >
+            {entries.map((entry) => (
+              <View key={entry.id} style={StyleSheet.absoluteFill} pointerEvents="box-none">
+                {entry.node}
+              </View>
+            ))}
+          </View>
         </View>
-      </View>
-    </TooltipPortalContext.Provider>
+      </TooltipPortalContext.Provider>
+    </TooltipProviderConfigContext.Provider>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  overlay: { ...StyleSheet.absoluteFillObject },
+  // Explicit absolute-fill (RN 0.85's StyleSheet type doesn't surface
+  // `absoluteFillObject`; this is exactly what it expands to).
+  overlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
 });

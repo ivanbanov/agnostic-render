@@ -6,9 +6,11 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.miro.render-experiment.native"
     },
     "android": {
+      "package": "com.miro.render_experiment.native",
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       }

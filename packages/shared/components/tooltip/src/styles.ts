@@ -1,12 +1,3 @@
-// Style values mirror @mirohq/design-system tooltip:
-//   background = $tooltip-background (charcoal)
-//   color      = $text-on-static-dark (white)
-//   padding    = calc($50 + $25) $100  → 6px 8px
-//   lineHeight = $400                  → 20px
-//   borderRadius = $tooltip             → 3px
-//   fontSize / fontWeight = 14 / 400
-//   outline: 1px solid transparent — preserves layout under forced-colors.
-//   zIndex: high enough to float above app chrome by default.
 export const content = {
   position: "absolute",
   pointerEvents: "auto",

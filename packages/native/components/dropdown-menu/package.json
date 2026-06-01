@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@render-experiment/dropdown-menu-core": "workspace:*",
+    "@render-experiment/machine-core": "workspace:*",
     "@render-experiment/machine-native": "workspace:*",
     "@render-experiment/style-engine-native": "workspace:*"
   }

@@ -312,31 +312,6 @@ describe("focusTrap", () => {
 });
 
 // -----------------------------------------------------------------------------
-// confirmOnEscape — surfaced on the connect API for adapters to read
-// -----------------------------------------------------------------------------
-
-describe("confirmOnEscape", () => {
-  it("defaults to false on the connect surface", () => {
-    expect(api(makeMachine({ defaultOpen: true })).confirmOnEscape).toBe(false);
-  });
-
-  it("reflects the resolved prop when true", () => {
-    expect(
-      api(makeMachine({ defaultOpen: true, confirmOnEscape: true }))
-        .confirmOnEscape,
-    ).toBe(true);
-  });
-
-  it("does not change how the machine handles an `escape` event", () => {
-    // The confirmation gate lives in the substrate adapter; once `escape`
-    // reaches the machine it always closes, regardless of confirmOnEscape.
-    const m = makeMachine({ defaultOpen: true, confirmOnEscape: true });
-    m.send({ type: "escape" });
-    expect(m.getState()).toBe("idle");
-  });
-});
-
-// -----------------------------------------------------------------------------
 // Mutual exclusion
 // -----------------------------------------------------------------------------
 

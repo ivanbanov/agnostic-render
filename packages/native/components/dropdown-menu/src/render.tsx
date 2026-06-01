@@ -48,6 +48,7 @@ import {
 import { mergeProps, normalize } from "@render-experiment/machine-native";
 import {
   type DropdownMenuProps,
+  type DropdownMenuSelectEvent,
 } from "@render-experiment/dropdown-menu-core";
 import { useDropdownMenuApi } from "./generated/api";
 import {
@@ -252,7 +253,7 @@ interface ItemBaseProps {
   value: string;
   textValue?: string;
   disabled?: boolean;
-  onSelect?: () => void;
+  onSelect?: (event: DropdownMenuSelectEvent) => void;
   kind: "item" | "checkbox" | "radio";
   checked?: boolean | "indeterminate";
   children: ReactNode;
@@ -324,7 +325,7 @@ export interface DropdownMenuItemProps
   value: string;
   textValue?: string;
   disabled?: boolean;
-  onSelect?: () => void;
+  onSelect?: (event: DropdownMenuSelectEvent) => void;
   children: ReactNode;
 }
 
@@ -360,8 +361,9 @@ export function DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps) {
     children,
     ...consumerProps
   } = props;
-  const handleSelect = () => {
-    onSelect?.();
+  const handleSelect = (event: DropdownMenuSelectEvent) => {
+    onSelect?.(event);
+    if (event.defaultPrevented) return;
     onCheckedChange?.(!checked);
   };
   return (
@@ -406,7 +408,7 @@ export interface DropdownMenuRadioItemProps
   value: string;
   textValue?: string;
   disabled?: boolean;
-  onSelect?: () => void;
+  onSelect?: (event: DropdownMenuSelectEvent) => void;
   children: ReactNode;
 }
 
@@ -414,8 +416,9 @@ export function DropdownMenuRadioItem(props: DropdownMenuRadioItemProps) {
   const { value, textValue, disabled, onSelect, children, ...consumerProps } = props;
   const radioGroup = useDropdownMenuRadioGroup();
   const checked = radioGroup?.value === value;
-  const handleSelect = () => {
-    onSelect?.();
+  const handleSelect = (event: DropdownMenuSelectEvent) => {
+    onSelect?.(event);
+    if (event.defaultPrevented) return;
     radioGroup?.onValueChange(value);
   };
   return (

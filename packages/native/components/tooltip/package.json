@@ -13,6 +13,7 @@
     "react-native": "*"
   },
   "dependencies": {
+    "@render-experiment/machine-core": "workspace:*",
     "@render-experiment/machine-native": "workspace:*",
     "@render-experiment/style-engine-native": "workspace:*",
     "@render-experiment/tooltip-core": "workspace:*"

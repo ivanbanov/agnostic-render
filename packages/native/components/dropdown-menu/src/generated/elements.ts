@@ -11,13 +11,20 @@ export const content: TranslatedNativeStyle = {
     "backgroundColor": "#FFFFFF",
     "color": "#222428",
     "borderRadius": 4,
-    "padding": "12px 12px",
+    "paddingVertical": 12,
+    "paddingHorizontal": 12,
     "fontSize": 14,
-    "lineHeight": "20px",
+    "lineHeight": 20,
     "minWidth": 180,
     "maxWidth": 500,
-    "boxShadow": "0 4px 16px #05003812",
-    "outline": "1px solid transparent"
+    "shadowColor": "#050038",
+    "shadowOffset": {
+      "width": 0,
+      "height": 4
+    },
+    "shadowOpacity": 0.07058823529411765,
+    "shadowRadius": 16,
+    "elevation": 8
   },
   "variants": {
     "side": {
@@ -41,40 +48,34 @@ export const content: TranslatedNativeStyle = {
   }
 };
 
-export function resolveContent(selections: Record<string, string> = {}) {
+export function resolveContent(selections: Record<string, string | boolean> = {}) {
   return resolveStyle(content, selections);
 }
 
 // Source: shared/components/dropdown-menu/src/styles → group
 export const group: TranslatedNativeStyle = {
-  "base": {
-    "display": "block"
-  },
+  "base": {},
   "variants": {},
   "compoundVariants": [],
   "defaultVariants": {}
 };
 
-export function resolveGroup(selections: Record<string, string> = {}) {
+export function resolveGroup(selections: Record<string, string | boolean> = {}) {
   return resolveStyle(group, selections);
 }
 
 // Source: shared/components/dropdown-menu/src/styles → item
 export const item: TranslatedNativeStyle = {
   "base": {
-    "boxSizing": "border-box",
-    "display": "grid",
-    "gridTemplateColumns": "auto 1fr auto",
-    "gridTemplateAreas": "\"left-slot item-text right-slot\"",
     "alignItems": "center",
     "gap": 8,
-    "padding": "10px 8px",
+    "paddingVertical": 10,
+    "paddingHorizontal": 8,
     "fontSize": 14,
-    "lineHeight": "20px",
+    "lineHeight": 20,
     "color": "#222428",
     "borderRadius": 4,
-    "position": "relative",
-    "outline": "none"
+    "position": "relative"
   },
   "variants": {
     "highlighted": {
@@ -100,16 +101,17 @@ export const item: TranslatedNativeStyle = {
   }
 };
 
-export function resolveItem(selections: Record<string, string> = {}) {
+export function resolveItem(selections: Record<string, string | boolean> = {}) {
   return resolveStyle(item, selections);
 }
 
 // Source: shared/components/dropdown-menu/src/styles → label
 export const label: TranslatedNativeStyle = {
   "base": {
-    "padding": "6px 8px",
+    "paddingVertical": 6,
+    "paddingHorizontal": 8,
     "fontSize": 12,
-    "lineHeight": "16px",
+    "lineHeight": 16,
     "fontWeight": 600,
     "color": "#AEB2C0"
   },
@@ -118,14 +120,14 @@ export const label: TranslatedNativeStyle = {
   "defaultVariants": {}
 };
 
-export function resolveLabel(selections: Record<string, string> = {}) {
+export function resolveLabel(selections: Record<string, string | boolean> = {}) {
   return resolveStyle(label, selections);
 }
 
 // Source: shared/components/dropdown-menu/src/styles → positioner
 export const positioner: TranslatedNativeStyle = {
   "base": {
-    "position": "fixed",
+    "position": "absolute",
     "width": 0,
     "height": 0
   },
@@ -141,7 +143,7 @@ export const positioner: TranslatedNativeStyle = {
   }
 };
 
-export function resolvePositioner(selections: Record<string, string> = {}) {
+export function resolvePositioner(selections: Record<string, string | boolean> = {}) {
   return resolveStyle(positioner, selections);
 }
 
@@ -158,6 +160,6 @@ export const separator: TranslatedNativeStyle = {
   "defaultVariants": {}
 };
 
-export function resolveSeparator(selections: Record<string, string> = {}) {
+export function resolveSeparator(selections: Record<string, string | boolean> = {}) {
   return resolveStyle(separator, selections);
 }

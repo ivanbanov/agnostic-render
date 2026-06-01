@@ -15,6 +15,7 @@
  * positioning (clipped by parent overflow — fine for top-level cases).
  */
 import { createContext, useContext, type ReactNode } from "react";
+import type { TooltipProviderConfig } from "@render-experiment/tooltip-core";
 
 export interface TooltipPortalEntry {
   id: string;
@@ -36,4 +37,18 @@ export const TooltipPortalContext = createContext<TooltipPortalContextValue | nu
  */
 export function useTooltipPortal(): TooltipPortalContextValue | null {
   return useContext(TooltipPortalContext);
+}
+
+/**
+ * Inheritable Tooltip defaults — mirrors the web TooltipProvider config
+ * (openDelay/closeDelay/skipDelayDuration/disableHoverableContent). Most
+ * fields are no-ops on touch (no hover model), but openDelay applies to
+ * the long-press duration and disableHoverableContent is honored when
+ * relevant.
+ */
+export const TooltipProviderConfigContext =
+  createContext<TooltipProviderConfig | null>(null);
+
+export function useTooltipProviderConfig(): TooltipProviderConfig | null {
+  return useContext(TooltipProviderConfigContext);
 }

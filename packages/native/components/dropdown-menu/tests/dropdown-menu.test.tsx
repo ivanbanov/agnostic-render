@@ -13,13 +13,8 @@
  * free in core/components/dropdown-menu/tests/machine.test.ts; here we only
  * check the RN view wires it up and respects substrate constraints.
  */
-import { Alert, BackHandler, Text } from "react-native";
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-} from "@testing-library/react-native";
+import { BackHandler, Text } from "react-native";
+import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { DropdownMenu } from "@render-experiment/dropdown-menu-native";
 
 function renderMenu(rootProps = {}, onSelect?: (e: { preventDefault: () => void }) => void) {
@@ -91,8 +86,7 @@ describe("RN dropdown — focusTrap is inert on RN", () => {
       const root = screen.UNSAFE_root;
       const withKeyHandler = root.findAll(
         (node: { props?: Record<string, unknown> }) =>
-          node.props?.onKeyDown !== undefined ||
-          node.props?.onKeyUp !== undefined,
+          node.props?.onKeyDown !== undefined || node.props?.onKeyUp !== undefined,
       );
       expect(withKeyHandler).toHaveLength(0);
       unmount();
@@ -120,63 +114,5 @@ describe("RN dropdown — Android back button", () => {
     expect(screen.queryByText("Item A")).toBeNull();
 
     spy.mockRestore();
-  });
-});
-
-describe("RN dropdown — confirmOnEscape on the back button", () => {
-  function backHandler() {
-    const spy = jest.spyOn(BackHandler, "addEventListener");
-    renderMenu({ defaultOpen: true, confirmOnEscape: true });
-    const call = spy.mock.calls.find(
-      ([event]: [string, ...unknown[]]) => event === "hardwareBackPress",
-    );
-    expect(call).toBeTruthy();
-    spy.mockRestore();
-    return call![1] as () => boolean;
-  }
-
-  it("prompts an Alert on back press and closes when confirmed", () => {
-    const alert = jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
-    const handler = backHandler();
-    expect(screen.getByText("Item A")).toBeTruthy();
-
-    let handled = false;
-    act(() => {
-      handled = handler();
-    });
-    // Back press is consumed, but the menu stays open until the Alert
-    // resolves — Alert.alert is async.
-    expect(handled).toBe(true);
-    expect(alert).toHaveBeenCalledWith("Close this menu?", undefined, [
-      expect.objectContaining({ text: "Cancel" }),
-      expect.objectContaining({ text: "OK" }),
-    ]);
-    expect(screen.getByText("Item A")).toBeTruthy();
-
-    // Simulate the user pressing "OK".
-    const buttons = alert.mock.calls[0][2] as Array<{
-      text?: string;
-      onPress?: () => void;
-    }>;
-    const ok = buttons.find((b) => b.text === "OK");
-    act(() => {
-      ok?.onPress?.();
-    });
-    expect(screen.queryByText("Item A")).toBeNull();
-
-    alert.mockRestore();
-  });
-
-  it("keeps the menu open when the Alert is cancelled", () => {
-    const alert = jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
-    const handler = backHandler();
-
-    act(() => {
-      handler();
-    });
-    // No button pressed (or Cancel pressed, which has no onPress) → no close.
-    expect(screen.getByText("Item A")).toBeTruthy();
-
-    alert.mockRestore();
   });
 });

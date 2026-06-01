@@ -5,27 +5,22 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start --clear",
-    "ios": "expo start --ios --clear",
-    "android": "expo start --android --clear",
+    "ios": "expo run:ios",
+    "android": "expo run:android",
     "web": "expo start --web --clear"
   },
   "dependencies": {
-    "@expo/metro-runtime": "~3.2.3",
-    "@render-experiment/machine-core": "workspace:*",
-    "@render-experiment/machine-native": "workspace:*",
-    "@render-experiment/style-engine-native": "workspace:*",
-    "@render-experiment/dropdown-menu-core": "workspace:*",
     "@render-experiment/dropdown-menu-native": "workspace:*",
-    "@render-experiment/tooltip-core": "workspace:*",
     "@render-experiment/tooltip-native": "workspace:*",
-    "expo": "~51.0.0",
-    "expo-status-bar": "~1.12.1",
-    "react": "18.2.0",
-    "react-native": "0.74.5",
-    "react-native-web": "~0.19.13"
+    "expo": "^56.0.0",
+    "expo-dev-client": "^56.0.18",
+    "expo-dev-menu": "^56.0.16",
+    "expo-status-bar": "^3.0.0",
+    "react": "19.2.0",
+    "react-native": "0.85.0"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
-    "@types/react": "~18.2.45"
+    "@types/react": "^19.2.0"
   }
 }
