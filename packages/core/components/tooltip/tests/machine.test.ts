@@ -63,6 +63,7 @@ function api(machine: ReturnType<typeof makeMachine>): TooltipApi {
     context: machine.getContext() as TooltipContext,
     props: machine.getProps(),
     send: machine.send,
+    computed: machine.getComputed(),
   })()
 }
 

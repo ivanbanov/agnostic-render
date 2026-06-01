@@ -64,6 +64,7 @@ function api(
     context: machine.getContext() as DropdownMenuContext,
     props: machine.getProps(),
     send: machine.send,
+    computed: machine.getComputed(),
   })(items)
 }
 

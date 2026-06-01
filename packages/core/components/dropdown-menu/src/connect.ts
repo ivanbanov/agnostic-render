@@ -13,6 +13,7 @@ import { connector, type AttrBindings, type EventBindings } from '@render-experi
 import { placementToSide } from '@render-experiment/utils'
 import type {
   DropdownMenuApi,
+  DropdownMenuComputed,
   DropdownMenuContext,
   DropdownMenuEvent,
   DropdownMenuMachineProps,
@@ -27,12 +28,13 @@ export const connectDropdownMenu = connector<
   DropdownMenuContext,
   DropdownMenuMachineProps,
   DropdownMenuApi,
-  DropdownMenuEvent
->()(({ state, context, props: r, send }, items: DropdownMenuItemProps[] = []): DropdownMenuApi => {
-  const open = state === 'open'
-
-  const triggerId = `dropdown-menu:${r.id}:trigger`
-  const contentId = `dropdown-menu:${r.id}:content`
+  DropdownMenuEvent,
+  DropdownMenuComputed
+>()((
+  { state, context, props: r, send, computed },
+  items: DropdownMenuItemProps[] = [],
+): DropdownMenuApi => {
+  const { open, triggerId, contentId } = computed
 
   const triggerHandlers: EventBindings = {
     onPress: () => send({ type: 'trigger.click', items }),
@@ -244,7 +246,7 @@ export const connectDropdownMenu = connector<
       if (open && context.pendingHighlight && nextItems.length > 0) {
         send({ type: 'items.ready', items: nextItems })
       }
-      return connectDropdownMenu({ state, context, props: r, send })(nextItems)
+      return connectDropdownMenu({ state, context, props: r, send, computed })(nextItems)
     },
   }
 })

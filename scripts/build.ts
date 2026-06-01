@@ -209,20 +209,13 @@ import {
 } from "@render-experiment/${slug}-core";
 import { ${camel}Adapter } from "../adapter";
 
-const ${camel}MachineWithAdapter = withAdapter<${pascal}MachineContext, ${pascal}MachineProps, ${pascal}Event>(
-  ${camel}Machine,
-  ${camel}Adapter,
-);
+const ${camel}MachineWithAdapter = withAdapter(${camel}Machine, ${camel}Adapter);
 
 /** Wire the core machine to React and return the connect() API. */
 export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
   // Resolve defaults ONCE here; the machine + connect receive concrete config.
   const config: ${pascal}MachineProps = { ...${CONST}_DEFAULTS, ...props };
-  return useApi<${pascal}MachineContext, ${pascal}MachineProps, ${pascal}State, ${pascal}Api, ${pascal}Event>(
-    ${camel}MachineWithAdapter,
-    config,
-    connect${pascal},
-  );
+  return useApi(${camel}MachineWithAdapter, config, connect${pascal});
 }
 `
 }
@@ -278,20 +271,13 @@ import {
 } from "@render-experiment/${slug}-core";
 import { ${camel}Adapter } from "../adapter";
 
-const ${camel}MachineWithAdapter = withAdapter<${pascal}MachineContext, ${pascal}MachineProps, ${pascal}Event>(
-  ${camel}Machine,
-  ${camel}Adapter,
-);
+const ${camel}MachineWithAdapter = withAdapter(${camel}Machine, ${camel}Adapter);
 
 /** Wire the core machine to native and return the connect() API. */
 export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
   // Resolve defaults ONCE here; the machine + connect receive concrete config.
   const config: ${pascal}MachineProps = { ...${CONST}_DEFAULTS, ...props };
-  return useApi<${pascal}MachineContext, ${pascal}MachineProps, ${pascal}State, ${pascal}Api, ${pascal}Event>(
-    ${camel}MachineWithAdapter,
-    config,
-    connect${pascal},
-  );
+  return useApi(${camel}MachineWithAdapter, config, connect${pascal});
 }
 `
 }

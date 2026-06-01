@@ -6,9 +6,10 @@
  */
 import type { Adapter } from '@render-experiment/machine-core'
 import type {
+  DropdownMenuComputed,
   DropdownMenuContext,
   DropdownMenuEvent,
-  DropdownMenuProps,
+  DropdownMenuMachineProps,
 } from '@render-experiment/dropdown-menu-core'
 
 // No substrate effects to override: the core's trackEscapeKey no-op stands
@@ -16,6 +17,7 @@ import type {
 // via BackHandler). Left empty intentionally rather than re-stating the no-op.
 export const dropdownMenuAdapter: Adapter<
   DropdownMenuContext,
-  DropdownMenuProps,
-  DropdownMenuEvent
+  DropdownMenuMachineProps,
+  DropdownMenuEvent,
+  DropdownMenuComputed
 > = {}

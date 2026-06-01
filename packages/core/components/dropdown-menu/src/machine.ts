@@ -37,6 +37,11 @@ import { firstEnabled, lastEnabled, makeSelectEvent, step, typeaheadFind } from 
 // Receives already-resolved config (defaults applied at the adapter entry),
 // so every prop is concrete and read directly off `props`.
 export const dropdownMenuMachine = setup<DropdownMenuSchema>().createMachine({
+  computed: {
+    open: ({ state }) => state === 'open',
+    triggerId: ({ props }) => `dropdown-menu:${props.id}:trigger`,
+    contentId: ({ props }) => `dropdown-menu:${props.id}:content`,
+  },
   initial: props => ((props.open ?? props.defaultOpen) ? 'open' : 'closed'),
 
   context: props => ({

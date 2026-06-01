@@ -217,6 +217,20 @@ export type DropdownMenuGuards = 'shouldCloseOnSelect'
 export type DropdownMenuEffects = 'trackEscapeKey' | 'trackGlobalStore'
 
 /**
+ * Derived values, memoized by machine version. Available to actions,
+ * guards, effects (via `params.computed`) and to the connect (via the
+ * snapshot's `computed` field).
+ */
+export type DropdownMenuComputed = {
+  /** True iff the machine is in the `open` state. */
+  open: boolean
+  /** Stable id for the trigger element — derived from `props.id`. */
+  triggerId: string
+  /** Stable id for the content element — derived from `props.id`. */
+  contentId: string
+}
+
+/**
  * Single source of truth for the dropdown-menu machine — wired into
  * `setup<DropdownMenuSchema>().createMachine({ ... })`. The compiler enforces:
  *   - every name referenced in `entry / exit / actions / effects / guard`
@@ -224,6 +238,7 @@ export type DropdownMenuEffects = 'trackEscapeKey' | 'trackGlobalStore'
  *   - every transition `target` is a declared `state`
  *   - `implementations.{actions,guards,effects}` are exhaustive — missing
  *     keys fail, extra keys fail
+ *   - `computed` returns the declared result type for each key
  */
 export type DropdownMenuSchema = {
   context: DropdownMenuContext
@@ -233,6 +248,7 @@ export type DropdownMenuSchema = {
   actions: DropdownMenuActions
   guards: DropdownMenuGuards
   effects: DropdownMenuEffects
+  computed: DropdownMenuComputed
 }
 
 // -----------------------------------------------------------------------------
