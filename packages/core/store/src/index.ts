@@ -1,2 +1,2 @@
-export * from "./create-store";
-export * from "./shallow-equal";
+export * from './create-store'
+export * from './shallow-equal'

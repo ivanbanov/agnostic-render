@@ -9,11 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@render-experiment/dropdown-menu-core": "workspace:*",
+    "@render-experiment/dropdown-menu-pixi": "workspace:*",
     "@render-experiment/machine-core": "workspace:*",
     "@render-experiment/machine-pixi": "workspace:*",
     "@render-experiment/style-engine-pixi": "workspace:*",
-    "@render-experiment/dropdown-menu-core": "workspace:*",
-    "@render-experiment/dropdown-menu-pixi": "workspace:*",
     "@render-experiment/tooltip-core": "workspace:*",
     "@render-experiment/tooltip-pixi": "workspace:*",
     "pixi.js": "^8.18.1"

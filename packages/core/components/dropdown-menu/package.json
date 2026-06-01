@@ -9,8 +9,8 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@render-experiment/machine-core": "workspace:*",
     "@render-experiment/dropdown-menu-shared": "workspace:*",
+    "@render-experiment/machine-core": "workspace:*",
     "@render-experiment/store": "workspace:*",
     "@render-experiment/utils": "workspace:*"
   }

@@ -1,73 +1,73 @@
 export const positioner = {
-  position: "fixed",
+  position: 'fixed',
   width: 0,
   height: 0,
   variants: {
     anchored: {
-      true: { visibility: "visible" },
-      false: { visibility: "hidden" },
+      true: { visibility: 'visible' },
+      false: { visibility: 'hidden' },
     },
   },
   defaultVariants: {
     anchored: false,
   },
-};
+}
 
 export const content = {
-  position: "absolute",
-  pointerEvents: "auto",
-  background: "#FFFFFF",
-  color: "#222428",
+  position: 'absolute',
+  pointerEvents: 'auto',
+  background: '#FFFFFF',
+  color: '#222428',
   borderRadius: 4,
-  padding: "12px 12px",
+  padding: '12px 12px',
   fontSize: 14,
-  lineHeight: "20px",
+  lineHeight: '20px',
   minWidth: 180,
   maxWidth: 500,
-  boxShadow: "0 4px 16px #05003812",
-  outline: "1px solid transparent",
+  boxShadow: '0 4px 16px #05003812',
+  outline: '1px solid transparent',
   variants: {
     side: {
-      top: { bottom: "100%" },
-      bottom: { top: "100%" },
-      left: { right: "100%" },
-      right: { left: "100%" },
+      top: { bottom: '100%' },
+      bottom: { top: '100%' },
+      left: { right: '100%' },
+      right: { left: '100%' },
     },
   },
   defaultVariants: {
-    side: "bottom",
+    side: 'bottom',
   },
-};
+}
 
 export const item = {
-  boxSizing: "border-box",
-  display: "grid",
-  gridTemplateColumns: "auto 1fr auto",
+  boxSizing: 'border-box',
+  display: 'grid',
+  gridTemplateColumns: 'auto 1fr auto',
   gridTemplateAreas: '"left-slot item-text right-slot"',
-  alignItems: "center",
+  alignItems: 'center',
   gap: 8,
-  padding: "10px 8px",
+  padding: '10px 8px',
   fontSize: 14,
-  lineHeight: "20px",
-  color: "#222428",
+  lineHeight: '20px',
+  color: '#222428',
   borderRadius: 4,
-  position: "relative",
-  userSelect: "none",
-  cursor: "pointer",
-  outline: "none",
+  position: 'relative',
+  userSelect: 'none',
+  cursor: 'pointer',
+  outline: 'none',
   variants: {
     highlighted: {
       true: {
-        background: "#E8ECFC",
-        color: "#314CD9",
+        background: '#E8ECFC',
+        color: '#314CD9',
       },
-      false: { background: "transparent" },
+      false: { background: 'transparent' },
     },
     disabled: {
       true: {
-        color: "#AEB2C0",
-        cursor: "default",
-        pointerEvents: "none",
+        color: '#AEB2C0',
+        cursor: 'default',
+        pointerEvents: 'none',
       },
       false: {},
     },
@@ -76,26 +76,26 @@ export const item = {
     highlighted: false,
     disabled: false,
   },
-};
+}
 
 export const separator = {
   height: 1,
   marginY: 4,
   marginX: 0,
-  background: "#E9EAEF",
+  background: '#E9EAEF',
   variants: {},
-};
+}
 
 export const label = {
-  padding: "6px 8px",
+  padding: '6px 8px',
   fontSize: 12,
-  lineHeight: "16px",
+  lineHeight: '16px',
   fontWeight: 600,
-  color: "#AEB2C0",
+  color: '#AEB2C0',
   variants: {},
-};
+}
 
 export const group = {
-  display: "block",
+  display: 'block',
   variants: {},
-};
+}

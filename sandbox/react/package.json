@@ -11,11 +11,11 @@
   "dependencies": {
     "@json-render/core": "^0.19.0",
     "@json-render/react": "^0.19.0",
+    "@render-experiment/dropdown-menu-core": "workspace:*",
+    "@render-experiment/dropdown-menu-react": "workspace:*",
     "@render-experiment/machine-core": "workspace:*",
     "@render-experiment/machine-react": "workspace:*",
     "@render-experiment/style-engine-react": "workspace:*",
-    "@render-experiment/dropdown-menu-core": "workspace:*",
-    "@render-experiment/dropdown-menu-react": "workspace:*",
     "@render-experiment/tooltip-core": "workspace:*",
     "@render-experiment/tooltip-react": "workspace:*",
     "react": "^19.2.6",

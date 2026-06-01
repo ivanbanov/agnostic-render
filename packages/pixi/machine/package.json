@@ -8,10 +8,10 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "peerDependencies": {
-    "pixi.js": "^8.0.0"
-  },
   "dependencies": {
     "@render-experiment/machine-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "pixi.js": "^8.0.0"
   }
 }

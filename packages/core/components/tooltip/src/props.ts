@@ -6,7 +6,7 @@
  * defaults in isolation, without scrolling past the state machine.
  */
 
-import type { Placement, PositioningOptions, TooltipProps } from "./types";
+import type { Placement, PositioningOptions, TooltipProps } from './types'
 
 // -----------------------------------------------------------------------------
 // Defaults
@@ -26,10 +26,10 @@ export const TOOLTIP_DEFAULTS = {
   disableHoverableContent: false,
   disabled: false,
   positioning: {
-    placement: "bottom" as Placement,
+    placement: 'bottom' as Placement,
     offset: { main: 4, cross: 0 },
   },
-} as const;
+} as const
 
 // -----------------------------------------------------------------------------
 // Resolved shape
@@ -38,18 +38,18 @@ export const TOOLTIP_DEFAULTS = {
 /** Props after defaults are applied. Machine code only ever sees this
  * shape — every optional prop is concrete, positioning is fully populated. */
 export interface ResolvedTooltipProps {
-  id: string;
-  open: boolean | undefined;
-  defaultOpen: boolean;
-  openDelay: number;
-  closeDelay: number;
-  skipDelayDuration: number;
-  closeOnEscape: boolean;
-  disableHoverableContent: boolean;
-  disabled: boolean;
-  onOpenChange: TooltipProps["onOpenChange"];
-  onEscapeKeyDown: TooltipProps["onEscapeKeyDown"];
-  positioning: PositioningOptions;
+  id: string
+  open: boolean | undefined
+  defaultOpen: boolean
+  openDelay: number
+  closeDelay: number
+  skipDelayDuration: number
+  closeOnEscape: boolean
+  disableHoverableContent: boolean
+  disabled: boolean
+  onOpenChange: TooltipProps['onOpenChange']
+  onEscapeKeyDown: TooltipProps['onEscapeKeyDown']
+  positioning: PositioningOptions
 }
 
 // -----------------------------------------------------------------------------
@@ -69,8 +69,7 @@ export function tooltipProps(props: TooltipProps): ResolvedTooltipProps {
     defaultOpen: props.defaultOpen ?? TOOLTIP_DEFAULTS.defaultOpen,
     openDelay: props.openDelay ?? TOOLTIP_DEFAULTS.openDelay,
     closeDelay: props.closeDelay ?? TOOLTIP_DEFAULTS.closeDelay,
-    skipDelayDuration:
-      props.skipDelayDuration ?? TOOLTIP_DEFAULTS.skipDelayDuration,
+    skipDelayDuration: props.skipDelayDuration ?? TOOLTIP_DEFAULTS.skipDelayDuration,
     closeOnEscape: props.closeOnEscape ?? TOOLTIP_DEFAULTS.closeOnEscape,
     disableHoverableContent:
       props.disableHoverableContent ?? TOOLTIP_DEFAULTS.disableHoverableContent,
@@ -78,16 +77,11 @@ export function tooltipProps(props: TooltipProps): ResolvedTooltipProps {
     onOpenChange: props.onOpenChange,
     onEscapeKeyDown: props.onEscapeKeyDown,
     positioning: {
-      placement:
-        props.positioning?.placement ?? TOOLTIP_DEFAULTS.positioning.placement,
+      placement: props.positioning?.placement ?? TOOLTIP_DEFAULTS.positioning.placement,
       offset: {
-        main:
-          props.positioning?.offset?.main ??
-          TOOLTIP_DEFAULTS.positioning.offset.main,
-        cross:
-          props.positioning?.offset?.cross ??
-          TOOLTIP_DEFAULTS.positioning.offset.cross,
+        main: props.positioning?.offset?.main ?? TOOLTIP_DEFAULTS.positioning.offset.main,
+        cross: props.positioning?.offset?.cross ?? TOOLTIP_DEFAULTS.positioning.offset.cross,
       },
     },
-  };
+  }
 }

@@ -14,10 +14,10 @@
  */
 
 // @ts-expect-error — the shim has its own types we don't need to inspect.
-import { useSyncExternalStoreWithSelector } from "use-sync-external-store/shim/with-selector.js";
-import type { Store } from "@render-experiment/store";
+import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/shim/with-selector.js'
+import type { Store } from '@render-experiment/store'
 
-const identity = <T,>(state: T): T => state;
+const identity = <T>(state: T): T => state
 
 export function useStore<T, S = T>(
   store: Store<T>,
@@ -30,5 +30,5 @@ export function useStore<T, S = T>(
     store.getState,
     selector,
     equalityFn,
-  );
+  )
 }

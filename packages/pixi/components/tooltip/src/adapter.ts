@@ -4,36 +4,36 @@
  * Pixi runs in a browser; window-level keydown is fine. We listen in
  * capture phase so nested overlays don't swallow the Escape first.
  */
-import type { Adapter } from "@render-experiment/machine-core";
+import type { Adapter } from '@render-experiment/machine-core'
 import {
   tooltipProps,
   type TooltipContext,
   type TooltipProps,
-} from "@render-experiment/tooltip-core";
+} from '@render-experiment/tooltip-core'
 
 export const tooltipAdapter: Adapter<TooltipContext, TooltipProps> = {
   trackEscapeKey: ({ props, send }) => {
-    const r = tooltipProps(props);
-    if (!r.closeOnEscape) return;
+    const r = tooltipProps(props)
+    if (!r.closeOnEscape) return
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.stopPropagation();
-      const cb = r.onEscapeKeyDown;
+      if (event.key !== 'Escape') return
+      event.stopPropagation()
+      const cb = r.onEscapeKeyDown
       if (cb) {
-        let prevented = false;
+        let prevented = false
         cb({
           preventDefault: () => {
-            prevented = true;
+            prevented = true
           },
           get defaultPrevented() {
-            return prevented;
+            return prevented
           },
-        });
-        if (prevented) return;
+        })
+        if (prevented) return
       }
-      send({ type: "close", src: "keydown.escape" });
-    };
-    window.addEventListener("keydown", onKeyDown, true);
-    return () => window.removeEventListener("keydown", onKeyDown, true);
+      send({ type: 'close', src: 'keydown.escape' })
+    }
+    window.addEventListener('keydown', onKeyDown, true)
+    return () => window.removeEventListener('keydown', onKeyDown, true)
   },
-};
+}

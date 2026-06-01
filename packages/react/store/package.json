@@ -8,11 +8,11 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "peerDependencies": {
-    "react": "*"
-  },
   "dependencies": {
     "@render-experiment/store": "workspace:*",
     "use-sync-external-store": "^1.4.0"
+  },
+  "peerDependencies": {
+    "react": "*"
   }
 }

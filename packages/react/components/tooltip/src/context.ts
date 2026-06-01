@@ -1,5 +1,5 @@
-import { createContext, useContext, type RefObject } from "react";
-import type { ResolvedTooltipProps, TooltipApi } from "@render-experiment/tooltip-core";
+import { createContext, useContext, type RefObject } from 'react'
+import type { ResolvedTooltipProps, TooltipApi } from '@render-experiment/tooltip-core'
 
 /**
  * React context for the tooltip — the root provides; Trigger/Content
@@ -13,17 +13,17 @@ import type { ResolvedTooltipProps, TooltipApi } from "@render-experiment/toolti
  */
 
 export interface TooltipContextValue {
-  api: TooltipApi;
-  props: ResolvedTooltipProps;
-  triggerRef: RefObject<HTMLElement | null>;
+  api: TooltipApi
+  props: ResolvedTooltipProps
+  triggerRef: RefObject<HTMLElement | null>
 }
 
-export const TooltipContextRef = createContext<TooltipContextValue | null>(null);
+export const TooltipContextRef = createContext<TooltipContextValue | null>(null)
 
 export function useTooltipContext(): TooltipContextValue {
-  const ctx = useContext(TooltipContextRef);
+  const ctx = useContext(TooltipContextRef)
   if (!ctx) {
-    throw new Error("Tooltip.Trigger / Tooltip.Content must be used inside <Tooltip>");
+    throw new Error('Tooltip.Trigger / Tooltip.Content must be used inside <Tooltip>')
   }
-  return ctx;
+  return ctx
 }

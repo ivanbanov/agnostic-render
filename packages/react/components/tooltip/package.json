@@ -8,12 +8,12 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "peerDependencies": {
-    "react": "*"
-  },
   "dependencies": {
     "@render-experiment/machine-react": "workspace:*",
     "@render-experiment/style-engine-react": "workspace:*",
     "@render-experiment/tooltip-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "*"
   }
 }

@@ -15,23 +15,16 @@
  *   const items = useStore(store, s => s.items, shallowEqual);
  */
 export function shallowEqual<T>(a: T, b: T): boolean {
-  if (Object.is(a, b)) return true;
-  if (
-    typeof a !== "object" ||
-    typeof b !== "object" ||
-    a === null ||
-    b === null
-  ) {
-    return false;
+  if (Object.is(a, b)) return true
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) {
+    return false
   }
 
-  const keysA = Object.keys(a);
-  const keysB = Object.keys(b);
-  if (keysA.length !== keysB.length) return false;
+  const keysA = Object.keys(a)
+  const keysB = Object.keys(b)
+  if (keysA.length !== keysB.length) return false
 
-  const objA = a as Record<string, unknown>;
-  const objB = b as Record<string, unknown>;
-  return keysA.every(
-    (key) => Object.hasOwn(b, key) && Object.is(objA[key], objB[key]),
-  );
+  const objA = a as Record<string, unknown>
+  const objB = b as Record<string, unknown>
+  return keysA.every(key => Object.hasOwn(b, key) && Object.is(objA[key], objB[key]))
 }

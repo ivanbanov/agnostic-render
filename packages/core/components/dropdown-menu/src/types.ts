@@ -9,17 +9,11 @@
  * No defaults, no implementation — those live in props.ts and machine.ts.
  */
 
-import type { AttrBindings, Part } from "@render-experiment/machine-core";
-import type {
-  Placement,
-  PositioningOptions,
-} from "@render-experiment/utils";
-import type {
-  DropdownMenuContentVariants,
-  DropdownMenuItemVariants,
-} from "./parts";
+import type { AttrBindings, Part } from '@render-experiment/machine-core'
+import type { Placement, PositioningOptions } from '@render-experiment/utils'
+import type { DropdownMenuContentVariants, DropdownMenuItemVariants } from './parts'
 
-export type { Placement, PositioningOptions };
+export type { Placement, PositioningOptions }
 
 // -----------------------------------------------------------------------------
 // Caller-facing props (Radix-shaped)
@@ -27,17 +21,17 @@ export type { Placement, PositioningOptions };
 
 export interface DropdownMenuProps {
   /** Stable id for the menu instance. */
-  id: string;
+  id: string
   /** Controlled open state. Undefined = uncontrolled. */
-  open?: boolean;
-  defaultOpen?: boolean;
-  onOpenChange?: (details: { open: boolean }) => void;
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (details: { open: boolean }) => void
 
   /** If false, regular items don't close the menu on activation. Checkbox
    *  and radio items always stay open regardless. */
-  closeOnSelect?: boolean;
+  closeOnSelect?: boolean
   /** Esc closes the menu. */
-  closeOnEscape?: boolean;
+  closeOnEscape?: boolean
   /**
    * Keep keyboard focus inside the open menu. When true, Tab / Shift+Tab
    * are swallowed (the menu stays open; Esc or selecting an item exits) —
@@ -45,16 +39,16 @@ export interface DropdownMenuProps {
    * Tab closes the menu and lets focus move to the next tabbable element
    * in document order — the literal W3C APG menu-button behavior.
    */
-  focusTrap?: boolean;
+  focusTrap?: boolean
   /** Allow keyboard navigation to wrap around at boundaries. */
-  loop?: boolean;
+  loop?: boolean
   /** Enable type-ahead character matching. */
-  typeahead?: boolean;
+  typeahead?: boolean
   /** Direction; affects which arrow keys open/close submenus.
    *  Accepted for Radix-API parity; v1 doesn't act on it. */
-  dir?: "ltr" | "rtl";
+  dir?: 'ltr' | 'rtl'
 
-  positioning?: Partial<PositioningOptions>;
+  positioning?: Partial<PositioningOptions>
 }
 
 // -----------------------------------------------------------------------------
@@ -66,30 +60,30 @@ export interface DropdownMenuProps {
  * `preventDefault()` to keep the menu open on activation.
  */
 export interface DropdownMenuSelectEvent {
-  preventDefault: () => void;
-  defaultPrevented: boolean;
+  preventDefault: () => void
+  defaultPrevented: boolean
 }
 
 export interface DropdownMenuItemProps {
   /** Stable identifier within this menu. */
-  value: string;
+  value: string
   /** Visual text for typeahead matching; defaults to `value` if absent. */
-  textValue?: string;
-  disabled?: boolean;
+  textValue?: string
+  disabled?: boolean
   /** Item kind — controls role + how activation closes the menu. */
-  kind?: "item" | "checkbox" | "radio";
+  kind?: 'item' | 'checkbox' | 'radio'
   /** For checkbox items. */
-  checked?: boolean | "indeterminate";
+  checked?: boolean | 'indeterminate'
   /**
    * Override the default close-on-select behavior for this item.
    * Default: regular items close, checkbox/radio items don't.
    */
-  closeOnSelect?: boolean;
+  closeOnSelect?: boolean
   /**
    * Activation callback. Receives an event; call `preventDefault()` to
    * keep the menu open regardless of the default close behavior.
    */
-  onSelect?: (event: DropdownMenuSelectEvent) => void;
+  onSelect?: (event: DropdownMenuSelectEvent) => void
 }
 
 // -----------------------------------------------------------------------------
@@ -98,63 +92,60 @@ export interface DropdownMenuItemProps {
 
 export interface DropdownMenuContext {
   /** value of the currently-highlighted item, or null. */
-  highlightedValue: string | null;
+  highlightedValue: string | null
   /** When true, pointer-move highlight is paused (during keyboard nav). */
-  suspendPointer: boolean;
+  suspendPointer: boolean
   /** Resolved placement after collision logic (today: just the prop). */
-  currentPlacement: Placement;
+  currentPlacement: Placement
   /** Type-ahead buffer; cleared after a quiet period. */
-  typeaheadBuffer: string;
+  typeaheadBuffer: string
   /** Time of last typeahead key — adapters compare to clear the buffer. */
-  typeaheadLastTime: number;
+  typeaheadLastTime: number
   /**
    * Set when the menu opens via a keyboard intent ("first" from
    * ArrowDown/Enter/Space, "last" from ArrowUp). The render layer fires
    * an `items.ready` event once items have mounted; the machine applies
    * the highlight then.
    */
-  pendingHighlight: "first" | "last" | null;
+  pendingHighlight: 'first' | 'last' | null
 }
 
 // -----------------------------------------------------------------------------
 // States
 // -----------------------------------------------------------------------------
 
-export type DropdownMenuState = "idle" | "open";
+export type DropdownMenuState = 'idle' | 'open'
 
 // -----------------------------------------------------------------------------
 // Connect API
 // -----------------------------------------------------------------------------
 
-export type DropdownMenuItemPart = Part<
-  DropdownMenuItemVariants,
-  { highlighted: boolean }
->;
+export type DropdownMenuItemPart = Part<DropdownMenuItemVariants, { highlighted: boolean }>
 
 export interface DropdownMenuApi {
-  open: boolean;
-  setOpen: (next: boolean) => void;
+  open: boolean
+  setOpen: (next: boolean) => void
   /**
    * Resolved focus-trap mode (default false). The render layer reads this
    * to decide whether to refocus the trigger on Tab — see connect's Tab
    * handler. Surfaced here so the default lives in one place (props.ts).
    */
-  focusTrap: boolean;
+  focusTrap: boolean
 
   parts: {
-    trigger: Part;
+    trigger: Part
     content: Part<
       DropdownMenuContentVariants,
       { positioning: PositioningOptions; rendered: boolean }
-    >;
+    >
     /** Static parts — same attrs for every render call. */
-    separator: { attrs: AttrBindings };
-    label: { attrs: AttrBindings };
-    group: { attrs: AttrBindings };
-  };
+    separator: { attrs: AttrBindings }
+    label: { attrs: AttrBindings }
+    group: { attrs: AttrBindings }
+  }
 
   /** Per-item part producer. */
-  getItem: (item: DropdownMenuItemProps) => DropdownMenuItemPart;
+  getItem: (item: DropdownMenuItemProps) => DropdownMenuItemPart
 
   /**
    * Re-derive the api with the ordered list of menu items wired into the
@@ -162,5 +153,5 @@ export interface DropdownMenuApi {
    * it's about to render so that ARROW_DOWN, typeahead, etc. can compute
    * "next item" without storing the list inside the machine context.
    */
-  withItems: (items: DropdownMenuItemProps[]) => DropdownMenuApi;
+  withItems: (items: DropdownMenuItemProps[]) => DropdownMenuApi
 }

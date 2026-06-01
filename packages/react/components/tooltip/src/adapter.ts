@@ -6,12 +6,12 @@
  * generated api.ts merges this map into the machine via withAdapter()
  * before useMachine.
  */
-import type { Adapter } from "@render-experiment/machine-core";
+import type { Adapter } from '@render-experiment/machine-core'
 import {
   tooltipProps,
   type TooltipContext,
   type TooltipProps,
-} from "@render-experiment/tooltip-core";
+} from '@render-experiment/tooltip-core'
 
 export const tooltipAdapter: Adapter<TooltipContext, TooltipProps> = {
   // Listen for Escape while the tooltip is open. Capture-phase so we run
@@ -21,27 +21,27 @@ export const tooltipAdapter: Adapter<TooltipContext, TooltipProps> = {
   // consumers can `preventDefault()` to keep the tooltip open. If they
   // do, no close event is sent.
   trackEscapeKey: ({ props, send }) => {
-    const r = tooltipProps(props);
-    if (!r.closeOnEscape) return;
+    const r = tooltipProps(props)
+    if (!r.closeOnEscape) return
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.stopPropagation();
-      const cb = r.onEscapeKeyDown;
+      if (event.key !== 'Escape') return
+      event.stopPropagation()
+      const cb = r.onEscapeKeyDown
       if (cb) {
-        let prevented = false;
+        let prevented = false
         cb({
           preventDefault: () => {
-            prevented = true;
+            prevented = true
           },
           get defaultPrevented() {
-            return prevented;
+            return prevented
           },
-        });
-        if (prevented) return;
+        })
+        if (prevented) return
       }
-      send({ type: "close", src: "keydown.escape" });
-    };
-    document.addEventListener("keydown", onKeyDown, true);
-    return () => document.removeEventListener("keydown", onKeyDown, true);
+      send({ type: 'close', src: 'keydown.escape' })
+    }
+    document.addEventListener('keydown', onKeyDown, true)
+    return () => document.removeEventListener('keydown', onKeyDown, true)
   },
-};
+}

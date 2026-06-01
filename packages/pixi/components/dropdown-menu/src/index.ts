@@ -1,4 +1,4 @@
-export * from "./render";
+export * from './render'
 export type {
   DropdownMenuApi,
   DropdownMenuItemProps,
@@ -6,4 +6,4 @@ export type {
   DropdownMenuState,
   Placement,
   PositioningOptions,
-} from "@render-experiment/dropdown-menu-core";
+} from '@render-experiment/dropdown-menu-core'

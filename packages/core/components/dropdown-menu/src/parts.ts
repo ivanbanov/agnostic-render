@@ -10,27 +10,20 @@
  * so the barrel's `export *` doesn't collide with other components.
  */
 
-import type { Side } from "@render-experiment/utils";
+import type { Side } from '@render-experiment/utils'
 
-export const parts = [
-  "positioner",
-  "content",
-  "item",
-  "separator",
-  "label",
-  "group",
-] as const;
-export type Part = (typeof parts)[number];
+export const parts = ['positioner', 'content', 'item', 'separator', 'label', 'group'] as const
+export type Part = (typeof parts)[number]
 
 export type DropdownMenuPositionerVariants = {
-  anchored: boolean;
-};
+  anchored: boolean
+}
 
 export type DropdownMenuContentVariants = {
-  side: Side;
-};
+  side: Side
+}
 
 export type DropdownMenuItemVariants = {
-  highlighted: boolean;
-  disabled: boolean;
-};
+  highlighted: boolean
+  disabled: boolean
+}

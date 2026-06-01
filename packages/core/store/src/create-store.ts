@@ -19,58 +19,58 @@
  *     reach for it as a perf hack.
  */
 
-export type Listener<T> = (state: T) => void;
-export type SetStateAction<T, S = T> = S | ((state: T) => S);
+export type Listener<T> = (state: T) => void
+export type SetStateAction<T, S = T> = S | ((state: T) => S)
 
 export interface Store<T> {
   /** Read the current value. */
-  getState: () => T;
+  getState: () => T
   /** Read the value the store was created with. */
-  getInitialState: () => T;
+  getInitialState: () => T
   /**
    * Update state. Default merge: shallow-merges `partial` over current.
    * Pass `replace=true` to replace wholesale.
    */
-  setState: (partial: SetStateAction<T, Partial<T>>, replace?: boolean) => void;
+  setState: (partial: SetStateAction<T, Partial<T>>, replace?: boolean) => void
   /**
    * Same as setState but does not notify subscribers. For pre-render
    * synchronization where notifying would cause a redundant re-render.
    */
-  setStateSilent: (partial: SetStateAction<T, Partial<T>>, replace?: boolean) => void;
+  setStateSilent: (partial: SetStateAction<T, Partial<T>>, replace?: boolean) => void
   /** Subscribe to every state change. Returns the unsubscribe fn. */
-  subscribe: (listener: Listener<T>) => () => void;
+  subscribe: (listener: Listener<T>) => () => void
   /** Remove all subscribers. The store still works after destroy. */
-  destroy: () => void;
+  destroy: () => void
 }
 
 export function createStore<T extends object>(initialState: T = {} as T): Store<T> {
-  const initial = initialState;
-  let state = initialState;
-  const subscribers = new Set<Listener<T>>();
+  const initial = initialState
+  let state = initialState
+  const subscribers = new Set<Listener<T>>()
 
   const setStateSilent = (partial: SetStateAction<T, Partial<T>>, replace = false) => {
-    const next = typeof partial === "function" ? partial(state) : partial;
-    state = replace ? (next as T) : { ...state, ...next };
-  };
+    const next = typeof partial === 'function' ? partial(state) : partial
+    state = replace ? (next as T) : { ...state, ...next }
+  }
 
   return {
     getState: () => state,
     getInitialState: () => initial,
     setState(partial, replace) {
-      const prev = state;
-      setStateSilent(partial, replace);
-      if (Object.is(prev, state)) return;
-      subscribers.forEach((listener) => listener(state));
+      const prev = state
+      setStateSilent(partial, replace)
+      if (Object.is(prev, state)) return
+      subscribers.forEach(listener => listener(state))
     },
     setStateSilent,
     subscribe(listener) {
-      subscribers.add(listener);
+      subscribers.add(listener)
       return () => {
-        subscribers.delete(listener);
-      };
+        subscribers.delete(listener)
+      }
     },
     destroy() {
-      subscribers.clear();
+      subscribers.clear()
     },
-  };
+  }
 }

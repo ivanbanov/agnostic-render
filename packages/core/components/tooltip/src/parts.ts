@@ -10,15 +10,15 @@
  * the barrel's `export *` doesn't collide with other components.
  */
 
-import type { Side } from "@render-experiment/utils";
+import type { Side } from '@render-experiment/utils'
 
-export const parts = ["positioner", "content"] as const;
-export type Part = (typeof parts)[number];
+export const parts = ['positioner', 'content'] as const
+export type Part = (typeof parts)[number]
 
 export type TooltipPositionerVariants = {
-  anchored: boolean;
-};
+  anchored: boolean
+}
 
 export type TooltipContentVariants = {
-  side: Side;
-};
+  side: Side
+}

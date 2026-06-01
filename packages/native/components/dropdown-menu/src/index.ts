@@ -10,7 +10,7 @@ import {
   DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "./render";
+} from './render'
 
 export const DropdownMenu = Object.assign(DropdownMenuRoot, {
   Trigger: DropdownMenuTrigger,
@@ -23,8 +23,8 @@ export const DropdownMenu = Object.assign(DropdownMenuRoot, {
   Separator: DropdownMenuSeparator,
   Label: DropdownMenuLabel,
   Group: DropdownMenuGroup,
-});
+})
 
-export * from "./render";
-export * from "./generated/api";
-export * from "./context";
+export * from './render'
+export * from './generated/api'
+export * from './context'

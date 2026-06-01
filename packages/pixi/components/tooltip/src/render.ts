@@ -22,175 +22,175 @@
  *     counter — same pattern useMachine uses, just imperative.
  */
 
-import type { Container } from "pixi.js";
-import { normalize, type PixiListenerPair } from "@render-experiment/machine-pixi";
-import type { TooltipApi, TooltipProps } from "@render-experiment/tooltip-core";
-import { createTooltipBridge } from "./generated/api";
-import * as Styled from "./generated/elements";
-import { anchorOf, boundsToRect, edgePinOffset } from "./utils";
+import type { Container } from 'pixi.js'
+import { normalize, type PixiListenerPair } from '@render-experiment/machine-pixi'
+import type { TooltipApi, TooltipProps } from '@render-experiment/tooltip-core'
+import { createTooltipBridge } from './generated/api'
+import * as Styled from './generated/elements'
+import { anchorOf, boundsToRect, edgePinOffset } from './utils'
 
-export interface CreateTooltipOptions extends Omit<TooltipProps, "id"> {
+export interface CreateTooltipOptions extends Omit<TooltipProps, 'id'> {
   /** Pixi node the user hovers / interacts with. */
-  trigger: Container;
+  trigger: Container
   /** Container that hosts the floating overlay (typically a top UI layer). */
-  parent: Container;
+  parent: Container
   /**
    * Tooltip body. A string becomes the label of the generated Content node;
    * a Container is used as-is (the caller controls its layout).
    */
-  content: string | Container;
+  content: string | Container
   /** Optional explicit id — auto-generated if omitted. */
-  id?: string;
+  id?: string
 }
 
 export interface TooltipHandle {
   /** Force-set the open state (controlled toggle). */
-  setOpen: (next: boolean) => void;
+  setOpen: (next: boolean) => void
   /** Tear down: detach listeners, remove overlay nodes, stop the machine. */
-  destroy: () => void;
+  destroy: () => void
 }
 
-let idCounter = 0;
-const nextId = () => `pixi-tooltip-${++idCounter}`;
+let idCounter = 0
+const nextId = () => `pixi-tooltip-${++idCounter}`
 
 export function createTooltip(options: CreateTooltipOptions): TooltipHandle {
-  const { trigger, parent, content, id: providedId, ...rest } = options;
-  const id = providedId ?? nextId();
+  const { trigger, parent, content, id: providedId, ...rest } = options
+  const id = providedId ?? nextId()
 
-  const bridge = createTooltipBridge({ id, ...rest });
-  const { runtime } = bridge;
+  const bridge = createTooltipBridge({ id, ...rest })
+  const { runtime } = bridge
 
   // Trigger must be interactive for Pixi to emit pointer events.
-  trigger.eventMode = "static";
+  trigger.eventMode = 'static'
 
   // The Positioner + Content nodes are owned by us; (re)used across opens.
-  const positionerNode = Styled.Positioner();
-  const isStringContent = typeof content === "string";
-  const contentNode = isStringContent ? Styled.Content() : null;
-  if (contentNode) contentNode.setLabel(content as string);
-  const contentRoot: Container = contentNode ? contentNode.root : (content as Container);
+  const positionerNode = Styled.Positioner()
+  const isStringContent = typeof content === 'string'
+  const contentNode = isStringContent ? Styled.Content() : null
+  if (contentNode) contentNode.setLabel(content as string)
+  const contentRoot: Container = contentNode ? contentNode.root : (content as Container)
 
-  positionerNode.root.addChild(contentRoot);
+  positionerNode.root.addChild(contentRoot)
 
   // Track attached state so subscribe() is idempotent across redundant ticks.
-  let mounted = false;
+  let mounted = false
   const mount = () => {
-    if (mounted) return;
-    parent.addChild(positionerNode.root);
-    mounted = true;
-  };
+    if (mounted) return
+    parent.addChild(positionerNode.root)
+    mounted = true
+  }
   const unmount = () => {
-    if (!mounted) return;
-    parent.removeChild(positionerNode.root);
-    mounted = false;
-  };
+    if (!mounted) return
+    parent.removeChild(positionerNode.root)
+    mounted = false
+  }
 
   // -----------------------------------------------------------------------
   // Trigger listeners — re-bound on every api change because the connect's
   // handler closures capture the latest props / send.
   // -----------------------------------------------------------------------
 
-  let attachedPairs: PixiListenerPair[] = [];
+  let attachedPairs: PixiListenerPair[] = []
   const detachTriggerListeners = () => {
     for (const { event, listener } of attachedPairs) {
-      trigger.off(event as never, listener as never);
+      trigger.off(event as never, listener as never)
     }
-    attachedPairs = [];
-  };
+    attachedPairs = []
+  }
   const attachTriggerListeners = (api: TooltipApi) => {
-    detachTriggerListeners();
-    const pairs = normalize(api.parts.trigger.handlers as unknown as Record<string, unknown>);
+    detachTriggerListeners()
+    const pairs = normalize(api.parts.trigger.handlers as unknown as Record<string, unknown>)
     for (const { event, listener } of pairs) {
-      trigger.on(event as never, listener as never);
+      trigger.on(event as never, listener as never)
     }
-    attachedPairs = pairs;
-  };
+    attachedPairs = pairs
+  }
 
   // Same idea for content handlers (interactive: true tooltips need to
   // know when the pointer enters/leaves the floating body).
-  let attachedContentPairs: PixiListenerPair[] = [];
+  let attachedContentPairs: PixiListenerPair[] = []
   const detachContentListeners = () => {
     for (const { event, listener } of attachedContentPairs) {
-      contentRoot.off(event as never, listener as never);
+      contentRoot.off(event as never, listener as never)
     }
-    attachedContentPairs = [];
-  };
+    attachedContentPairs = []
+  }
   const attachContentListeners = (api: TooltipApi) => {
-    detachContentListeners();
-    const pairs = normalize(api.parts.content.handlers as unknown as Record<string, unknown>);
-    if (pairs.length === 0) return;
-    contentRoot.eventMode = "static";
+    detachContentListeners()
+    const pairs = normalize(api.parts.content.handlers as unknown as Record<string, unknown>)
+    if (pairs.length === 0) return
+    contentRoot.eventMode = 'static'
     for (const { event, listener } of pairs) {
-      contentRoot.on(event as never, listener as never);
+      contentRoot.on(event as never, listener as never)
     }
-    attachedContentPairs = pairs;
-  };
+    attachedContentPairs = pairs
+  }
 
   // -----------------------------------------------------------------------
   // Position computation — runs on every render tick when open.
   // -----------------------------------------------------------------------
 
   const positionOverlay = (api: TooltipApi) => {
-    const bounds = trigger.getBounds();
-    const rect = boundsToRect(bounds);
-    const anchor = anchorOf(rect, api.parts.content.positioning);
-    positionerNode.root.x = anchor.x;
-    positionerNode.root.y = anchor.y;
+    const bounds = trigger.getBounds()
+    const rect = boundsToRect(bounds)
+    const anchor = anchorOf(rect, api.parts.content.positioning)
+    positionerNode.root.x = anchor.x
+    positionerNode.root.y = anchor.y
 
-    const { side } = api.parts.content.variants;
-    const align = (api.parts.content.positioning.placement.split("-")[1] ?? undefined) as
-      | "start"
-      | "end"
-      | undefined;
+    const { side } = api.parts.content.variants
+    const align = (api.parts.content.positioning.placement.split('-')[1] ?? undefined) as
+      | 'start'
+      | 'end'
+      | undefined
 
     // The styled Content auto-sizes from its label + padding. Read its
     // current width/height after styling and edge-pin it relative to the
     // anchor (== positioner origin).
-    const w = contentRoot.width;
-    const h = contentRoot.height;
-    const offset = edgePinOffset(side, align, w, h);
-    contentRoot.x = offset.x;
-    contentRoot.y = offset.y;
+    const w = contentRoot.width
+    const h = contentRoot.height
+    const offset = edgePinOffset(side, align, w, h)
+    contentRoot.x = offset.x
+    contentRoot.y = offset.y
 
     // Apply variants if we own the styled content (string-content mode).
     if (contentNode) {
-      contentNode.apply({ side });
+      contentNode.apply({ side })
     }
-    positionerNode.apply({ anchored: true });
-  };
+    positionerNode.apply({ anchored: true })
+  }
 
   // -----------------------------------------------------------------------
   // Subscribe to the runtime; re-derive api on every tick.
   // -----------------------------------------------------------------------
 
   const sync = () => {
-    const api = bridge.getApi();
-    attachTriggerListeners(api);
+    const api = bridge.getApi()
+    attachTriggerListeners(api)
 
     if (api.parts.content.rendered) {
-      mount();
-      attachContentListeners(api);
-      positionOverlay(api);
+      mount()
+      attachContentListeners(api)
+      positionOverlay(api)
     } else {
-      detachContentListeners();
-      unmount();
+      detachContentListeners()
+      unmount()
     }
-  };
+  }
 
   // Initial wire-up
-  sync();
-  const unsubscribe = runtime.subscribe(sync);
+  sync()
+  const unsubscribe = runtime.subscribe(sync)
 
   return {
-    setOpen: (next) => bridge.getApi().setOpen(next),
+    setOpen: next => bridge.getApi().setOpen(next),
     destroy: () => {
-      unsubscribe();
-      detachTriggerListeners();
-      detachContentListeners();
-      unmount();
-      positionerNode.dispose();
-      if (contentNode) contentNode.dispose();
-      runtime.dispose();
+      unsubscribe()
+      detachTriggerListeners()
+      detachContentListeners()
+      unmount()
+      positionerNode.dispose()
+      if (contentNode) contentNode.dispose()
+      runtime.dispose()
     },
-  };
+  }
 }

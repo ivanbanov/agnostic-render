@@ -12,55 +12,40 @@
  *   runtime.subscribe(() => positionOverlay(getApi()));
  */
 
-import type {
-  Connect,
-  MachineConfig,
-} from "@render-experiment/machine-core";
-import {
-  createMachineRuntime,
-  type MachineRuntime,
-} from "./runtime";
+import type { Connect, MachineConfig } from '@render-experiment/machine-core'
+import { createMachineRuntime, type MachineRuntime } from './runtime'
 
-export interface Runtime<
-  TContext extends object,
-  TProps extends object,
-  TApi,
-> {
-  runtime: MachineRuntime<TContext, TProps>;
+export interface Runtime<TContext extends object, TProps extends object, TApi> {
+  runtime: MachineRuntime<TContext, TProps>
   /** Latest connect() output; cached by machine version. */
-  getApi: () => TApi;
+  getApi: () => TApi
 }
 
-export function createRuntime<
-  TContext extends object,
-  TProps extends object,
-  TState,
-  TApi,
->(
+export function createRuntime<TContext extends object, TProps extends object, TState, TApi>(
   config: MachineConfig<TContext, TProps>,
   props: TProps,
   connect: Connect<TState, TContext, TProps, TApi, []>,
 ): Runtime<TContext, TProps, TApi> {
-  const runtime = createMachineRuntime<TContext, TProps>(config, props);
-  const { machine } = runtime;
+  const runtime = createMachineRuntime<TContext, TProps>(config, props)
+  const { machine } = runtime
 
-  let cachedVersion = -1;
-  let cachedApi: TApi | undefined;
+  let cachedVersion = -1
+  let cachedApi: TApi | undefined
 
   const getApi = (): TApi => {
-    const version = machine.getVersion();
+    const version = machine.getVersion()
     if (cachedApi !== undefined && version === cachedVersion) {
-      return cachedApi;
+      return cachedApi
     }
-    cachedVersion = version;
+    cachedVersion = version
     cachedApi = connect({
       state: machine.getState() as TState,
       context: machine.getContext(),
       props: machine.getProps(),
       send: machine.send,
-    })();
-    return cachedApi;
-  };
+    })()
+    return cachedApi
+  }
 
-  return { runtime, getApi };
+  return { runtime, getApi }
 }

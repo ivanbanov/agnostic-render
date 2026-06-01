@@ -8,14 +8,11 @@
  * See SPEC.md for the contract this file implements.
  */
 
-import type { Part } from "@render-experiment/machine-core";
-import type {
-  Placement,
-  PositioningOptions,
-} from "@render-experiment/utils";
-import type { TooltipContentVariants } from "./parts";
+import type { Part } from '@render-experiment/machine-core'
+import type { Placement, PositioningOptions } from '@render-experiment/utils'
+import type { TooltipContentVariants } from './parts'
 
-export type { Placement, PositioningOptions };
+export type { Placement, PositioningOptions }
 
 // -----------------------------------------------------------------------------
 // Provider config (subset of TooltipProps; supplies defaults across many)
@@ -27,16 +24,16 @@ export type { Placement, PositioningOptions };
  */
 export interface TooltipProviderConfig {
   /** Hover dwell before opening, ms. Default 400. */
-  openDelay?: number;
+  openDelay?: number
   /** Grace period after pointer leaves, ms. Default 150. */
-  closeDelay?: number;
+  closeDelay?: number
   /**
    * After any tooltip closes, the next tooltip hovered within this window
    * opens instantly (delayed-open → instant-open). Set 0 to disable. Default 300.
    */
-  skipDelayDuration?: number;
+  skipDelayDuration?: number
   /** Close immediately when pointer leaves trigger; content is not hoverable. */
-  disableHoverableContent?: boolean;
+  disableHoverableContent?: boolean
 }
 
 // -----------------------------------------------------------------------------
@@ -50,26 +47,26 @@ export interface TooltipProviderConfig {
  * close.
  */
 export interface TooltipEscapeKeyDownEvent {
-  preventDefault: () => void;
-  defaultPrevented: boolean;
+  preventDefault: () => void
+  defaultPrevented: boolean
 }
 
 export interface TooltipProps extends TooltipProviderConfig {
-  id: string;
+  id: string
   /** Controlled open state. Pass `undefined` for uncontrolled. */
-  open?: boolean;
-  defaultOpen?: boolean;
+  open?: boolean
+  defaultOpen?: boolean
   /** Esc dismisses the tooltip. Default true. */
-  closeOnEscape?: boolean;
+  closeOnEscape?: boolean
   /** When true, all opens are suppressed. */
-  disabled?: boolean;
-  positioning?: Partial<PositioningOptions>;
-  onOpenChange?: (details: { open: boolean }) => void;
+  disabled?: boolean
+  positioning?: Partial<PositioningOptions>
+  onOpenChange?: (details: { open: boolean }) => void
   /**
    * Fires when Escape is pressed while open. Call `preventDefault()` to
    * keep the tooltip open. Closed-by-default behavior is preserved.
    */
-  onEscapeKeyDown?: (event: TooltipEscapeKeyDownEvent) => void;
+  onEscapeKeyDown?: (event: TooltipEscapeKeyDownEvent) => void
 }
 
 // -----------------------------------------------------------------------------
@@ -82,26 +79,23 @@ export interface TooltipContext {
    * `"delayed-open"` for hover/move-driven opens, `"instant-open"` when
    * the skip-delay window fast-tracked the open.
    */
-  hasPointerMoveOpened: boolean;
+  hasPointerMoveOpened: boolean
   /** True when this open consumed the skip-delay window (vs paid full delay). */
-  hasInstantOpen: boolean;
-  placement: Placement;
+  hasInstantOpen: boolean
+  placement: Placement
 }
 
-export type TooltipState = "closed" | "opening" | "open" | "closing";
+export type TooltipState = 'closed' | 'opening' | 'open' | 'closing'
 
 // -----------------------------------------------------------------------------
 // Connect API (consumed by adapter render layer)
 // -----------------------------------------------------------------------------
 
 export interface TooltipApi {
-  open: boolean;
-  setOpen: (next: boolean) => void;
+  open: boolean
+  setOpen: (next: boolean) => void
   parts: {
-    trigger: Part;
-    content: Part<
-      TooltipContentVariants,
-      { positioning: PositioningOptions; rendered: boolean }
-    >;
-  };
+    trigger: Part
+    content: Part<TooltipContentVariants, { positioning: PositioningOptions; rendered: boolean }>
+  }
 }

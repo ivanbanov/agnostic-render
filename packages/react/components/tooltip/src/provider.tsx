@@ -7,25 +7,16 @@
  * disableHoverableContent false).
  */
 
-import {
-  createContext,
-  useContext,
-  useMemo,
-  type ReactNode,
-} from "react";
-import type { TooltipProviderConfig } from "@render-experiment/tooltip-core";
+import { createContext, useContext, useMemo, type ReactNode } from 'react'
+import type { TooltipProviderConfig } from '@render-experiment/tooltip-core'
 
-const TooltipProviderRef =
-  createContext<TooltipProviderConfig | null>(null);
+const TooltipProviderRef = createContext<TooltipProviderConfig | null>(null)
 
 export interface TooltipProviderProps extends TooltipProviderConfig {
-  children: ReactNode;
+  children: ReactNode
 }
 
-export function TooltipProvider({
-  children,
-  ...config
-}: TooltipProviderProps): React.JSX.Element {
+export function TooltipProvider({ children, ...config }: TooltipProviderProps): React.JSX.Element {
   // Stable config object so context consumers don't re-render on every
   // parent render. The set of provider props is small and rarely changes;
   // memoize against each field individually.
@@ -36,18 +27,9 @@ export function TooltipProvider({
       skipDelayDuration: config.skipDelayDuration,
       disableHoverableContent: config.disableHoverableContent,
     }),
-    [
-      config.openDelay,
-      config.closeDelay,
-      config.skipDelayDuration,
-      config.disableHoverableContent,
-    ],
-  );
-  return (
-    <TooltipProviderRef.Provider value={value}>
-      {children}
-    </TooltipProviderRef.Provider>
-  );
+    [config.openDelay, config.closeDelay, config.skipDelayDuration, config.disableHoverableContent],
+  )
+  return <TooltipProviderRef.Provider value={value}>{children}</TooltipProviderRef.Provider>
 }
 
 /**
@@ -56,5 +38,5 @@ export function TooltipProvider({
  * the prop resolver (TooltipRoot does this implicitly).
  */
 export function useTooltipProviderConfig(): TooltipProviderConfig | null {
-  return useContext(TooltipProviderRef);
+  return useContext(TooltipProviderRef)
 }

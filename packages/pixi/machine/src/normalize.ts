@@ -15,30 +15,28 @@
  */
 
 const EVENT_MAP: Record<string, string> = {
-  onPress: "pointertap",
-  onPointerEnter: "pointerover",
-  onPointerLeave: "pointerout",
-  onPointerMove: "pointermove",
-  onPointerDown: "pointerdown",
-  onPointerUp: "pointerup",
-  onPointerCancel: "pointercancel",
-};
+  onPress: 'pointertap',
+  onPointerEnter: 'pointerover',
+  onPointerLeave: 'pointerout',
+  onPointerMove: 'pointermove',
+  onPointerDown: 'pointerdown',
+  onPointerUp: 'pointerup',
+  onPointerCancel: 'pointercancel',
+}
 
 export interface PixiListenerPair {
-  event: string;
-  listener: (event: unknown) => void;
+  event: string
+  listener: (event: unknown) => void
 }
 
 /** Convert a logical handlers record to a list of Pixi event/listener pairs. */
-export function normalize(
-  handlers: Record<string, unknown>,
-): PixiListenerPair[] {
-  const pairs: PixiListenerPair[] = [];
+export function normalize(handlers: Record<string, unknown>): PixiListenerPair[] {
+  const pairs: PixiListenerPair[] = []
   for (const [key, value] of Object.entries(handlers)) {
-    if (typeof value !== "function") continue;
-    const event = EVENT_MAP[key];
-    if (!event) continue; // onFocus/onBlur/onKeyDown — silently dropped on Pixi
-    pairs.push({ event, listener: value as (event: unknown) => void });
+    if (typeof value !== 'function') continue
+    const event = EVENT_MAP[key]
+    if (!event) continue // onFocus/onBlur/onKeyDown — silently dropped on Pixi
+    pairs.push({ event, listener: value as (event: unknown) => void })
   }
-  return pairs;
+  return pairs
 }

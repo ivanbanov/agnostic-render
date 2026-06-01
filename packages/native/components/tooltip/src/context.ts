@@ -14,29 +14,29 @@
  * Without TooltipProvider the tooltip falls back to inline absolute
  * positioning (clipped by parent overflow — fine for top-level cases).
  */
-import { createContext, useContext, type ReactNode } from "react";
-import type { TooltipProviderConfig } from "@render-experiment/tooltip-core";
+import { createContext, useContext, type ReactNode } from 'react'
+import type { TooltipProviderConfig } from '@render-experiment/tooltip-core'
 
 export interface TooltipPortalEntry {
-  id: string;
-  node: ReactNode;
+  id: string
+  node: ReactNode
 }
 
 export interface TooltipPortalContextValue {
   /** Mount a tooltip node into the provider's slot. */
-  mount: (entry: TooltipPortalEntry) => void;
+  mount: (entry: TooltipPortalEntry) => void
   /** Unmount by id. */
-  unmount: (id: string) => void;
+  unmount: (id: string) => void
 }
 
-export const TooltipPortalContext = createContext<TooltipPortalContextValue | null>(null);
+export const TooltipPortalContext = createContext<TooltipPortalContextValue | null>(null)
 
 /**
  * Returns the provider's portal API or null if no provider is mounted.
  * Callers fall back to inline rendering when null.
  */
 export function useTooltipPortal(): TooltipPortalContextValue | null {
-  return useContext(TooltipPortalContext);
+  return useContext(TooltipPortalContext)
 }
 
 /**
@@ -46,9 +46,8 @@ export function useTooltipPortal(): TooltipPortalContextValue | null {
  * the long-press duration and disableHoverableContent is honored when
  * relevant.
  */
-export const TooltipProviderConfigContext =
-  createContext<TooltipProviderConfig | null>(null);
+export const TooltipProviderConfigContext = createContext<TooltipProviderConfig | null>(null)
 
 export function useTooltipProviderConfig(): TooltipProviderConfig | null {
-  return useContext(TooltipProviderConfigContext);
+  return useContext(TooltipProviderConfigContext)
 }

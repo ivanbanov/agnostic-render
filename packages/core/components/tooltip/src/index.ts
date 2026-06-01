@@ -10,17 +10,17 @@
  * here for component-author convenience.
  */
 
-export * from "./types";
-export * from "./props";
-export * from "./machine";
-export * from "./store";
-export * from "./connect";
-export * from "./parts";
-export * as styles from "@render-experiment/tooltip-shared";
+export * from './types'
+export * from './props'
+export * from './machine'
+export * from './store'
+export * from './connect'
+export * from './parts'
+export * as styles from '@render-experiment/tooltip-shared'
 export {
   placementToSide,
   type Placement,
   type PositioningOptions,
   type Side,
-} from "@render-experiment/utils";
-export type { Style, StyleSpec, StyleValue } from "@render-experiment/machine-core";
+} from '@render-experiment/utils'
+export type { Style, StyleSpec, StyleValue } from '@render-experiment/machine-core'

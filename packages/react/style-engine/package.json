@@ -8,10 +8,10 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "peerDependencies": {
-    "react": "*"
-  },
   "dependencies": {
     "@stitches/react": "^1.2.8"
+  },
+  "peerDependencies": {
+    "react": "*"
   }
 }

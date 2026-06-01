@@ -1,53 +1,41 @@
-import { defineConfig } from "vite";
-import { resolve } from "node:path";
+import { defineConfig } from 'vite'
+import { resolve } from 'node:path'
 
 export default defineConfig({
   resolve: {
     alias: {
-      "@render-experiment/utils": resolve(
+      '@render-experiment/utils': resolve(__dirname, '../../packages/shared/utils/src'),
+      '@render-experiment/tooltip-shared': resolve(
         __dirname,
-        "../../packages/shared/utils/src",
+        '../../packages/shared/components/tooltip/src',
       ),
-      "@render-experiment/tooltip-shared": resolve(
+      '@render-experiment/dropdown-menu-shared': resolve(
         __dirname,
-        "../../packages/shared/components/tooltip/src",
+        '../../packages/shared/components/dropdown-menu/src',
       ),
-      "@render-experiment/dropdown-menu-shared": resolve(
+      '@render-experiment/store': resolve(__dirname, '../../packages/core/store/src'),
+      '@render-experiment/machine-core': resolve(__dirname, '../../packages/core/machine/src'),
+      '@render-experiment/machine-pixi': resolve(__dirname, '../../packages/pixi/machine/src'),
+      '@render-experiment/style-engine-pixi': resolve(
         __dirname,
-        "../../packages/shared/components/dropdown-menu/src",
+        '../../packages/pixi/style-engine/src',
       ),
-      "@render-experiment/store": resolve(
+      '@render-experiment/tooltip-core': resolve(
         __dirname,
-        "../../packages/core/store/src",
+        '../../packages/core/components/tooltip/src',
       ),
-      "@render-experiment/machine-core": resolve(
+      '@render-experiment/tooltip-pixi': resolve(
         __dirname,
-        "../../packages/core/machine/src",
+        '../../packages/pixi/components/tooltip/src',
       ),
-      "@render-experiment/machine-pixi": resolve(
+      '@render-experiment/dropdown-menu-core': resolve(
         __dirname,
-        "../../packages/pixi/machine/src",
+        '../../packages/core/components/dropdown-menu/src',
       ),
-      "@render-experiment/style-engine-pixi": resolve(
+      '@render-experiment/dropdown-menu-pixi': resolve(
         __dirname,
-        "../../packages/pixi/style-engine/src",
-      ),
-      "@render-experiment/tooltip-core": resolve(
-        __dirname,
-        "../../packages/core/components/tooltip/src",
-      ),
-      "@render-experiment/tooltip-pixi": resolve(
-        __dirname,
-        "../../packages/pixi/components/tooltip/src",
-      ),
-      "@render-experiment/dropdown-menu-core": resolve(
-        __dirname,
-        "../../packages/core/components/dropdown-menu/src",
-      ),
-      "@render-experiment/dropdown-menu-pixi": resolve(
-        __dirname,
-        "../../packages/pixi/components/dropdown-menu/src",
+        '../../packages/pixi/components/dropdown-menu/src',
       ),
     },
   },
-});
+})

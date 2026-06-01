@@ -9,33 +9,33 @@
  * cleanly.
  */
 
-import { createStore } from "@render-experiment/store";
+import { createStore } from '@render-experiment/store'
 
 interface TooltipStoreState {
-  openId: string | null;
+  openId: string | null
   /** When non-null, new tooltips skip openDelay until skipUntil. */
-  skipUntil: number | null;
+  skipUntil: number | null
 }
 
 const store = createStore<TooltipStoreState>({
   openId: null,
   skipUntil: null,
-});
+})
 
 export const tooltipStore = {
   get: store.getState,
   subscribe: store.subscribe,
   setOpen(id: string | null) {
-    store.setState({ openId: id });
+    store.setState({ openId: id })
   },
   startSkipWindow(ms: number) {
-    store.setState({ skipUntil: Date.now() + ms });
+    store.setState({ skipUntil: Date.now() + ms })
   },
   endSkipWindow() {
-    store.setState({ skipUntil: null });
+    store.setState({ skipUntil: null })
   },
   isInSkipWindow() {
-    const { skipUntil } = store.getState();
-    return skipUntil !== null && Date.now() < skipUntil;
+    const { skipUntil } = store.getState()
+    return skipUntil !== null && Date.now() < skipUntil
   },
-};
+}
