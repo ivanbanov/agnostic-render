@@ -33,14 +33,12 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { translateAgnosticSpec } from '@render-experiment/style-engine-react'
 import { translateAgnosticSpecToNative } from '@render-experiment/style-engine-native'
-import { translateAgnosticSpecToPixi } from '@render-experiment/style-engine-pixi'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = resolve(__dirname, '..')
 const COMPONENTS_CORE = resolve(REPO_ROOT, 'packages/core/components')
 const COMPONENTS_REACT = resolve(REPO_ROOT, 'packages/react/components')
 const COMPONENTS_NATIVE = resolve(REPO_ROOT, 'packages/native/components')
-const COMPONENTS_PIXI = resolve(REPO_ROOT, 'packages/pixi/components')
 const COMPONENTS_SHARED = resolve(REPO_ROOT, 'packages/shared/components')
 
 // -----------------------------------------------------------------------------
@@ -62,8 +60,6 @@ export interface DiscoveredComponent {
   reactSrc: string
   /** Path to native adapter's src dir (may not exist). */
   nativeSrc: string
-  /** Path to pixi adapter's src dir (may not exist). */
-  pixiSrc: string
 }
 
 function pascalize(slug: string): string {
@@ -103,7 +99,6 @@ export function discoverComponents(): DiscoveredComponent[] {
       sharedSrc: resolve(COMPONENTS_SHARED, slug, 'src'),
       reactSrc: resolve(COMPONENTS_REACT, slug, 'src'),
       nativeSrc: resolve(COMPONENTS_NATIVE, slug, 'src'),
-      pixiSrc: resolve(COMPONENTS_PIXI, slug, 'src'),
     }))
 }
 
@@ -292,84 +287,6 @@ export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
 }
 
 // -----------------------------------------------------------------------------
-// Pixi emitters
-// -----------------------------------------------------------------------------
-
-/**
- * Pick the Pixi primitive tag for a given element name.
- *
- *   "Positioner"     → "container"  (invisible layout host)
- *   "Label" / "Hotkey" → "text"      (text-only)
- *   anything else    → "graphics"   (background-painted surface)
- *
- * Components can override by exporting a constant `pixiPrimitives` from
- * styles.ts mapping element name → primitive — wired later if needed.
- */
-function pixiPrimitiveFor(elementName: string): 'container' | 'graphics' | 'text' {
-  if (elementName === 'Positioner' || elementName === 'Group') return 'container'
-  if (elementName === 'Label' || elementName === 'Hotkey') return 'text'
-  return 'graphics'
-}
-
-function emitPixiElements(component: DiscoveredComponent, styles: Record<string, unknown>): string {
-  const decls: string[] = []
-  for (const [elementName, spec] of Object.entries(styles)) {
-    const camel = elementName[0]!.toLowerCase() + elementName.slice(1)
-    const primitive = pixiPrimitiveFor(elementName)
-    const translated = translateAgnosticSpecToPixi(spec as never)
-    const inlined = JSON.stringify(translated, null, 2)
-    decls.push(
-      `// Source: shared/components/${component.slug}/src/styles → ${camel} (primitive: ${primitive})
-export const ${elementName} = styled(${JSON.stringify(primitive)}, ${inlined});`,
-    )
-  }
-
-  return `${ESLINT_DISABLE}
-import { styled } from "@render-experiment/style-engine-pixi";
-
-${decls.join('\n\n')}
-`
-}
-
-function emitPixiApi(component: DiscoveredComponent): string {
-  const { pascal, slug, camel } = component
-  return `${ESLINT_DISABLE}
-import { withAdapter } from "@render-experiment/machine-core";
-import { createRuntime, type Runtime } from "@render-experiment/machine-pixi";
-import {
-  connect${pascal},
-  ${camel}Machine,
-  type ${pascal}Api,
-  type ${pascal}Context as ${pascal}MachineContext,
-  type ${pascal}Event,
-  type ${pascal}Props,
-  type ${pascal}State,
-} from "@render-experiment/${slug}-core";
-import { ${camel}Adapter } from "../adapter";
-
-const ${camel}MachineWithAdapter = withAdapter<${pascal}MachineContext, ${pascal}Props, ${pascal}Event>(
-  ${camel}Machine,
-  ${camel}Adapter,
-);
-
-/**
- * Pixi version: not a hook (no React). Returns a runtime + a getApi()
- * that's cached by the machine's version counter — calls are cheap as
- * long as nothing has changed.
- */
-export type ${pascal}Bridge = Runtime<${pascal}MachineContext, ${pascal}Props, ${pascal}Api, ${pascal}Event>;
-
-export function create${pascal}Bridge(props: ${pascal}Props): ${pascal}Bridge {
-  return createRuntime<${pascal}MachineContext, ${pascal}Props, ${pascal}State, ${pascal}Api, ${pascal}Event>(
-    ${camel}MachineWithAdapter,
-    props,
-    connect${pascal},
-  );
-}
-`
-}
-
-// -----------------------------------------------------------------------------
 // Orchestration
 // -----------------------------------------------------------------------------
 
@@ -398,15 +315,6 @@ export async function buildComponent(component: DiscoveredComponent) {
     )
     writeFile(resolve(component.nativeSrc, 'generated/api.ts'), emitNativeApi(component))
     targets.push('native')
-  }
-
-  if (existsSync(component.pixiSrc)) {
-    writeFile(
-      resolve(component.pixiSrc, 'generated/elements.ts'),
-      emitPixiElements(component, core.styles),
-    )
-    writeFile(resolve(component.pixiSrc, 'generated/api.ts'), emitPixiApi(component))
-    targets.push('pixi')
   }
 
   if (targets.length === 0) {
