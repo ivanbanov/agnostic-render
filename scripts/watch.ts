@@ -52,7 +52,9 @@ console.log(`[watch] ready — watching ${components.length} component(s)`);
 
 // Debounce per slug so a save that touches multiple files batches into
 // one rebuild.
-const pending = new Map<string, NodeJS.Timeout>();
+// ReturnType<typeof setTimeout> adapts to whichever lib resolves here
+// (DOM `number` vs Node `Timeout`) — the tsconfig pulls in "dom".
+const pending = new Map<string, ReturnType<typeof setTimeout>>();
 function rebuildSlug(slug: string) {
   const existing = pending.get(slug);
   if (existing) clearTimeout(existing);

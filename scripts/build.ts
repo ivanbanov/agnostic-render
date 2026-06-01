@@ -248,7 +248,7 @@ function emitNativeElements(component: DiscoveredComponent, styles: Record<strin
       `// Source: shared/components/${component.slug}/src/styles → ${camel}
 export const ${camel}: TranslatedNativeStyle = ${inlined};
 
-export function resolve${elementName}(selections: Record<string, string> = {}) {
+export function resolve${elementName}(selections: Record<string, string | boolean> = {}) {
   return resolveStyle(${camel}, selections);
 }`,
     );

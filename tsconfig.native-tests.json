@@ -1,0 +1,11 @@
+{
+  // Type-checks the React Native Jest tests (and jest.native.ts), which use
+  // jest globals — these collide with the main project's vitest globals, so
+  // they live in their own project. Run via `pnpm typecheck` (project ref).
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["@types/node", "jest"]
+  },
+  "include": ["./packages/native/**/*.native.test.{ts,tsx}", "./jest.native.ts"],
+  "exclude": ["**/node_modules", "**/dist"]
+}
