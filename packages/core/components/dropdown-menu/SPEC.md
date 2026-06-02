@@ -103,14 +103,14 @@ while the menu is open:
   dropdown.
 - **`true`** — Tab is swallowed (`preventDefault`, no close); focus stays
   inside the open menu. The only ways out are Escape or activating an item.
-  This matches the trapped behavior of Radix UI and React Aria, which
-  contain focus inside the popover surface.
 
-Rationale for defaulting to `false`: it is the spec-faithful behavior, and
-it sidesteps the focus-proxying problem that keeps libraries that trap
-(e.g. Radix's still-open issue for non-modal Tab) from letting focus leave
-cleanly. `true` exists for callers who want the familiar Radix-style
-containment.
+`focusTrap: true` is opt-in because it unlocks a different class of menu:
+one whose content holds elements the user needs to interact with directly
+— a search input, a stepper, a swatch grid, a nested form fragment. In
+those menus, leaving the menu on Tab would defeat the UI; the consumer
+declares intent by enabling the trap. The default stays `false` so the
+plain "list of commands" menu behaves the way the W3C menu-button pattern
+prescribes.
 
 This is a Tab/focus switch only — it does not make the rest of the page
 inert (no scroll lock, no outside `aria-hidden`). Page modality, if needed,
