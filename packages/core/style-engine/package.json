@@ -1,5 +1,5 @@
 {
-  "name": "@render-experiment/store",
+  "name": "@render-experiment/style-engine-core",
   "version": "0.0.0",
   "private": true,
   "type": "module",
