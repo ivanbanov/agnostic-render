@@ -194,7 +194,7 @@ function emitReactApi(component: DiscoveredComponent): string {
   const { pascal, slug, camel } = component
   const CONST = slug.toUpperCase().replace(/-/g, '_')
   return `${ESLINT_DISABLE}
-import { useMachine } from "@render-experiment/machine-react";
+import { useMachine, useEffects } from "@render-experiment/machine-react";
 import {
   ${CONST}_DEFAULTS,
   connect${pascal},
@@ -203,7 +203,8 @@ import {
   type ${pascal}MachineProps,
   type ${pascal}Props,
 } from "@render-experiment/${slug}-core";
-import { ${camel}Adapter, use${pascal}Effects } from "../adapter";
+import { ${camel}Adapter } from "../adapter";
+import { ${camel}Effects } from "../effects";
 
 /** Wire the core ${camel} machine to React and return the connect() API. */
 export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
@@ -215,8 +216,9 @@ export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
     ${camel}Adapter,
     resolved,
   );
-  // Substrate-specific, prop-dependent effects (e.g. Escape / back-button).
-  use${pascal}Effects(machine, resolved);
+  // Substrate-specific transport (Escape, back-button, …) declared as a
+  // ComponentEffect; useEffects owns the React effect + builds its dep array.
+  useEffects(${camel}Effects, machine, resolved);
   return api;
 }
 `
@@ -258,7 +260,7 @@ function emitNativeApi(component: DiscoveredComponent): string {
   const { pascal, slug, camel } = component
   const CONST = slug.toUpperCase().replace(/-/g, '_')
   return `${ESLINT_DISABLE}
-import { useMachine } from "@render-experiment/machine-native";
+import { useMachine, useEffects } from "@render-experiment/machine-native";
 import {
   ${CONST}_DEFAULTS,
   connect${pascal},
@@ -267,7 +269,8 @@ import {
   type ${pascal}MachineProps,
   type ${pascal}Props,
 } from "@render-experiment/${slug}-core";
-import { ${camel}Adapter, use${pascal}Effects } from "../adapter";
+import { ${camel}Adapter } from "../adapter";
+import { ${camel}Effects } from "../effects";
 
 /** Wire the core ${camel} machine to native and return the connect() API. */
 export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
@@ -279,8 +282,9 @@ export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
     ${camel}Adapter,
     resolved,
   );
-  // Substrate-specific, prop-dependent effects (e.g. Android back button).
-  use${pascal}Effects(machine, resolved);
+  // Substrate-specific transport declared as a ComponentEffect; useEffects owns
+  // the React effect + builds its dep array.
+  useEffects(${camel}Effects, machine, resolved);
   return api;
 }
 `

@@ -99,7 +99,7 @@ export const connectTooltip: Connect<
 connectTooltip.reactions = [
   {
     // `open` is true while the tooltip is visible (open or closing-out).
-    select: m => m.matches('open') || m.matches('closing'),
-    onChange: (open, props) => props.onOpenChange?.({ open }),
+    selector: m => m.matches('open') || m.matches('closing'),
+    callback: (open, props) => props.onOpenChange?.({ open }),
   },
 ]

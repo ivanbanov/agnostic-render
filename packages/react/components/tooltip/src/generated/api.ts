@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { useMachine } from '@render-experiment/machine-react'
+import { useMachine, useEffects } from '@render-experiment/machine-react'
 import {
   TOOLTIP_DEFAULTS,
   connectTooltip,
@@ -8,7 +8,8 @@ import {
   type TooltipMachineProps,
   type TooltipProps,
 } from '@render-experiment/tooltip-core'
-import { tooltipAdapter, useTooltipEffects } from '../adapter'
+import { tooltipAdapter } from '../adapter'
+import { tooltipEffects } from '../effects'
 
 /** Wire the core tooltip machine to React and return the connect() API. */
 export function useTooltipApi(props: TooltipProps): TooltipApi {
@@ -20,7 +21,8 @@ export function useTooltipApi(props: TooltipProps): TooltipApi {
     tooltipAdapter,
     resolved,
   )
-  // Substrate-specific, prop-dependent effects (e.g. Escape / back-button).
-  useTooltipEffects(machine, resolved)
+  // Substrate-specific transport (Escape, back-button, …) declared as a
+  // ComponentEffect; useEffects owns the React effect + builds its dep array.
+  useEffects(tooltipEffects, machine, resolved)
   return api
 }

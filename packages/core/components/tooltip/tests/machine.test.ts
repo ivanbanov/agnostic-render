@@ -36,7 +36,7 @@ function make(props: Partial<TooltipProps> = {}) {
   const resolved: TooltipMachineProps = { ...TOOLTIP_DEFAULTS, id: `t${nextId++}`, ...props }
   const m = machine(tooltipMachineConfig(resolved))
   const conn = connector(m, connectTooltip, resolved)
-  m.start()
+  m.start() // wires the connector's reactions automatically (onStart)
   return { m, conn }
 }
 
