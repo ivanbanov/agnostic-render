@@ -88,18 +88,6 @@ export function TooltipTrigger(props: TooltipTriggerProps) {
 // -----------------------------------------------------------------------------
 // <Tooltip.Content>
 // -----------------------------------------------------------------------------
-//
-// Render structure:
-//   <Styled.Positioner>  position: fixed at anchor point (zero-size,
-//                         from spec); top/left are runtime data and
-//                         come through the `css` prop.
-//     <Styled.Content>   position: absolute + edge-pinned via variant
-//   </Styled.Positioner>
-//
-// Consumer-passed props (className, style, data-testid, onMouseEnter,
-// etc.) are merged onto <Styled.Content>. Variants come through as
-// named props (`side`, `red`); they aren't spread from `props`.
-
 export interface TooltipContentProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children'> {
   children: ReactNode
 }

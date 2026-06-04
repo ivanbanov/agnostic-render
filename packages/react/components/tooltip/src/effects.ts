@@ -1,14 +1,3 @@
-/**
- * React DOM effects for Tooltip — substrate-specific transport the agnostic
- * machine can't own. Declared as a `ComponentEffect`: a plain setup/teardown
- * function plus the prop names it depends on. The generated `useApi` runs it
- * (it owns the `useEffect`), so component authors write no React here.
- *
- * Currently one effect: the Escape listener. It's transport only — it detects
- * the key, then defers the decision (enabled-gate + prevent-able veto) to the
- * agnostic `resolveEscape`, and on accept sends `escape` (the machine then
- * closes; behavior stays portable).
- */
 import type { ComponentEffect } from '@render-experiment/machine-react'
 import {
   resolveEscape,
@@ -16,7 +5,9 @@ import {
   type TooltipMachineProps,
 } from '@render-experiment/tooltip-core'
 
-export const tooltipEffects: ComponentEffect<TooltipMachine, TooltipMachineProps> = [
+type TooltipEffect = ComponentEffect<TooltipMachine, TooltipMachineProps>
+
+const trackEscape: TooltipEffect = [
   (machine, props) => {
     const { closeOnEscape, onEscapeKeyDown } = props
     if (!closeOnEscape) return
@@ -34,3 +25,5 @@ export const tooltipEffects: ComponentEffect<TooltipMachine, TooltipMachineProps
   },
   ['closeOnEscape', 'onEscapeKeyDown'],
 ]
+
+export const tooltipEffects = [trackEscape]

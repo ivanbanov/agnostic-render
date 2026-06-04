@@ -1,17 +1,6 @@
 import { createContext, useContext, type RefObject } from 'react'
 import type { TooltipApi, TooltipMachineProps } from '@render-experiment/tooltip-core'
 
-/**
- * React context for the tooltip — the root provides; Trigger/Content
- * consume. Kept separate from the API hook in api.ts so the wiring of
- * "machine → React" and the wiring of "component tree → context" stay
- * independently editable.
- *
- * `props` carries the resolved props through so the view can read
- * configuration without going through the state machine — the machine
- * should only own behavioral state.
- */
-
 export interface TooltipContextValue {
   api: TooltipApi
   props: TooltipMachineProps
