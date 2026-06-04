@@ -3,174 +3,139 @@
  *
  * States: closed → opening → open → closing
  *
- * Receives ALREADY-RESOLVED config (`TooltipMachineProps`) — defaults are
- * applied once at the adapter entry, so every field on `props` is concrete
- * and read directly.
+ * The machine never sees props (see ARCHITECTURE.md). `createTooltipMachine`
+ * takes the resolved props ONCE, seeds the config the transitions need into
+ * context, and computes the initial state. From then on the machine reads only
+ * context/events:
+ *   - openDelay / closeDelay → named `after` delays reading context
+ *   - skipDelayDuration / id → context, used to drive the global store
+ *   - disableHoverableContent → a guard over context
+ *   - the single-open store + skip-delay window → store.ts (a shared signal)
  *
- * Feature parity with the SPEC.md contract:
- *   - openDelay / closeDelay (Provider-inheritable, Root override)
- *   - skipDelayDuration window (per-tooltip; Provider-inheritable)
- *   - closeOnEscape — adapter listens; machine receives "escape" event
- *   - disableHoverableContent — inverse of legacy "interactive"
- *   - disabled — suppresses opens
- *   - controlled `open` + `onOpenChange`
- *   - global single-tooltip store (only one open at a time)
+ * Callbacks (onOpenChange) and controlled `open` are NOT here — the connector
+ * observes the machine and fires them.
  *
- * What is NOT here (intentional):
- *   - DOM event listeners outside the named effects
- *   - aria-* / role / data-* / style — those live in the connect's logical output
+ * `trackEscapeKey` is a named effect each adapter overrides via withAdapter().
  *
- * Sibling files:
- *   - types.ts    — public types
- *   - props.ts    — defaults (resolution is a spread at the adapter entry)
- *   - store.ts    — global singleton state
- *   - connect.ts  — logical surface (handlers + attrs)
- *   - index.ts    — public exports
+ * Sibling files: types.ts · props.ts · store.ts · connect.ts · index.ts
  */
 
-import { setup } from '@render-experiment/machine-core'
+import { config, type Machine } from '@render-experiment/machine-core'
 import { tooltipStore } from './store'
-import type { TooltipSchema } from './types'
+import type { TooltipContext, TooltipEvent, TooltipMachineProps, TooltipState } from './types'
 
-export const tooltipMachine = setup<TooltipSchema>().createMachine({
-  initial: props => ((props.open ?? props.defaultOpen) ? 'open' : 'closed'),
-
-  context: props => ({
-    hasPointerMoveOpened: false,
-    hasInstantOpen: false,
+/**
+ * Build the tooltip machine CONFIG from already-resolved props (defaults
+ * applied). Returns a config — the target bridge applies its adapter
+ * (withAdapter) and builds the running machine, so platform effects stay at
+ * the edge. Props are read ONCE here to seed context + initial state.
+ */
+export function tooltipMachineConfig(props: TooltipMachineProps) {
+  const context: TooltipContext = {
+    id: props.id,
     placement: props.placement,
-  }),
+    openDelay: props.openDelay,
+    closeDelay: props.closeDelay,
+    skipDelayDuration: props.skipDelayDuration,
+    disableHoverableContent: props.disableHoverableContent,
+  }
 
-  states: {
-    closed: {
-      entry: ['clearGlobalId'],
-      on: {
-        open: { target: 'open', actions: ['invokeOnOpen'] },
-        'pointer.move': [
-          {
-            guard: 'shouldSkipDelay',
-            target: 'open',
-            actions: ['setPointerMoveOpened', 'setInstantOpen', 'invokeOnOpen'],
-          },
-          { target: 'opening' },
-        ],
-        'pointer.leave': { actions: ['clearPointerMoveOpened'] },
-      },
-    },
+  return config<TooltipState, TooltipContext, TooltipEvent>({
+    initial: (props.open ?? props.defaultOpen) ? 'open' : 'closed',
+    context,
 
-    opening: {
-      effects: ['waitForOpenDelay'],
-      on: {
-        'after.openDelay': {
-          target: 'open',
-          actions: ['setPointerMoveOpened', 'clearInstantOpen', 'invokeOnOpen'],
-        },
-        open: { target: 'open', actions: ['invokeOnOpen'] },
-        close: { target: 'closed', actions: ['invokeOnClose'] },
-        'pointer.leave': {
-          target: 'closed',
-          actions: ['clearPointerMoveOpened'],
+    states: {
+      closed: {
+        entry: ['clearGlobalId'],
+        on: {
+          open: { target: 'open' },
+          'pointer.move': [{ guard: 'shouldSkipDelay', target: 'open' }, { target: 'opening' }],
         },
       },
-    },
 
-    open: {
-      effects: ['trackEscapeKey', 'trackGlobalStore'],
-      entry: ['setGlobalId'],
-      on: {
-        close: { target: 'closed', actions: ['invokeOnClose'] },
-        'pointer.leave': [
-          { guard: 'isHoverableContent', target: 'closing' },
-          {
-            target: 'closed',
-            actions: ['clearPointerMoveOpened', 'invokeOnClose'],
-          },
-        ],
-        'content.pointer.leave': {
-          guard: 'isHoverableContent',
-          target: 'closing',
+      opening: {
+        // openDelay elapses → open. Auto-cancelled if the pointer leaves first.
+        after: {
+          openDelay: { target: 'open' },
+        },
+        on: {
+          open: { target: 'open' },
+          close: { target: 'closed' },
+          'pointer.leave': { target: 'closed' },
+        },
+      },
+
+      open: {
+        entry: ['setGlobalId'],
+        effects: ['trackGlobalStore'],
+        on: {
+          close: { target: 'closed' },
+          // escape is sent by the target's listener AFTER its prevent-able
+          // onEscapeKeyDown gate; the machine just closes (behavior is portable).
+          escape: { target: 'closed' },
+          'pointer.leave': [
+            { guard: 'isHoverableContent', target: 'closing' },
+            { target: 'closed' },
+          ],
+          'content.pointer.leave': { guard: 'isHoverableContent', target: 'closing' },
+        },
+      },
+
+      closing: {
+        after: {
+          closeDelay: { target: 'closed' },
+        },
+        on: {
+          'content.pointer.move': { target: 'open' },
+          'pointer.move': { target: 'open' },
+          open: { target: 'open' },
         },
       },
     },
 
-    closing: {
-      effects: ['waitForCloseDelay'],
-      on: {
-        'after.closeDelay': {
-          target: 'closed',
-          actions: ['clearPointerMoveOpened', 'invokeOnClose'],
-        },
-        'content.pointer.move': { target: 'open' },
-        'pointer.move': { target: 'open' },
-        open: { target: 'open', actions: ['invokeOnOpen'] },
-      },
-    },
-  },
-
-  implementations: {
-    guards: {
-      shouldSkipDelay: () => tooltipStore.isInSkipWindow(),
-      /** Inverse of disableHoverableContent — pointer can dwell on Content. */
-      isHoverableContent: ({ props }) => !props.disableHoverableContent,
-    },
-
-    actions: {
-      invokeOnOpen: ({ props }) => {
-        props.onOpenChange?.({ open: true })
-      },
-      invokeOnClose: ({ props }) => {
-        props.onOpenChange?.({ open: false })
-      },
-      setPointerMoveOpened: ({ setContext }) => {
-        setContext({ hasPointerMoveOpened: true })
-      },
-      clearPointerMoveOpened: ({ setContext }) => {
-        setContext({ hasPointerMoveOpened: false })
-      },
-      setInstantOpen: ({ setContext }) => {
-        setContext({ hasInstantOpen: true })
-      },
-      clearInstantOpen: ({ setContext }) => {
-        setContext({ hasInstantOpen: false })
-      },
-      setGlobalId: ({ props }) => {
-        const { id, skipDelayDuration } = props
-        tooltipStore.setOpen(id)
-        if (skipDelayDuration > 0) {
-          tooltipStore.startSkipWindow(skipDelayDuration)
-        }
-      },
-      clearGlobalId: ({ props }) => {
-        if (tooltipStore.get().openId === props.id) {
-          tooltipStore.setOpen(null)
-        }
-      },
-    },
-
-    effects: {
-      waitForOpenDelay: ({ props, send }) => {
-        const id = setTimeout(() => send({ type: 'after.openDelay' }), props.openDelay)
-        return () => clearTimeout(id)
+    implementations: {
+      delays: {
+        openDelay: ({ context }) => context.openDelay,
+        closeDelay: ({ context }) => context.closeDelay,
       },
 
-      waitForCloseDelay: ({ props, send }) => {
-        const id = setTimeout(() => send({ type: 'after.closeDelay' }), props.closeDelay)
-        return () => clearTimeout(id)
+      guards: {
+        shouldSkipDelay: () => tooltipStore.isInSkipWindow(),
+        /** Inverse of disableHoverableContent — pointer can dwell on Content. */
+        isHoverableContent: ({ context }) => !context.disableHoverableContent,
       },
 
-      // Substrate-specific: each adapter (React DOM, React Native, …)
-      // overrides this via withAdapter() in its api.ts. Core defines
-      // the name and a no-op so the machine references stay valid.
-      trackEscapeKey: () => undefined,
-
-      trackGlobalStore: ({ props, send }) => {
-        const { id } = props
-        return tooltipStore.subscribe(() => {
-          if (tooltipStore.get().openId !== id && tooltipStore.get().openId !== null) {
-            send({ type: 'close', src: 'store.id.change' })
+      actions: {
+        setGlobalId: ({ context }) => {
+          tooltipStore.setOpen(context.id)
+          if (context.skipDelayDuration > 0) {
+            tooltipStore.startSkipWindow(context.skipDelayDuration)
           }
-        })
+        },
+        clearGlobalId: ({ context }) => {
+          if (tooltipStore.get().openId === context.id) tooltipStore.setOpen(null)
+        },
+      },
+
+      effects: {
+        // While open, watch the global store: if another tooltip claims the
+        // single-open slot, close this one. (Escape is NOT a machine effect —
+        // its listener + prevent-able gate live in the target adapter, which
+        // then sends `escape`.)
+        trackGlobalStore: ({ context, send }) =>
+          tooltipStore.subscribe(() => {
+            const openId = tooltipStore.get().openId
+            if (openId !== context.id && openId !== null) {
+              send({ type: 'close', src: 'store.id.change' })
+            }
+          }),
       },
     },
-  },
-})
+  })
+}
+
+/** The config type produced by `tooltipMachineConfig`. */
+export type TooltipMachineConfig = ReturnType<typeof tooltipMachineConfig>
+
+/** The running tooltip machine service type (built by the bridge). */
+export type TooltipMachine = Machine<TooltipState, TooltipContext, TooltipEvent>

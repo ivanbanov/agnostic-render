@@ -15,6 +15,7 @@ export * from './props'
 export * from './machine'
 export * from './store'
 export * from './connect'
+export * from './utils'
 export * from './parts'
 export * as styles from '@render-experiment/tooltip-shared'
 export {

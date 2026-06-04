@@ -1,16 +1,16 @@
 /**
  * Tooltip — public types.
  *
- * Vocabulary shared across the component's other files (machine.ts,
- * styles.ts) and consumed by adapters. No defaults, no implementation —
- * those live next to the state machine in machine.ts.
+ * Under the "machine never sees props" rule: config the transitions need lives
+ * in `TooltipContext` (seeded from props at the edge); callbacks + controlled
+ * `open` live on `TooltipProps` and are handled by the connector, never the
+ * machine.
  *
  * See SPEC.md for the contract this file implements.
  */
 
-import type { Part } from '@render-experiment/machine-core'
-import type { Placement } from '@render-experiment/utils'
-import type { TooltipContentVariants } from './parts'
+import type { AttrBindings, EventBindings } from '@render-experiment/machine-core'
+import type { Placement, Side } from '@render-experiment/utils'
 
 export type { Placement }
 
@@ -41,10 +41,8 @@ export interface TooltipProviderConfig {
 // -----------------------------------------------------------------------------
 
 /**
- * Optional event payload for the Content's Escape handler. The connect
- * passes through whatever event-like object the adapter's normalize()
- * gave it; the shape is opaque to core. `preventDefault()` cancels the
- * close.
+ * Optional event payload for the Content's Escape handler. `preventDefault()`
+ * cancels the close.
  */
 export interface TooltipEscapeKeyDownEvent {
   preventDefault: () => void
@@ -67,21 +65,18 @@ export interface TooltipProps extends TooltipProviderConfig {
   /** Screen-vertical offset from the anchor point, px. Default 4. */
   offsetY?: number
   onOpenChange?: (details: { open: boolean }) => void
-  /**
-   * Fires when Escape is pressed while open. Call `preventDefault()` to
-   * keep the tooltip open. Closed-by-default behavior is preserved.
-   */
+  /** Fires when Escape is pressed while open. preventDefault() keeps it open. */
   onEscapeKeyDown?: (event: TooltipEscapeKeyDownEvent) => void
 }
 
 /**
  * Props after defaults are applied (`{ ...TOOLTIP_DEFAULTS, ...props }`),
- * resolved once at the adapter entry. The machine and connect operate on
- * this concrete shape and never re-resolve.
+ * resolved once at the adapter entry. The connector operates on this concrete
+ * shape (controlled `open`, callbacks); the machine does NOT — config fields
+ * are seeded into context.
  */
 export interface TooltipMachineProps {
   id: string
-  /** Optional — no default; absent means uncontrolled. */
   open?: boolean
   defaultOpen: boolean
   openDelay: number
@@ -93,25 +88,26 @@ export interface TooltipMachineProps {
   placement: Placement
   offsetX: number
   offsetY: number
-  /** Optional — callbacks have no default. */
   onOpenChange?: TooltipProps['onOpenChange']
   onEscapeKeyDown?: TooltipProps['onEscapeKeyDown']
 }
 
 // -----------------------------------------------------------------------------
-// Internal context (machine state)
+// Machine context (config the transitions need + internal state)
 // -----------------------------------------------------------------------------
 
+/**
+ * The machine's context. Config fields (id, placement, delays, …) are seeded
+ * from the resolved props at construction; the machine reads them as context,
+ * never as props.
+ */
 export interface TooltipContext {
-  /**
-   * True after a pointer-driven open. Used to choose `data-state`:
-   * `"delayed-open"` for hover/move-driven opens, `"instant-open"` when
-   * the skip-delay window fast-tracked the open.
-   */
-  hasPointerMoveOpened: boolean
-  /** True when this open consumed the skip-delay window (vs paid full delay). */
-  hasInstantOpen: boolean
+  id: string
   placement: Placement
+  openDelay: number
+  closeDelay: number
+  skipDelayDuration: number
+  disableHoverableContent: boolean
 }
 
 export type TooltipState = 'closed' | 'opening' | 'open' | 'closing'
@@ -120,10 +116,6 @@ export type TooltipState = 'closed' | 'opening' | 'open' | 'closing'
 // Events
 // -----------------------------------------------------------------------------
 
-/**
- * Every event the tooltip machine accepts. `src` is an opaque trace tag
- * used in debugging logs / DevTools breadcrumbs.
- */
 export type TooltipEvent =
   | { type: 'open'; src?: string }
   | { type: 'close'; src?: string }
@@ -131,66 +123,41 @@ export type TooltipEvent =
   | { type: 'pointer.leave' }
   | { type: 'content.pointer.move' }
   | { type: 'content.pointer.leave' }
-  | { type: 'after.openDelay' }
-  | { type: 'after.closeDelay' }
   | { type: 'escape'; src?: string }
-
-// -----------------------------------------------------------------------------
-// Machine vocabulary (the Schema)
-// -----------------------------------------------------------------------------
-
-/** Every action name the machine references. */
-export type TooltipActions =
-  | 'invokeOnOpen'
-  | 'invokeOnClose'
-  | 'setPointerMoveOpened'
-  | 'clearPointerMoveOpened'
-  | 'setInstantOpen'
-  | 'clearInstantOpen'
-  | 'setGlobalId'
-  | 'clearGlobalId'
-
-/** Every guard name the machine references. */
-export type TooltipGuards = 'shouldSkipDelay' | 'isHoverableContent'
-
-/** Every effect name the machine references. */
-export type TooltipEffects =
-  | 'waitForOpenDelay'
-  | 'waitForCloseDelay'
-  | 'trackEscapeKey'
-  | 'trackGlobalStore'
-
-/**
- * Single source of truth for the tooltip machine — wired into
- * `setup<TooltipSchema>().createMachine({ ... })`. The compiler enforces:
- *   - every name referenced in `entry / exit / actions / effects / guard`
- *     belongs to one of these unions
- *   - every transition `target` is a declared `state`
- *   - `implementations.{actions,guards,effects}` are exhaustive — missing
- *     keys fail, extra keys fail
- */
-export type TooltipSchema = {
-  context: TooltipContext
-  props: TooltipMachineProps
-  event: TooltipEvent
-  state: TooltipState
-  actions: TooltipActions
-  guards: TooltipGuards
-  effects: TooltipEffects
-}
 
 // -----------------------------------------------------------------------------
 // Connect API (consumed by adapter render layer)
 // -----------------------------------------------------------------------------
 
+/**
+ * A named part of the component — one flat bag of the things the view spreads
+ * onto the element: event handlers (`onPointerMove`, `onFocus`, …) and
+ * substrate attributes (`id`, `role`, `describedBy`, `disabled`, aria-*). The
+ * adapter's normalize() maps each key by name; there's no handler/attr grouping
+ * because nothing downstream needs one.
+ *
+ * Semantic state (machine state, side) is NOT collapsed into `data-*` here —
+ * core stays agnostic; each adapter derives whatever `data-*` it wants from the
+ * machine state + the part's own fields (e.g. `side`).
+ */
+export type TooltipPart = EventBindings & AttrBindings
+
+/**
+ * The content part also carries positioning fields the view CONSUMES (reads by
+ * name) rather than spreads — render destructures these out before normalize().
+ */
+export type TooltipContentPart = TooltipPart & {
+  side: Side
+  placement: Placement
+  offsetX: number
+  offsetY: number
+}
+
 export interface TooltipApi {
   open: boolean
   setOpen: (next: boolean) => void
   parts: {
-    trigger: Part
-    content: Part<
-      TooltipContentVariants,
-      { placement: Placement; offsetX: number; offsetY: number; rendered: boolean }
-    >
+    trigger: TooltipPart
+    content: TooltipContentPart
   }
 }

@@ -74,10 +74,7 @@ export function TooltipTrigger(props: TooltipTriggerProps) {
     triggerRef.current = node
   }
 
-  const machineProps = {
-    ...normalize(api.parts.trigger.handlers as unknown as Record<string, unknown>),
-    ...normalize(api.parts.trigger.attrs as unknown as Record<string, unknown>),
-  }
+  const machineProps = normalize(api.parts.trigger as unknown as Record<string, unknown>)
 
   const merged = mergeProps(consumerProps as Record<string, unknown>, machineProps)
 
@@ -110,7 +107,7 @@ export interface TooltipContentProps extends Omit<ComponentPropsWithoutRef<'div'
 export function TooltipContent(props: TooltipContentProps) {
   const { children, ...consumerProps } = props
   const { api, props: ctxProps, triggerRef } = useTooltipContext()
-  if (!api.parts.content.rendered) return null
+  if (!api.open) return null
   return (
     <PositionedContent
       api={api}
@@ -140,7 +137,7 @@ function PositionedContent({
 
   const contentRef = useRef<HTMLDivElement | null>(null)
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null)
-  const [effectiveSide, setEffectiveSide] = useState<Side>(api.parts.content.variants.side)
+  const [effectiveSide, setEffectiveSide] = useState<Side>(api.parts.content.side)
 
   // Measure: read both rects, compute the effective side (collision
   // flip), then anchor against the effective placement so the offsets
@@ -152,7 +149,7 @@ function PositionedContent({
       const triggerRect = trigger.getBoundingClientRect()
       const contentRect = contentRef.current?.getBoundingClientRect() ?? null
 
-      const preferred = api.parts.content.variants.side
+      const preferred = api.parts.content.side
       const { placement, offsetX, offsetY } = api.parts.content
       const next = pickSide(
         preferred,
@@ -179,7 +176,7 @@ function PositionedContent({
     api.parts.content.placement,
     api.parts.content.offsetX,
     api.parts.content.offsetY,
-    api.parts.content.variants.side,
+    api.parts.content.side,
     triggerRef,
   ])
 
@@ -196,7 +193,7 @@ function PositionedContent({
       if (!t) return
       const triggerRect = t.getBoundingClientRect()
       const contentRect = contentRef.current?.getBoundingClientRect() ?? null
-      const preferred = api.parts.content.variants.side
+      const preferred = api.parts.content.side
       const { placement, offsetX, offsetY } = api.parts.content
       const next = pickSide(
         preferred,
@@ -215,7 +212,7 @@ function PositionedContent({
     api.parts.content.placement,
     api.parts.content.offsetX,
     api.parts.content.offsetY,
-    api.parts.content.variants.side,
+    api.parts.content.side,
     triggerRef,
   ])
 
@@ -236,20 +233,15 @@ function PositionedContent({
     return () => io.disconnect()
   }, [api, triggerRef])
 
-  const handlerProps = normalize(api.parts.content.handlers as unknown as Record<string, unknown>)
-  const attrProps = normalize(api.parts.content.attrs as unknown as Record<string, unknown>)
+  // Positioning fields are consumed (above) — strip them so they aren't spread
+  // onto the DOM node; normalize the rest (handlers + attrs) by name.
+  const { side: _s, placement: _p, offsetX: _ox, offsetY: _oy, ...spreadable } = api.parts.content
+  const machineProps = normalize(spreadable as unknown as Record<string, unknown>)
 
   // Two runtime numbers — that's the irreducible minimum.
   const anchorCoords = anchor ? { top: anchor.y, left: anchor.x } : undefined
 
-  // Override the connect's `side` (preferred) with the effective side
-  // (after collision flip) so styling and the data-side attr reflect
-  // where the tooltip actually ended up.
-  const merged = mergeProps(consumerProps, {
-    ...handlerProps,
-    ...attrProps,
-    'data-side': effectiveSide,
-  })
+  const merged = mergeProps(consumerProps, machineProps)
 
   return (
     <Styled.Positioner anchored={!!anchor} css={anchorCoords}>

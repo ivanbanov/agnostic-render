@@ -1,24 +1,26 @@
 /* eslint-disable */
-import { withAdapter } from '@render-experiment/machine-core'
-import { useApi } from '@render-experiment/machine-react'
+import { useMachine } from '@render-experiment/machine-react'
 import {
-  connectTooltip,
-  tooltipMachine,
   TOOLTIP_DEFAULTS,
+  connectTooltip,
+  tooltipMachineConfig,
   type TooltipApi,
-  type TooltipContext as TooltipMachineContext,
-  type TooltipEvent,
   type TooltipMachineProps,
   type TooltipProps,
-  type TooltipState,
 } from '@render-experiment/tooltip-core'
-import { tooltipAdapter } from '../adapter'
+import { tooltipAdapter, useTooltipEffects } from '../adapter'
 
-const tooltipMachineWithAdapter = withAdapter(tooltipMachine, tooltipAdapter)
-
-/** Wire the core machine to React and return the connect() API. */
+/** Wire the core tooltip machine to React and return the connect() API. */
 export function useTooltipApi(props: TooltipProps): TooltipApi {
-  // Resolve defaults ONCE here; the machine + connect receive concrete config.
-  const config: TooltipMachineProps = { ...TOOLTIP_DEFAULTS, ...props }
-  return useApi(tooltipMachineWithAdapter, config, connectTooltip)
+  // Resolve defaults once (machine + connector operate on the concrete shape).
+  const resolved: TooltipMachineProps = { ...TOOLTIP_DEFAULTS, ...props }
+  const { api, machine } = useMachine(
+    tooltipMachineConfig,
+    connectTooltip,
+    tooltipAdapter,
+    resolved,
+  )
+  // Substrate-specific, prop-dependent effects (e.g. Escape / back-button).
+  useTooltipEffects(machine, resolved)
+  return api
 }

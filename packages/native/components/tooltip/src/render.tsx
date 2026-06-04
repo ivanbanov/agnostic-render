@@ -142,7 +142,7 @@ export function TooltipTrigger(props: TooltipTriggerProps) {
   // Machine-supplied bindings (handler functions). The native normalizer
   // drops hover-only handlers; we supplement with onLongPress/onPressOut
   // below to actually open/close.
-  const normalized = normalize(api.parts.trigger.handlers as unknown as Record<string, unknown>)
+  const normalized = normalize(api.parts.trigger as unknown as Record<string, unknown>)
 
   const machineProps: Record<string, unknown> = {
     ...(normalized as object),
@@ -180,8 +180,8 @@ export function TooltipContent(props: TooltipContentProps) {
   const { children, ...consumerProps } = props
   const { api, props: ctxProps, anchor } = useTooltipCtxOrThrow()
 
-  const rendered = api.parts.content.rendered
-  const { side } = api.parts.content.variants
+  const rendered = api.open
+  const { side } = api.parts.content
 
   // Wire Android back button to close (mirror of trackEscapeKey on web).
   useEffect(() => {

@@ -23,7 +23,7 @@
  *     The part name on adapters is the PascalCase form: `content` → `Content`.
  *   - core/components/<slug>/src/parts/<name>.ts holds the matching variant
  *     types (the contract). Codegen does not read these.
- *   - core/components/<slug>/src/index.ts exports `<camel>Machine` and
+ *   - core/components/<slug>/src/index.ts exports `<camel>MachineConfig` and
  *     `connect<Pascal>`.
  *
  * No AST parsing — core packages import as ESM modules.
@@ -144,7 +144,7 @@ async function loadCore(component: DiscoveredComponent): Promise<LoadedCore> {
     )
   }
 
-  const machineKey = `${component.camel}Machine`
+  const machineKey = `${component.camel}MachineConfig`
   const connectKey = `connect${component.pascal}`
   if (!(machineKey in indexMod)) {
     throw new Error(`[${component.slug}] core/index.ts missing export ${machineKey}`)
@@ -194,28 +194,30 @@ function emitReactApi(component: DiscoveredComponent): string {
   const { pascal, slug, camel } = component
   const CONST = slug.toUpperCase().replace(/-/g, '_')
   return `${ESLINT_DISABLE}
-import { withAdapter } from "@render-experiment/machine-core";
-import { useApi } from "@render-experiment/machine-react";
+import { useMachine } from "@render-experiment/machine-react";
 import {
-  connect${pascal},
-  ${camel}Machine,
   ${CONST}_DEFAULTS,
+  connect${pascal},
+  ${camel}MachineConfig,
   type ${pascal}Api,
-  type ${pascal}Context as ${pascal}MachineContext,
-  type ${pascal}Event,
   type ${pascal}MachineProps,
   type ${pascal}Props,
-  type ${pascal}State,
 } from "@render-experiment/${slug}-core";
-import { ${camel}Adapter } from "../adapter";
+import { ${camel}Adapter, use${pascal}Effects } from "../adapter";
 
-const ${camel}MachineWithAdapter = withAdapter(${camel}Machine, ${camel}Adapter);
-
-/** Wire the core machine to React and return the connect() API. */
+/** Wire the core ${camel} machine to React and return the connect() API. */
 export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
-  // Resolve defaults ONCE here; the machine + connect receive concrete config.
-  const config: ${pascal}MachineProps = { ...${CONST}_DEFAULTS, ...props };
-  return useApi(${camel}MachineWithAdapter, config, connect${pascal});
+  // Resolve defaults once (machine + connector operate on the concrete shape).
+  const resolved: ${pascal}MachineProps = { ...${CONST}_DEFAULTS, ...props };
+  const { api, machine } = useMachine(
+    ${camel}MachineConfig,
+    connect${pascal},
+    ${camel}Adapter,
+    resolved,
+  );
+  // Substrate-specific, prop-dependent effects (e.g. Escape / back-button).
+  use${pascal}Effects(machine, resolved);
+  return api;
 }
 `
 }
@@ -256,28 +258,30 @@ function emitNativeApi(component: DiscoveredComponent): string {
   const { pascal, slug, camel } = component
   const CONST = slug.toUpperCase().replace(/-/g, '_')
   return `${ESLINT_DISABLE}
-import { withAdapter } from "@render-experiment/machine-core";
-import { useApi } from "@render-experiment/machine-native";
+import { useMachine } from "@render-experiment/machine-native";
 import {
-  connect${pascal},
-  ${camel}Machine,
   ${CONST}_DEFAULTS,
+  connect${pascal},
+  ${camel}MachineConfig,
   type ${pascal}Api,
-  type ${pascal}Context as ${pascal}MachineContext,
-  type ${pascal}Event,
   type ${pascal}MachineProps,
   type ${pascal}Props,
-  type ${pascal}State,
 } from "@render-experiment/${slug}-core";
-import { ${camel}Adapter } from "../adapter";
+import { ${camel}Adapter, use${pascal}Effects } from "../adapter";
 
-const ${camel}MachineWithAdapter = withAdapter(${camel}Machine, ${camel}Adapter);
-
-/** Wire the core machine to native and return the connect() API. */
+/** Wire the core ${camel} machine to native and return the connect() API. */
 export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
-  // Resolve defaults ONCE here; the machine + connect receive concrete config.
-  const config: ${pascal}MachineProps = { ...${CONST}_DEFAULTS, ...props };
-  return useApi(${camel}MachineWithAdapter, config, connect${pascal});
+  // Resolve defaults once (machine + connector operate on the concrete shape).
+  const resolved: ${pascal}MachineProps = { ...${CONST}_DEFAULTS, ...props };
+  const { api, machine } = useMachine(
+    ${camel}MachineConfig,
+    connect${pascal},
+    ${camel}Adapter,
+    resolved,
+  );
+  // Substrate-specific, prop-dependent effects (e.g. Android back button).
+  use${pascal}Effects(machine, resolved);
+  return api;
 }
 `
 }
