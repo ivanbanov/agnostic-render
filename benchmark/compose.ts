@@ -16,9 +16,9 @@
  * Run: pnpm tsx benchmark/compose/bench.ts
  */
 import { Bench } from 'tinybench'
-import { compose } from '../../packages/core/machine/src/index'
-import { makeCoreMachine, bump, SINK } from '../lib/contenders'
-import { report } from '../lib/report'
+import { compose } from '../packages/core/machine/src/index'
+import { makeCoreMachine, bump, SINK } from './lib/contenders'
+import { report } from './lib/report'
 
 function buildGroup(M: number) {
   const members: Record<string, ReturnType<typeof makeCoreMachine>> = {}
@@ -60,10 +60,18 @@ function benchChain(M: number) {
   const g = buildGroup(M)
   g.start()
   const keys = Object.keys(g.members)
-  // chain: when ANY member changes, push an event to the NEXT member
+  // chain: when ANY member changes, push an event to a DOWNSTREAM member.
+  // Re-entrancy guard: the downstream send itself triggers `sync` again (sync is
+  // coarse — fires on any member change), so without the flag this recurses
+  // forever. A real chain rule guards the same way (act on the upstream change,
+  // ignore your own downstream write).
+  let chaining = false
   g.sync(() => {
+    if (chaining) return
+    chaining = true
     bump()
     g.members.m1.send({ type: 'miss' }) // a downstream hop
+    chaining = false
   })
   let i = 0
   bench.add(`chain — change → cross-machine send (${M} members)`, () => {

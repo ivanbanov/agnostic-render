@@ -2,20 +2,26 @@
  * Shared contender factories for the machine benchmark suite. DISPOSABLE —
  * built for a first look, expect to rebuild.
  *
- * Three reactive "cell" models, each exposing the same tiny interface so the
- * scenarios can drive them uniformly:
+ * Reactive "cell" models for the HEADLESS tables — the two real STATECHARTS,
+ * exposing the same tiny interface so the scenarios can drive them uniformly:
  *
- *   - core   : machine-core      → machine() + select(field).subscribe()  (intrinsic, auto-tracked)
- *   - store  : @xstate/store     → createStore + store.select(fn).subscribe (manual selector)
- *   - coarse : hand-rolled       → listener-Set snapshot store              (the O(all) model)
+ *   - core   : machine-core   → machine() + select(field).subscribe()  (intrinsic, auto-tracked)
+ *   - xstate : xstate          → createActor + actor.subscribe (COARSE)  (the real statechart)
  *
- * Zag core is omitted from the fine-grained scenarios: its reactivity is
- * delegated to a host framework, so @zag-js/core has no standalone per-field
- * subscription to benchmark. The coarse store stands in for the
- * snapshot-and-diff / delegate-to-framework shape.
+ * Both are SYNCHRONOUS, so they share the synchronous ops/sec loop fairly.
+ * (@xstate/store is intentionally NOT here — it's a store, not a statechart.)
+ *
+ * NOTE on what's NOT here:
+ *   - xstate's headless subscription (actor.subscribe) is COARSE — fine-grained
+ *     selection in XState is `useSelector`, which is React-only; it shows up in
+ *     the React render benchmark instead.
+ *   - Zag's headless `send` (via @zag-js/vanilla VanillaMachine) is ASYNC —
+ *     microtask-batched — so it can't share a synchronous ops/sec loop fairly.
+ *     Zag is measured in the React render benchmark only (mount + re-render),
+ *     where it runs natively via @zag-js/react.
  */
 
-import { createStore } from '@xstate/store'
+import { createActor, createMachine as createXMachine, assign } from 'xstate'
 import { machine, type Machine } from '../../packages/core/machine/src/index'
 
 /** A sink so subscriber work isn't dead-code-eliminated by the JIT. */
@@ -29,25 +35,6 @@ export interface Cell {
   hit: () => void
   /** Change an UNOBSERVED field (`other`) — for the fine-grain / irrelevant test. */
   miss: () => void
-}
-
-// -----------------------------------------------------------------------------
-// Coarse baseline store
-// -----------------------------------------------------------------------------
-export function createCoarseStore<T extends object>(initial: T) {
-  let state = initial
-  const listeners = new Set<() => void>()
-  return {
-    get: () => state,
-    set: (patch: Partial<T>) => {
-      state = { ...state, ...patch }
-      for (const l of listeners) l()
-    },
-    subscribe: (l: () => void) => {
-      listeners.add(l)
-      return () => listeners.delete(l)
-    },
-  }
 }
 
 // -----------------------------------------------------------------------------
@@ -81,43 +68,35 @@ export function makeCoreCell(observe = true): Cell {
 }
 
 // -----------------------------------------------------------------------------
-// @xstate/store cell
+// xstate cell — the real statechart (createMachine + createActor).
+// actor.subscribe is COARSE (fires on every snapshot change). We diff `value`
+// in the listener, the same shape the coarse store uses, so the headless number
+// reflects XState's actual headless subscription behavior.
 // -----------------------------------------------------------------------------
-export function makeStoreCell(observe = true): Cell {
-  const s = createStore({
-    context: { value: 0, other: 0 } as Ctx,
+export function makeXstateCell(observe = true): Cell {
+  const m = createXMachine({
+    context: { value: 0, other: 0 },
     on: {
-      hit: (ctx: Ctx) => ({ ...ctx, value: ctx.value + 1 }),
-      miss: (ctx: Ctx) => ({ ...ctx, other: ctx.other + 1 }),
+      hit: { actions: assign({ value: ({ context }) => context.value + 1 }) },
+      miss: { actions: assign({ other: ({ context }) => context.other + 1 }) },
     },
   })
-  if (observe) s.select((c: Ctx) => c.value).subscribe(bump)
-  return { hit: () => s.trigger.hit(), miss: () => s.trigger.miss() }
-}
-
-// -----------------------------------------------------------------------------
-// coarse cell (snapshot + diff in the consumer)
-// -----------------------------------------------------------------------------
-export function makeCoarseCell(observe = true): Cell {
-  const s = createCoarseStore<Ctx>({ value: 0, other: 0 })
+  const a = createActor(m)
+  a.start()
   if (observe) {
-    let last = s.get().value
-    s.subscribe(() => {
-      const v = s.get().value
+    let last = a.getSnapshot().context.value
+    a.subscribe(snap => {
+      const v = snap.context.value
       if (v !== last) {
         last = v
         bump()
       }
     })
   }
-  return {
-    hit: () => s.set({ value: s.get().value + 1 }),
-    miss: () => s.set({ other: s.get().other + 1 }),
-  }
+  return { hit: () => a.send({ type: 'hit' }), miss: () => a.send({ type: 'miss' }) }
 }
 
 export const CONTENDERS: Record<string, (observe?: boolean) => Cell> = {
   core: makeCoreCell,
-  store: makeStoreCell,
-  coarse: makeCoarseCell,
+  xstate: makeXstateCell,
 }

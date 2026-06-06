@@ -10,9 +10,15 @@ const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'http:
 const g = globalThis as unknown as Record<string, unknown>
 g.window = dom.window
 g.document = dom.window.document
-g.navigator = dom.window.navigator
 g.HTMLElement = dom.window.HTMLElement
 g.Node = dom.window.Node
+// `navigator` is a read-only getter on modern Node — define it instead of assigning.
+if (!('navigator' in globalThis)) {
+  Object.defineProperty(globalThis, 'navigator', {
+    value: dom.window.navigator,
+    configurable: true,
+  })
+}
 // React 18/19 act() env flag
 g.IS_REACT_ACT_ENVIRONMENT = true
 

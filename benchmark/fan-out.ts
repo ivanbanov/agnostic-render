@@ -2,95 +2,48 @@
  * Fan-out + fine-grain + throughput. DISPOSABLE first-look benchmark.
  *
  *   A. PROPAGATION  — N cells, change ONE. Does cost stay flat (O(changed)) or
- *      scale with N (O(all))? The coarse variant uses a SHARED store with N
- *      subscribers (the realistic "one store, many readers" O(all) shape).
- *   B. FINE-GRAIN   — change a field NOBODY observes. The auto-tracked engines
- *      should do ~zero subscriber work; coarse still wakes everyone.
+ *      degrade with N? Each contender uses one independent machine per cell.
+ *   B. FINE-GRAIN   — change a field NOBODY observes. Auto-tracked engines do
+ *      ~zero subscriber work.
  *   C. THROUGHPUT   — one cell, fire one event. Per-transition cost (where
- *      signals may LOSE to a plain reducer).
+ *      signals may LOSE to a plain store reducer).
  *
- * Run: pnpm tsx benchmark/fan-out/bench.ts
+ * Contenders (both SYNCHRONOUS statecharts, so the ops/sec loop is fair): core,
+ * xstate (real statechart, coarse headless subscribe).
+ *
+ * Not here: Zag — its headless `send` is async/microtask-batched, so it can't
+ * share a synchronous loop. Zag is in the React render benchmark instead.
+ *
+ * Run: pnpm bench:fanout
  */
 import { Bench } from 'tinybench'
-import {
-  createCoarseStore,
-  makeCoreCell,
-  makeStoreCell,
-  makeCoarseCell,
-  bump,
-  SINK,
-} from '../lib/contenders'
-import { report } from '../lib/report'
+import { makeCoreCell, makeXstateCell, SINK, type Cell } from './lib/contenders'
+import { report } from './lib/report'
+
+const CONTENDERS: Array<[string, (observe?: boolean) => Cell]> = [
+  ['core  ', makeCoreCell],
+  ['xstate', makeXstateCell],
+]
 
 function benchPropagation(N: number) {
   const bench = new Bench({ time: 400, warmupTime: 100 })
-
-  {
-    const cells = Array.from({ length: N }, () => makeCoreCell())
+  for (const [label, make] of CONTENDERS) {
+    const cells = Array.from({ length: N }, () => make())
     let i = 0
-    bench.add(`core   1/${N}`, () => {
+    bench.add(`${label} 1/${N}`, () => {
       cells[i++ % N].hit()
-    })
-  }
-  {
-    const cells = Array.from({ length: N }, () => makeStoreCell())
-    let i = 0
-    bench.add(`store  1/${N}`, () => {
-      cells[i++ % N].hit()
-    })
-  }
-  {
-    // coarse SHARED store, N subscribers → one change wakes all N (O(all))
-    const s = createCoarseStore({ value: 0, other: 0 })
-    for (let k = 0; k < N; k++) {
-      let last = s.get().value
-      s.subscribe(() => {
-        const v = s.get().value
-        if (v !== last) {
-          last = v
-          bump()
-        }
-      })
-    }
-    bench.add(`coarse 1/${N} (shared, N subs)`, () => {
-      s.set({ value: s.get().value + 1 })
     })
   }
   return bench
 }
 
 function benchFineGrain(N: number) {
-  // N cells observing `value`; we repeatedly change `other` (unobserved).
-  // Auto-tracked: subscriber never fires. Coarse-shared: still wakes all N.
   const bench = new Bench({ time: 400, warmupTime: 100 })
-  {
-    const cells = Array.from({ length: N }, () => makeCoreCell())
+  for (const [label, make] of CONTENDERS) {
+    const cells = Array.from({ length: N }, () => make())
     let i = 0
-    bench.add(`core   miss 1/${N}`, () => {
+    bench.add(`${label} miss 1/${N}`, () => {
       cells[i++ % N].miss()
-    })
-  }
-  {
-    const cells = Array.from({ length: N }, () => makeStoreCell())
-    let i = 0
-    bench.add(`store  miss 1/${N}`, () => {
-      cells[i++ % N].miss()
-    })
-  }
-  {
-    const s = createCoarseStore({ value: 0, other: 0 })
-    for (let k = 0; k < N; k++) {
-      let last = s.get().value
-      s.subscribe(() => {
-        const v = s.get().value
-        if (v !== last) {
-          last = v
-          bump()
-        }
-      })
-    }
-    bench.add(`coarse miss 1/${N} (shared, N subs)`, () => {
-      s.set({ other: s.get().other + 1 })
     })
   }
   return bench
@@ -98,12 +51,10 @@ function benchFineGrain(N: number) {
 
 function benchThroughput() {
   const bench = new Bench({ time: 500, warmupTime: 100 })
-  const core = makeCoreCell(),
-    store = makeStoreCell(),
-    coarse = makeCoarseCell()
-  bench.add('core   single-event', () => core.hit())
-  bench.add('store  single-event', () => store.hit())
-  bench.add('coarse single-event', () => coarse.hit())
+  for (const [label, make] of CONTENDERS) {
+    const c = make()
+    bench.add(`${label} single-event`, () => c.hit())
+  }
   return bench
 }
 
