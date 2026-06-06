@@ -1,5 +1,5 @@
 /**
- * Shared contender factories for the machine benchmark suite. DISPOSABLE —
+ * Shared competitor factories for the machine benchmark suite. DISPOSABLE —
  * built for a first look, expect to rebuild.
  *
  * Reactive "cell" models for the HEADLESS tables — the two real STATECHARTS,
@@ -22,7 +22,7 @@
  */
 
 import { createActor, createMachine as createXMachine, assign } from 'xstate'
-import { machine, type Machine } from '../../packages/core/machine/src/index'
+import { machine, type Machine } from '../packages/core/machine/src/index'
 
 /** A sink so subscriber work isn't dead-code-eliminated by the JIT. */
 export const SINK = { n: 0 }

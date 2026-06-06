@@ -14,10 +14,11 @@
  * Not here: Zag — its headless `send` is async/microtask-batched, so it can't
  * share a synchronous loop. Zag is in the React render benchmark instead.
  *
- * Run: pnpm bench:fanout
+ * Exported as `runFanout()`; the suite runs it via benchmark/index.ts
+ * (`pnpm benchmark`).
  */
 import { Bench } from 'tinybench'
-import { makeCoreCell, makeXstateCell, SINK, type Cell } from './lib/contenders'
+import { makeCoreCell, makeXstateCell, SINK, type Cell } from './competitors'
 import { report } from './lib/report'
 
 const CONTENDERS: Array<[string, (observe?: boolean) => Cell]> = [
@@ -26,7 +27,7 @@ const CONTENDERS: Array<[string, (observe?: boolean) => Cell]> = [
 ]
 
 function benchPropagation(N: number) {
-  const bench = new Bench({ time: 400, warmupTime: 100 })
+  const bench = new Bench({ time: 120, warmupTime: 40 })
   for (const [label, make] of CONTENDERS) {
     const cells = Array.from({ length: N }, () => make())
     let i = 0
@@ -38,7 +39,7 @@ function benchPropagation(N: number) {
 }
 
 function benchFineGrain(N: number) {
-  const bench = new Bench({ time: 400, warmupTime: 100 })
+  const bench = new Bench({ time: 120, warmupTime: 40 })
   for (const [label, make] of CONTENDERS) {
     const cells = Array.from({ length: N }, () => make())
     let i = 0
@@ -50,7 +51,7 @@ function benchFineGrain(N: number) {
 }
 
 function benchThroughput() {
-  const bench = new Bench({ time: 500, warmupTime: 100 })
+  const bench = new Bench({ time: 150, warmupTime: 40 })
   for (const [label, make] of CONTENDERS) {
     const c = make()
     bench.add(`${label} single-event`, () => c.hit())
@@ -64,13 +65,12 @@ async function run(title: string, b: Bench) {
   report(title, b)
 }
 
-async function main() {
-  console.log('Fan-out / fine-grain / throughput (disposable). Node', process.version)
+export async function runFanout() {
+  console.log('\n========== FAN-OUT / fine-grain / throughput ==========')
   for (const N of [100, 1000, 5000])
     await run(`A. Propagation — change 1 of ${N}`, benchPropagation(N))
   for (const N of [1000, 5000])
     await run(`B. Fine-grain — change an UNOBSERVED field, ${N} cells`, benchFineGrain(N))
   await run('C. Throughput — single machine, one event', benchThroughput())
-  console.log('\n(anti-DCE SINK:', SINK.n, ')')
+  console.log('(anti-DCE SINK:', SINK.n, ')')
 }
-main()
