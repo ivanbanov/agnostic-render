@@ -16,7 +16,8 @@
  * See ../SPEC.md for the contract.
  */
 
-import type { Connect, Reaction } from '@render-experiment/machine-core'
+import type { Connect } from '@render-experiment/machine-core'
+import { makeReaction } from '@render-experiment/machine-core'
 import { placementToSide } from '@render-experiment/utils'
 import type {
   TooltipApi,
@@ -96,19 +97,12 @@ export const connectTooltip: Connect<
  * declared once and fired identically on every target. (Escape is NOT here —
  * it's a DOM listener, so it lives in each target's effects.)
  */
-type TooltipReaction<Value> = Reaction<
-  TooltipState,
-  TooltipContext,
-  TooltipEvent,
-  TooltipMachineProps,
-  Record<string, never>,
-  Value
->
+const reaction = makeReaction<TooltipState, TooltipContext, TooltipEvent, TooltipMachineProps>()
 
 /** Fire onOpenChange whenever the tooltip becomes visible (open or closing) or hides. */
-const onOpenChange: TooltipReaction<boolean> = [
-  m => m.matches('open') || m.matches('closing'),
-  (open, props) => props.onOpenChange?.({ open }),
-]
+const onOpenChange = reaction(
+  m => m.matches('open') || m.matches('closing'), // Value = boolean (inferred from selector)
+  (open, props) => props.onOpenChange?.({ open }), // open: boolean
+)
 
 connectTooltip.reactions = [onOpenChange]
