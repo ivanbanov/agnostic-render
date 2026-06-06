@@ -16,8 +16,8 @@
  * heapMB() force-GCs before sampling (no-op without --expose-gc — it'll WARN).
  */
 import { createActor, createMachine as createXMachine, assign } from 'xstate'
-import { machine } from '../packages/core/machine/src/index'
-import { heapMB } from './lib/report'
+import { machine } from '../../packages/core/machine/src/index'
+import { heapMB } from '../report'
 
 const FIELDS = { thin: 2, fat: 64 } as const
 

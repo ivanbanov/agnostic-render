@@ -17,9 +17,9 @@
  * (`pnpm benchmark`).
  */
 import { Bench } from 'tinybench'
-import { compose } from '../packages/core/machine/src/index'
-import { makeCoreMachine, bump, SINK } from './competitors'
-import { report } from './lib/report'
+import { compose } from '../../packages/core/machine/src/index'
+import { makeCoreMachine, bump, SINK } from '../competitors'
+import { report } from '../report'
 
 function buildGroup(M: number) {
   const members: Record<string, ReturnType<typeof makeCoreMachine>> = {}

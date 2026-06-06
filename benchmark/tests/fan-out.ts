@@ -18,8 +18,8 @@
  * (`pnpm benchmark`).
  */
 import { Bench } from 'tinybench'
-import { makeCoreCell, makeXstateCell, SINK, type Cell } from './competitors'
-import { report } from './lib/report'
+import { makeCoreCell, makeXstateCell, SINK, type Cell } from '../competitors'
+import { report } from '../report'
 
 const CONTENDERS: Array<[string, (observe?: boolean) => Cell]> = [
   ['core  ', makeCoreCell],

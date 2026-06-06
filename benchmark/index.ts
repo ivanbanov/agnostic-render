@@ -7,18 +7,18 @@
  * The single command passes --expose-gc (memory needs it; harmless elsewhere).
  *
  * Each bench is also exported standalone if you want to run one in isolation:
- *   node --expose-gc --import tsx -e "import('./benchmark/memory').then(m=>m.runMemory())"
+ *   node --expose-gc --import tsx -e "import('./benchmark/tests/memory').then(m=>m.runMemory())"
  * (or import the run* fn from its file). The rendering bench bootstraps jsdom
  * itself, so it's safe to run alone too.
  *
  * Order: the four headless/pure benches first, then rendering LAST — rendering
  * imports react-dom, so we keep it after the pure measurements.
  */
-import { runFanout } from './fan-out'
-import { runCompose } from './compose'
-import { runConstruct } from './construct'
-import { runMemory } from './memory'
-import { runRendering } from './rendering/run'
+import { runFanout } from './tests/fan-out'
+import { runCompose } from './tests/compose'
+import { runConstruct } from './tests/construct'
+import { runMemory } from './tests/memory'
+import { runRendering } from './tests/rendering/run'
 
 async function main() {
   console.log('Benchmark suite (disposable). Node', process.version)

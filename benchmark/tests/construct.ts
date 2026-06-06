@@ -12,7 +12,7 @@
  * (`pnpm benchmark`).
  */
 import { createActor, createMachine as createXMachine, assign } from 'xstate'
-import { machine } from '../packages/core/machine/src/index'
+import { machine } from '../../packages/core/machine/src/index'
 
 type Ctx = { value: number; other: number }
 type Ev = { type: 'hit' | 'miss' }
