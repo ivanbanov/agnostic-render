@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Dialog } from '@render-experiment/dialog-react'
 import { DropdownMenu } from '@render-experiment/dropdown-menu-react'
 import { Tooltip } from '@render-experiment/tooltip-react'
 import {
@@ -121,6 +122,36 @@ export function App() {
           </DropdownMenu>
         </Row>
         <CardHint>last action · {lastAction}</CardHint>
+      </Card>
+
+      <Card>
+        <CardTitle>Dialog</CardTitle>
+        <CardHint>
+          Modal window: focus traps inside, Escape or clicking the backdrop closes, focus returns to
+          the trigger.
+        </CardHint>
+        <Row>
+          <Dialog>
+            <Dialog.Trigger>
+              <Button tone='primary'>Open dialog</Button>
+            </Dialog.Trigger>
+            <Dialog.Portal>
+              <Dialog.Overlay>
+                <Dialog.Content>
+                  <Dialog.Title>Delete project?</Dialog.Title>
+                  <Dialog.Description>
+                    This permanently removes the project and all of its data. This action cannot be
+                    undone.
+                  </Dialog.Description>
+                  <Row>
+                    <Dialog.Close>Cancel</Dialog.Close>
+                    <Dialog.Close>Delete</Dialog.Close>
+                  </Row>
+                </Dialog.Content>
+              </Dialog.Overlay>
+            </Dialog.Portal>
+          </Dialog>
+        </Row>
       </Card>
     </Container>
   )

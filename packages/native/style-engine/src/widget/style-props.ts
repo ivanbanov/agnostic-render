@@ -14,6 +14,8 @@ import { mergeStyles } from './merge'
 import { getVariantsMap, StylePropsFnSymbol } from './variants'
 
 function extractBaseStyles(style: StyleConfig = {}): NestedStyle {
+  // Destructure-to-omit: name the variant keys only to exclude them from `base`.
+  // eslint-disable-next-line no-unused-vars -- intentional omit, the names aren't read
   const { variants, compoundVariants, defaultVariants, ...base } = style
   return base as NestedStyle
 }

@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars -- `i` is read via `i++` inside the bench
+   closures; oxlint's no-unused-vars can't see the closure read. */
 /**
  * Chained / synced machines. DISPOSABLE first-look benchmark.
  *

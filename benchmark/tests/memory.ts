@@ -99,7 +99,7 @@ const ENGINES: Record<string, (fields: number) => unknown> = {
 
 function measureOnce(build: (fields: number) => unknown, N: number, fields: number): number {
   const before = heapMB()
-  const hold: unknown[] = new Array(N)
+  const hold: unknown[] = Array.from({ length: N })
   for (let i = 0; i < N; i++) hold[i] = build(fields)
   const after = heapMB()
   // keep `hold` reachable across the sample so it isn't collected
