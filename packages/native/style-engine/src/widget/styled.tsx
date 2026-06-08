@@ -107,34 +107,37 @@ export function styled(target: StyledTarget, spec: StyleInput, options: StyledOp
     const resolvedStyle = resolver(variants, conditions)
 
     // Wire interaction handlers only for the conditions the config declares,
-    // composing with any consumer-passed handler so both fire.
+    // composing with any consumer-passed handler so both fire. Pull the consumer
+    // handlers out by name so each callback depends on that one handler's
+    // identity (not the whole `rest` object, which changes on any prop).
+    const { onPressIn: cbPressIn, onPressOut: cbPressOut, onFocus: cbFocus, onBlur: cbBlur } = rest
     const onPressIn = useCallback(
       (e: GestureResponderEvent) => {
         setPressed(true)
-        rest.onPressIn?.(e)
+        cbPressIn?.(e)
       },
-      [rest.onPressIn],
+      [cbPressIn],
     )
     const onPressOut = useCallback(
       (e: GestureResponderEvent) => {
         setPressed(false)
-        rest.onPressOut?.(e)
+        cbPressOut?.(e)
       },
-      [rest.onPressOut],
+      [cbPressOut],
     )
     const onFocus = useCallback(
       (e: any) => {
         setFocused(true)
-        rest.onFocus?.(e)
+        cbFocus?.(e)
       },
-      [rest.onFocus],
+      [cbFocus],
     )
     const onBlur = useCallback(
       (e: any) => {
         setFocused(false)
-        rest.onBlur?.(e)
+        cbBlur?.(e)
       },
-      [rest.onBlur],
+      [cbBlur],
     )
 
     const elementProps: AnyProps = {}
