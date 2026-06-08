@@ -16,6 +16,8 @@
  * heapMB() force-GCs before sampling (no-op without --expose-gc — it'll WARN).
  */
 import { createActor, createMachine as createXMachine, assign } from 'xstate'
+import { createMachine as createZagMachine } from '@zag-js/core'
+import { VanillaMachine } from '@zag-js/vanilla'
 import { machine } from '../../packages/core/machine/src/index'
 import { heapMB } from '../report'
 
@@ -55,12 +57,47 @@ function buildXstate(fields: number) {
   return a
 }
 
+// Zag's headless runtime (VanillaMachine). Context is one `bindable` reactive
+// cell PER FIELD — the model that grows memory with field count, which this bench
+// exposes. A Zag config is shared across instances, like the others.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildZag(fields: number, cfg: any) {
+  const m = new VanillaMachine(cfg, {})
+  m.start?.()
+  return m
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function zagConfig(fields: number): any {
+  return createZagMachine({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    context({ bindable }: any) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ctx: any = {}
+      for (let i = 0; i < fields; i++) ctx[`f${i}`] = bindable<number>(() => ({ defaultValue: 0 }))
+      return ctx
+    },
+    initialState() {
+      return 'idle'
+    },
+    states: { idle: {} },
+  })
+}
+
 const ENGINES: Record<string, (fields: number) => unknown> = {
   core: buildCore,
   xstate: buildXstate,
+  // bind a shared per-width config so we measure machine overhead, not config dup
+  zag: (() => {
+    const cache = new Map<number, unknown>()
+    return (fields: number) => {
+      if (!cache.has(fields)) cache.set(fields, zagConfig(fields))
+      return buildZag(fields, cache.get(fields))
+    }
+  })(),
 }
 
-function measure(build: (fields: number) => unknown, N: number, fields: number): number {
+function measureOnce(build: (fields: number) => unknown, N: number, fields: number): number {
   const before = heapMB()
   const hold: unknown[] = new Array(N)
   for (let i = 0; i < N; i++) hold[i] = build(fields)
@@ -68,6 +105,14 @@ function measure(build: (fields: number) => unknown, N: number, fields: number):
   // keep `hold` reachable across the sample so it isn't collected
   if ((hold as unknown[]).length !== N) throw new Error('unreachable')
   return after - before // MB retained by the N machines
+}
+
+// Best (minimum) of a few passes — the lowest retained-heap reading is the least
+// polluted by leftover GC garbage, so it's the trustworthy per-machine figure.
+function measure(build: (fields: number) => unknown, N: number, fields: number): number {
+  let best = Infinity
+  for (let r = 0; r < 3; r++) best = Math.min(best, measureOnce(build, N, fields))
+  return best
 }
 
 export async function runMemory() {

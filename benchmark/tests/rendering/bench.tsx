@@ -172,11 +172,15 @@ export async function runRenderingBench(N: number, moves: number) {
   //    holding its own bool. A move flips exactly 2 (old off, new on) → only
   //    those 2 rows re-render. This is Zag's native shape (one machine per
   //    component), so it's the apples-to-apples arena vs core's per-instance.
-  const run = (
+  const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]
+
+  // One mount + `moves` re-renders, timed. Render COUNTS are deterministic; the
+  // ms are jsdom-noisy, so `run` repeats this and reports the MEDIAN ms (below).
+  const onePass = (
     strategy: Strategy,
     mountTree: () => React.ReactNode,
     move: (k: number) => void,
-  ): Row => {
+  ) => {
     renderCounts[strategy] = 0
     const container = document.createElement('div')
     document.body.appendChild(container)
@@ -194,6 +198,23 @@ export async function runRenderingBench(N: number, moves: number) {
     flushSync(() => root.unmount())
     container.remove()
     return { mount, mountMs, renders: renderCounts[strategy] - mount, ms }
+  }
+
+  // Median of REPS passes — jsdom render ms swing run-to-run (GC, layout), so a
+  // single pass is unreliable; the median is the stable, reproducible figure.
+  const REPS = 5
+  const run = (
+    strategy: Strategy,
+    mountTree: () => React.ReactNode,
+    move: (k: number) => void,
+  ): Row => {
+    const passes = Array.from({ length: REPS }, () => onePass(strategy, mountTree, move))
+    return {
+      mount: passes[0].mount, // deterministic across passes
+      renders: passes[0].renders, // deterministic
+      mountMs: median(passes.map(p => p.mountMs)),
+      ms: median(passes.map(p => p.ms)),
+    }
   }
 
   // --- SHARED arena: selector + naive (one machine) ---
@@ -281,7 +302,10 @@ export async function runRenderingBench(N: number, moves: number) {
       'mount (ms)': v!.mountMs.toFixed(1),
       're-renders (total)': v!.renders,
       'avg rows / move': (v!.renders / moves).toFixed(1),
-      're-render wall (ms)': v!.ms.toFixed(1),
+      // Zag's `send` is async (microtask-batched), so it can't be flushed under
+      // the synchronous flushSync re-render loop — the ms isn't comparable to the
+      // sync engines (it balloons). Report n/a; its row-count (2) IS fair + shown.
+      're-render wall (ms)': k === 'zag/instance' ? 'n/a (async)' : v!.ms.toFixed(1),
     })),
   )
 }
