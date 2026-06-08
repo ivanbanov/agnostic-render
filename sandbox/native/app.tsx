@@ -1,133 +1,186 @@
 import { useState } from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import { ScrollView, StyleSheet, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
+import { LinearGradient } from 'expo-linear-gradient'
 import { Tooltip, TooltipProvider } from '@render-experiment/tooltip-native'
 import { DropdownMenu } from '@render-experiment/dropdown-menu-native'
 
+// Premium light surface — mirrors the React sandbox: soft gray → white gradient,
+// a centered container, white cards with a soft shadow, clean buttons.
+
+function Button({
+  children,
+  tone = 'default',
+}: {
+  children: React.ReactNode
+  tone?: 'default' | 'primary'
+}) {
+  return (
+    <View style={[styles.button, tone === 'primary' && styles.buttonPrimary]}>
+      <Text style={[styles.buttonText, tone === 'primary' && styles.buttonTextPrimary]}>
+        {children}
+      </Text>
+    </View>
+  )
+}
+
 export default function App() {
   const [openCount, setOpenCount] = useState(0)
-  const [lastAction, setLastAction] = useState('(nothing yet)')
+  const [lastAction, setLastAction] = useState('—')
   const [theme, setTheme] = useState('system')
   const [bookmarks, setBookmarks] = useState({ urls: true, github: false })
 
   return (
-    <TooltipProvider>
-      <View style={styles.container}>
-        <StatusBar style='auto' />
-        <Text style={styles.title}>render-experiment / native</Text>
-        <Text style={styles.subtitle}>
-          Long-press a chip to open its tooltip. Tap the menu button to try the dropdown.
-          {'\n'}Tooltip opens: {openCount} Last menu action: {lastAction}
-        </Text>
+    <LinearGradient colors={['#eef1f6', '#ffffff']} locations={[0, 0.6]} style={styles.root}>
+      <TooltipProvider>
+        <StatusBar style='dark' />
+        <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.hero}>
+            <Text style={styles.title}>render-experiment</Text>
+            <Text style={styles.lead}>
+              A tooltip and a dropdown-menu driven by one substrate-agnostic state machine, rendered
+              through the React Native target.
+            </Text>
+          </View>
 
-        <Text style={styles.section}>Tooltip</Text>
-        <View style={styles.row}>
-          <Tooltip
-            id='tip-1'
-            openDelay={200}
-            onOpenChange={({ open }) => {
-              if (open) setOpenCount(c => c + 1)
-            }}
-          >
-            <Tooltip.Trigger>
-              <View style={styles.chip}>
-                <Text style={styles.chipText}>Long-press me</Text>
-              </View>
-            </Tooltip.Trigger>
-            <Tooltip.Content>Hello from the agnostic tooltip</Tooltip.Content>
-          </Tooltip>
-
-          <View style={{ width: 16 }} />
-
-          <Tooltip id='tip-2' openDelay={200}>
-            <Tooltip.Trigger>
-              <View style={[styles.chip, { backgroundColor: '#3a5' }]}>
-                <Text style={styles.chipText}>Or me</Text>
-              </View>
-            </Tooltip.Trigger>
-            <Tooltip.Content>Only one tooltip is open at a time.</Tooltip.Content>
-          </Tooltip>
-        </View>
-
-        <Text style={styles.section}>DropdownMenu — items + checkbox + radio</Text>
-        <View style={styles.row}>
-          <DropdownMenu id='menu-1'>
-            <DropdownMenu.Trigger>
-              <View style={[styles.chip, { backgroundColor: '#357' }]}>
-                <Text style={styles.chipText}>Open menu</Text>
-              </View>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Content>
-              <DropdownMenu.Label>Actions</DropdownMenu.Label>
-              <DropdownMenu.Item value='new' onSelect={() => setLastAction('new')}>
-                New
-              </DropdownMenu.Item>
-              <DropdownMenu.Item value='open' onSelect={() => setLastAction('open')}>
-                Open…
-              </DropdownMenu.Item>
-              <DropdownMenu.Item value='save-as' disabled>
-                Save As… (disabled)
-              </DropdownMenu.Item>
-              <DropdownMenu.Separator />
-
-              <DropdownMenu.Label>Bookmarks</DropdownMenu.Label>
-              <DropdownMenu.CheckboxItem
-                value='urls'
-                checked={bookmarks.urls}
-                onCheckedChange={c => setBookmarks(b => ({ ...b, urls: c }))}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Tooltip</Text>
+            <Text style={styles.cardHint}>Long-press a chip. Only one is open at a time.</Text>
+            <View style={styles.row}>
+              <Tooltip
+                id='tip-1'
+                openDelay={200}
+                onOpenChange={({ open }) => open && setOpenCount(c => c + 1)}
               >
-                <DropdownMenu.ItemIndicator />
-                Show URLs
-              </DropdownMenu.CheckboxItem>
-              <DropdownMenu.CheckboxItem
-                value='github'
-                checked={bookmarks.github}
-                onCheckedChange={c => setBookmarks(b => ({ ...b, github: c }))}
-              >
-                <DropdownMenu.ItemIndicator />
-                Show GitHub
-              </DropdownMenu.CheckboxItem>
-              <DropdownMenu.Separator />
+                <Tooltip.Trigger>
+                  <Button>Long-press me</Button>
+                </Tooltip.Trigger>
+                <Tooltip.Content>Hello from the agnostic tooltip</Tooltip.Content>
+              </Tooltip>
 
-              <DropdownMenu.Label>Theme: {theme}</DropdownMenu.Label>
-              <DropdownMenu.RadioGroup value={theme} onValueChange={setTheme}>
-                <DropdownMenu.RadioItem value='light'>
-                  <DropdownMenu.ItemIndicator>●</DropdownMenu.ItemIndicator>
-                  Light
-                </DropdownMenu.RadioItem>
-                <DropdownMenu.RadioItem value='dark'>
-                  <DropdownMenu.ItemIndicator>●</DropdownMenu.ItemIndicator>
-                  Dark
-                </DropdownMenu.RadioItem>
-                <DropdownMenu.RadioItem value='system'>
-                  <DropdownMenu.ItemIndicator>●</DropdownMenu.ItemIndicator>
-                  System
-                </DropdownMenu.RadioItem>
-              </DropdownMenu.RadioGroup>
-            </DropdownMenu.Content>
-          </DropdownMenu>
-        </View>
-      </View>
-    </TooltipProvider>
+              <Tooltip id='tip-2' openDelay={200}>
+                <Tooltip.Trigger>
+                  <Button>Or me</Button>
+                </Tooltip.Trigger>
+                <Tooltip.Content>Only one tooltip is open at a time.</Tooltip.Content>
+              </Tooltip>
+            </View>
+            <Text style={styles.cardHint}>opened {openCount} times</Text>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Dropdown menu</Text>
+            <Text style={styles.cardHint}>Tap to open · items, checkbox, radio.</Text>
+            <View style={styles.row}>
+              <DropdownMenu id='menu-1'>
+                <DropdownMenu.Trigger>
+                  <Button tone='primary'>Open menu</Button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content>
+                  <DropdownMenu.Label>Actions</DropdownMenu.Label>
+                  <DropdownMenu.Item value='new' onSelect={() => setLastAction('new')}>
+                    New
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item value='open' onSelect={() => setLastAction('open')}>
+                    Open…
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item value='save-as' disabled>
+                    Save As… (disabled)
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Separator />
+
+                  <DropdownMenu.Label>Bookmarks</DropdownMenu.Label>
+                  <DropdownMenu.CheckboxItem
+                    value='urls'
+                    checked={bookmarks.urls}
+                    onCheckedChange={c => setBookmarks(b => ({ ...b, urls: c }))}
+                  >
+                    <DropdownMenu.ItemIndicator />
+                    Show URLs
+                  </DropdownMenu.CheckboxItem>
+                  <DropdownMenu.CheckboxItem
+                    value='github'
+                    checked={bookmarks.github}
+                    onCheckedChange={c => setBookmarks(b => ({ ...b, github: c }))}
+                  >
+                    <DropdownMenu.ItemIndicator />
+                    Show GitHub
+                  </DropdownMenu.CheckboxItem>
+                  <DropdownMenu.Separator />
+
+                  <DropdownMenu.Label>Theme · {theme}</DropdownMenu.Label>
+                  <DropdownMenu.RadioGroup value={theme} onValueChange={setTheme}>
+                    <DropdownMenu.RadioItem value='light'>
+                      <DropdownMenu.ItemIndicator>●</DropdownMenu.ItemIndicator>
+                      Light
+                    </DropdownMenu.RadioItem>
+                    <DropdownMenu.RadioItem value='dark'>
+                      <DropdownMenu.ItemIndicator>●</DropdownMenu.ItemIndicator>
+                      Dark
+                    </DropdownMenu.RadioItem>
+                    <DropdownMenu.RadioItem value='system'>
+                      <DropdownMenu.ItemIndicator>●</DropdownMenu.ItemIndicator>
+                      System
+                    </DropdownMenu.RadioItem>
+                  </DropdownMenu.RadioGroup>
+                </DropdownMenu.Content>
+              </DropdownMenu>
+            </View>
+            <Text style={styles.cardHint}>last action · {lastAction}</Text>
+          </View>
+        </ScrollView>
+      </TooltipProvider>
+    </LinearGradient>
   )
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   container: {
-    flex: 1,
-    backgroundColor: '#fafafa',
+    paddingTop: 88,
+    paddingBottom: 120,
+    paddingHorizontal: 24,
+    gap: 24,
+    maxWidth: 640,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  hero: { gap: 10, marginBottom: 8 },
+  title: { fontSize: 32, fontWeight: '700', letterSpacing: -0.5, color: '#0d0f16' },
+  lead: { fontSize: 16, lineHeight: 24, color: '#5b6172' },
+
+  card: {
+    gap: 14,
     padding: 24,
-    paddingTop: 80,
+    borderRadius: 16,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: 'rgba(13,15,22,0.06)',
+    // Soft premium shadow.
+    shadowColor: '#0d0f16',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    elevation: 4,
   },
-  title: { fontSize: 22, fontWeight: '600', marginBottom: 8 },
-  subtitle: { color: '#666', marginBottom: 32, lineHeight: 20 },
-  section: { fontSize: 14, fontWeight: '600', marginTop: 24, marginBottom: 8, color: '#333' },
-  row: { flexDirection: 'row', alignItems: 'center' },
-  chip: {
-    paddingHorizontal: 14,
+  cardTitle: { fontSize: 14, fontWeight: '600', color: '#0d0f16' },
+  cardHint: { fontSize: 13, lineHeight: 18, color: '#8990a0' },
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'center' },
+
+  button: {
+    paddingHorizontal: 15,
     paddingVertical: 10,
-    backgroundColor: '#357',
-    borderRadius: 8,
+    borderRadius: 10,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: 'rgba(13,15,22,0.1)',
+    shadowColor: '#0d0f16',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  chipText: { color: '#fff', fontWeight: '500' },
+  buttonPrimary: { backgroundColor: '#4658e0', borderColor: 'transparent' },
+  buttonText: { fontSize: 14, fontWeight: '600', color: '#1c1e26' },
+  buttonTextPrimary: { color: '#ffffff' },
 })
