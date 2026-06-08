@@ -1,38 +1,38 @@
 /**
  * Core spec tests for the DropdownMenu — framework-free.
  *
- * Drives `dropdownMenuMachine` via `createMachine` and exercises
- * `connectDropdownMenu` on raw snapshots. No React, no DOM.
+ * Builds the machine from `dropdownMenuMachineConfig` and drives it through a
+ * `connector` (so the snapshot + the onOpenChange reaction are real). No React,
+ * no DOM. This is the source-of-truth layer asserting SPEC.md behavior at the
+ * agnostic level.
  *
  * Mapping to packages/core/components/dropdown-menu/SPEC.md:
  *   - Opening: click, Enter/Space, ArrowDown (first), ArrowUp (last)
- *   - Closing: trigger click, Escape (via event), Tab (focusTrap-dependent)
+ *   - Closing: trigger click, Escape (via the `escape` event the adapter sends)
  *   - Highlight + keyboard nav: ArrowDown/Up, Home/End, loop
  *   - Item activation: closeOnSelect, checkbox/radio stay open, onSelect cancel
  *   - Typeahead: prefix match, disabled items participate
  *   - Mutual exclusion: only one open
- *   - Accessibility (connect): roles, aria-haspopup, data-state
+ *   - Accessibility (connect): roles, hasPopup, expanded
  *   - focusTrap: Tab closes (false) vs swallowed (true)
  *
- * `connector` is curried and takes an `items` extra:
- *   connectDropdownMenu(snapshot)(items)
- * Keyboard/pointer events also carry `items` in their payload, since the
- * machine reads the ordered list from the event rather than context.
+ * Items are threaded per-render via `api.withItems(items)` (the machine reads
+ * the ordered list from the event, not context). Parts are flat bags: handlers
+ * + attrs live directly on the part (no `.handlers` / `.attrs` nesting).
+ * Presentation `data-*` is a VIEW concern and isn't asserted here.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   DROPDOWN_MENU_DEFAULTS,
   connectDropdownMenu,
-  dropdownMenuMachine,
+  dropdownMenuMachineConfig,
   dropdownMenuStore,
   type DropdownMenuApi,
-  type DropdownMenuContext,
   type DropdownMenuItemProps,
   type DropdownMenuMachineProps,
   type DropdownMenuProps,
-  type DropdownMenuState,
 } from '@render-experiment/dropdown-menu-core'
-import { createMachine } from '@render-experiment/machine-core'
+import { connector, machine } from '@render-experiment/machine-core'
 
 // -----------------------------------------------------------------------------
 // Harness
@@ -46,29 +46,27 @@ const ITEMS: DropdownMenuItemProps[] = [
   { value: 'c', textValue: 'Cherry' },
 ]
 
-function makeMachine(props: Partial<DropdownMenuProps> = {}) {
-  const raw: DropdownMenuProps = { id: `dm${nextId++}`, ...props }
-  const config: DropdownMenuMachineProps = { ...DROPDOWN_MENU_DEFAULTS, ...raw }
-  const machine = createMachine(dropdownMenuMachine, config)
-  machine.start()
-  return machine
+/** Build + start a menu machine and its connector (defaults resolved as the
+ * adapter entry does). */
+function make(props: Partial<DropdownMenuProps> = {}) {
+  const resolved: DropdownMenuMachineProps = {
+    ...DROPDOWN_MENU_DEFAULTS,
+    id: `dm${nextId++}`,
+    ...props,
+  }
+  const m = machine(dropdownMenuMachineConfig(resolved))
+  const conn = connector(m, connectDropdownMenu, resolved)
+  m.start()
+  return { m, conn }
 }
 
-/** Connect snapshot with a given items list (what the view passes). */
+/** The api a view would see, with the ordered items wired in. */
 function api(
-  machine: ReturnType<typeof makeMachine>,
+  conn: ReturnType<typeof make>['conn'],
   items: DropdownMenuItemProps[] = ITEMS,
 ): DropdownMenuApi {
-  return connectDropdownMenu({
-    state: machine.getState() as DropdownMenuState,
-    context: machine.getContext() as DropdownMenuContext,
-    props: machine.getProps(),
-    send: machine.send,
-    computed: machine.getComputed(),
-  })(items)
+  return (conn.snapshot as DropdownMenuApi).withItems(items)
 }
-
-const ctx = (m: ReturnType<typeof makeMachine>) => m.getContext() as DropdownMenuContext
 
 beforeEach(() => {
   dropdownMenuStore.setOpen(null)
@@ -84,15 +82,15 @@ afterEach(() => {
 
 describe('initial state', () => {
   it('starts closed by default', () => {
-    expect(makeMachine().getState()).toBe('closed')
+    expect(make().m.state).toBe('closed')
   })
 
   it('starts open when defaultOpen is true', () => {
-    expect(makeMachine({ defaultOpen: true }).getState()).toBe('open')
+    expect(make({ defaultOpen: true }).m.state).toBe('open')
   })
 
   it('starts open when controlled open is true', () => {
-    expect(makeMachine({ open: true }).getState()).toBe('open')
+    expect(make({ open: true }).m.state).toBe('open')
   })
 })
 
@@ -102,34 +100,34 @@ describe('initial state', () => {
 
 describe('opening', () => {
   it('clicking the trigger opens', () => {
-    const m = makeMachine()
-    api(m).parts.trigger.handlers.onPress?.(undefined as never)
-    expect(m.getState()).toBe('open')
+    const { m, conn } = make()
+    api(conn).parts.trigger.onPress?.(undefined as never)
+    expect(m.state).toBe('open')
   })
 
   it('Enter on the trigger opens with first item highlighted', () => {
-    const m = makeMachine()
-    api(m).parts.trigger.handlers.onKeyDown?.({ key: 'Enter' } as never)
-    expect(m.getState()).toBe('open')
+    const { m, conn } = make()
+    api(conn).parts.trigger.onKeyDown?.({ key: 'Enter' } as never)
+    expect(m.state).toBe('open')
     // Pending highlight resolves once items are known (withItems → items.ready).
-    api(m).withItems(ITEMS)
-    expect(ctx(m).highlightedValue).toBe('a')
+    api(conn, ITEMS)
+    expect(m.context.highlightedValue).toBe('a')
   })
 
   it('ArrowDown on the trigger opens with first item highlighted', () => {
-    const m = makeMachine()
-    api(m).parts.trigger.handlers.onKeyDown?.({ key: 'ArrowDown' } as never)
-    expect(m.getState()).toBe('open')
-    api(m).withItems(ITEMS)
-    expect(ctx(m).highlightedValue).toBe('a')
+    const { m, conn } = make()
+    api(conn).parts.trigger.onKeyDown?.({ key: 'ArrowDown' } as never)
+    expect(m.state).toBe('open')
+    api(conn, ITEMS)
+    expect(m.context.highlightedValue).toBe('a')
   })
 
   it('ArrowUp on the trigger opens with LAST item highlighted', () => {
-    const m = makeMachine()
-    api(m).parts.trigger.handlers.onKeyDown?.({ key: 'ArrowUp' } as never)
-    expect(m.getState()).toBe('open')
-    api(m).withItems(ITEMS)
-    expect(ctx(m).highlightedValue).toBe('c')
+    const { m, conn } = make()
+    api(conn).parts.trigger.onKeyDown?.({ key: 'ArrowUp' } as never)
+    expect(m.state).toBe('open')
+    api(conn, ITEMS)
+    expect(m.context.highlightedValue).toBe('c')
   })
 })
 
@@ -139,15 +137,15 @@ describe('opening', () => {
 
 describe('closing', () => {
   it('clicking the trigger while open closes', () => {
-    const m = makeMachine({ defaultOpen: true })
-    api(m).parts.trigger.handlers.onPress?.(undefined as never)
-    expect(m.getState()).toBe('closed')
+    const { m, conn } = make({ defaultOpen: true })
+    api(conn).parts.trigger.onPress?.(undefined as never)
+    expect(m.state).toBe('closed')
   })
 
   it('an `escape` event closes (what the Escape adapter sends)', () => {
-    const m = makeMachine({ defaultOpen: true })
+    const { m } = make({ defaultOpen: true })
     m.send({ type: 'escape' })
-    expect(m.getState()).toBe('closed')
+    expect(m.state).toBe('closed')
   })
 })
 
@@ -157,37 +155,37 @@ describe('closing', () => {
 
 describe('keyboard navigation', () => {
   it('ArrowDown / ArrowUp move the highlight between enabled items', () => {
-    const m = makeMachine({ defaultOpen: true })
-    const content = () => api(m).parts.content.handlers
+    const { m, conn } = make({ defaultOpen: true })
+    const content = () => api(conn).parts.content
 
     content().onKeyDown?.({ key: 'ArrowDown' } as never) // → a
-    expect(ctx(m).highlightedValue).toBe('a')
+    expect(m.context.highlightedValue).toBe('a')
     content().onKeyDown?.({ key: 'ArrowDown' } as never) // → b
-    expect(ctx(m).highlightedValue).toBe('b')
+    expect(m.context.highlightedValue).toBe('b')
     content().onKeyDown?.({ key: 'ArrowUp' } as never) // → a
-    expect(ctx(m).highlightedValue).toBe('a')
+    expect(m.context.highlightedValue).toBe('a')
   })
 
   it('Home / End jump to first / last enabled item', () => {
-    const m = makeMachine({ defaultOpen: true })
-    api(m).parts.content.handlers.onKeyDown?.({ key: 'End' } as never)
-    expect(ctx(m).highlightedValue).toBe('c')
-    api(m).parts.content.handlers.onKeyDown?.({ key: 'Home' } as never)
-    expect(ctx(m).highlightedValue).toBe('a')
+    const { m, conn } = make({ defaultOpen: true })
+    api(conn).parts.content.onKeyDown?.({ key: 'End' } as never)
+    expect(m.context.highlightedValue).toBe('c')
+    api(conn).parts.content.onKeyDown?.({ key: 'Home' } as never)
+    expect(m.context.highlightedValue).toBe('a')
   })
 
   it('ArrowUp from the first item wraps to last when loop is enabled (default)', () => {
-    const m = makeMachine({ defaultOpen: true })
-    api(m).parts.content.handlers.onKeyDown?.({ key: 'ArrowDown' } as never) // a
-    api(m).parts.content.handlers.onKeyDown?.({ key: 'ArrowUp' } as never) // wrap → c
-    expect(ctx(m).highlightedValue).toBe('c')
+    const { m, conn } = make({ defaultOpen: true })
+    api(conn).parts.content.onKeyDown?.({ key: 'ArrowDown' } as never) // a
+    api(conn).parts.content.onKeyDown?.({ key: 'ArrowUp' } as never) // wrap → c
+    expect(m.context.highlightedValue).toBe('c')
   })
 
   it('ArrowUp from the first item stops when loop is disabled', () => {
-    const m = makeMachine({ defaultOpen: true, loop: false })
-    api(m).parts.content.handlers.onKeyDown?.({ key: 'ArrowDown' } as never) // a
-    api(m).parts.content.handlers.onKeyDown?.({ key: 'ArrowUp' } as never) // stays a
-    expect(ctx(m).highlightedValue).toBe('a')
+    const { m, conn } = make({ defaultOpen: true, loop: false })
+    api(conn).parts.content.onKeyDown?.({ key: 'ArrowDown' } as never) // a
+    api(conn).parts.content.onKeyDown?.({ key: 'ArrowUp' } as never) // stays a
+    expect(m.context.highlightedValue).toBe('a')
   })
 
   it('navigation skips disabled items', () => {
@@ -196,10 +194,10 @@ describe('keyboard navigation', () => {
       { value: 'b', textValue: 'Banana', disabled: true },
       { value: 'c', textValue: 'Cherry' },
     ]
-    const m = makeMachine({ defaultOpen: true })
-    api(m, items).parts.content.handlers.onKeyDown?.({ key: 'ArrowDown' } as never) // a
-    api(m, items).parts.content.handlers.onKeyDown?.({ key: 'ArrowDown' } as never) // skip b → c
-    expect(ctx(m).highlightedValue).toBe('c')
+    const { m, conn } = make({ defaultOpen: true })
+    api(conn, items).parts.content.onKeyDown?.({ key: 'ArrowDown' } as never) // a
+    api(conn, items).parts.content.onKeyDown?.({ key: 'ArrowDown' } as never) // skip b → c
+    expect(m.context.highlightedValue).toBe('c')
   })
 })
 
@@ -209,15 +207,15 @@ describe('keyboard navigation', () => {
 
 describe('typeahead', () => {
   it('a printable char highlights the first item whose text matches', () => {
-    const m = makeMachine({ defaultOpen: true })
-    api(m).parts.content.handlers.onKeyDown?.({ key: 'b' } as never) // Banana
-    expect(ctx(m).highlightedValue).toBe('b')
+    const { m, conn } = make({ defaultOpen: true })
+    api(conn).parts.content.onKeyDown?.({ key: 'b' } as never) // Banana
+    expect(m.context.highlightedValue).toBe('b')
   })
 
   it('typeahead can be disabled', () => {
-    const m = makeMachine({ defaultOpen: true, typeahead: false })
-    api(m).parts.content.handlers.onKeyDown?.({ key: 'b' } as never)
-    expect(ctx(m).highlightedValue).toBeNull()
+    const { m, conn } = make({ defaultOpen: true, typeahead: false })
+    api(conn).parts.content.onKeyDown?.({ key: 'b' } as never)
+    expect(m.context.highlightedValue).toBeNull()
   })
 })
 
@@ -227,59 +225,50 @@ describe('typeahead', () => {
 
 describe('item activation', () => {
   it('activating a regular item closes the menu (closeOnSelect default)', () => {
-    const m = makeMachine({ defaultOpen: true })
-    api(m)
-      .getItem(ITEMS[0])
-      .handlers.onPress?.(undefined as never)
-    expect(m.getState()).toBe('closed')
+    const { m, conn } = make({ defaultOpen: true })
+    api(conn)
+      .getItem(ITEMS[0]!)
+      .onPress?.(undefined as never)
+    expect(m.state).toBe('closed')
   })
 
   it('closeOnSelect=false on the root keeps the menu open after activation', () => {
-    const m = makeMachine({ defaultOpen: true, closeOnSelect: false })
-    api(m)
-      .getItem(ITEMS[0])
-      .handlers.onPress?.(undefined as never)
-    expect(m.getState()).toBe('open')
+    const { m, conn } = make({ defaultOpen: true, closeOnSelect: false })
+    api(conn)
+      .getItem(ITEMS[0]!)
+      .onPress?.(undefined as never)
+    expect(m.state).toBe('open')
   })
 
   it('checkbox items keep the menu open by default', () => {
-    const m = makeMachine({ defaultOpen: true })
-    const checkbox: DropdownMenuItemProps = {
-      value: 'x',
-      textValue: 'Toggle',
-      kind: 'checkbox',
-    }
-    api(m, [checkbox])
+    const { m, conn } = make({ defaultOpen: true })
+    const checkbox: DropdownMenuItemProps = { value: 'x', textValue: 'Toggle', kind: 'checkbox' }
+    api(conn, [checkbox])
       .getItem(checkbox)
-      .handlers.onPress?.(undefined as never)
-    expect(m.getState()).toBe('open')
+      .onPress?.(undefined as never)
+    expect(m.state).toBe('open')
   })
 
   it('onSelect preventDefault cancels the close', () => {
     const onSelect = vi.fn((e: { preventDefault: () => void }) => e.preventDefault())
     const item: DropdownMenuItemProps = { value: 'a', textValue: 'Apple', onSelect }
-    const m = makeMachine({ defaultOpen: true })
-    api(m, [item])
+    const { m, conn } = make({ defaultOpen: true })
+    api(conn, [item])
       .getItem(item)
-      .handlers.onPress?.(undefined as never)
+      .onPress?.(undefined as never)
     expect(onSelect).toHaveBeenCalled()
-    expect(m.getState()).toBe('open')
+    expect(m.state).toBe('open')
   })
 
   it('disabled items do not activate', () => {
     const onSelect = vi.fn()
-    const item: DropdownMenuItemProps = {
-      value: 'a',
-      textValue: 'Apple',
-      disabled: true,
-      onSelect,
-    }
-    const m = makeMachine({ defaultOpen: true })
-    api(m, [item])
+    const item: DropdownMenuItemProps = { value: 'a', textValue: 'Apple', disabled: true, onSelect }
+    const { m, conn } = make({ defaultOpen: true })
+    api(conn, [item])
       .getItem(item)
-      .handlers.onPress?.(undefined as never)
+      .onPress?.(undefined as never)
     expect(onSelect).not.toHaveBeenCalled()
-    expect(m.getState()).toBe('open')
+    expect(m.state).toBe('open')
   })
 })
 
@@ -289,35 +278,35 @@ describe('item activation', () => {
 
 describe('focusTrap', () => {
   it('defaults to false on the connect surface', () => {
-    expect(api(makeMachine({ defaultOpen: true })).focusTrap).toBe(false)
+    expect(api(make({ defaultOpen: true }).conn).focusTrap).toBe(false)
   })
 
   it('reflects the resolved prop when true', () => {
-    expect(api(makeMachine({ defaultOpen: true, focusTrap: true })).focusTrap).toBe(true)
+    expect(api(make({ defaultOpen: true, focusTrap: true }).conn).focusTrap).toBe(true)
   })
 
   it('Tab closes the menu when focusTrap is false (default)', () => {
-    const m = makeMachine({ defaultOpen: true })
+    const { m, conn } = make({ defaultOpen: true })
     // The view's keydown handler sends `close` on Tab in loose mode.
     const event = { key: 'Tab', preventDefault: vi.fn() }
-    api(m).parts.content.handlers.onKeyDown?.(event as never)
-    expect(m.getState()).toBe('closed')
+    api(conn).parts.content.onKeyDown?.(event as never)
+    expect(m.state).toBe('closed')
     expect(event.preventDefault).not.toHaveBeenCalled()
   })
 
   it('Tab is swallowed (no close, preventDefault) when focusTrap is true', () => {
-    const m = makeMachine({ defaultOpen: true, focusTrap: true })
+    const { m, conn } = make({ defaultOpen: true, focusTrap: true })
     const event = { key: 'Tab', preventDefault: vi.fn() }
-    api(m).parts.content.handlers.onKeyDown?.(event as never)
-    expect(m.getState()).toBe('open')
+    api(conn).parts.content.onKeyDown?.(event as never)
+    expect(m.state).toBe('open')
     expect(event.preventDefault).toHaveBeenCalled()
   })
 
   it('Shift+Tab is also swallowed when focusTrap is true', () => {
-    const m = makeMachine({ defaultOpen: true, focusTrap: true })
+    const { m, conn } = make({ defaultOpen: true, focusTrap: true })
     const event = { key: 'Tab', shiftKey: true, preventDefault: vi.fn() }
-    api(m).parts.content.handlers.onKeyDown?.(event as never)
-    expect(m.getState()).toBe('open')
+    api(conn).parts.content.onKeyDown?.(event as never)
+    expect(m.state).toBe('open')
     expect(event.preventDefault).toHaveBeenCalled()
   })
 })
@@ -328,67 +317,67 @@ describe('focusTrap', () => {
 
 describe('mutual exclusion', () => {
   it('opening a second menu closes the first', () => {
-    const first = makeMachine()
-    api(first).parts.trigger.handlers.onPress?.(undefined as never)
-    expect(first.getState()).toBe('open')
+    const first = make()
+    api(first.conn).parts.trigger.onPress?.(undefined as never)
+    expect(first.m.state).toBe('open')
 
-    const second = makeMachine()
-    api(second).parts.trigger.handlers.onPress?.(undefined as never)
+    const second = make()
+    api(second.conn).parts.trigger.onPress?.(undefined as never)
 
-    expect(second.getState()).toBe('open')
-    expect(first.getState()).toBe('closed')
+    expect(second.m.state).toBe('open')
+    expect(first.m.state).toBe('closed')
   })
 })
 
 // -----------------------------------------------------------------------------
-// connect — accessibility surface
+// connect — accessibility surface (agnostic bindings; data-* is a view concern)
 // -----------------------------------------------------------------------------
 
 describe('connect accessibility surface', () => {
   it('trigger announces a menu popup and expanded state', () => {
-    const m = makeMachine()
-    const closed = api(m).parts.trigger.attrs
+    const { m, conn } = make()
+    const closed = api(conn).parts.trigger
     expect(closed.role).toBe('button')
-    expect(closed['aria-haspopup']).toBe('menu')
+    expect(closed.hasPopup).toBe('menu')
     expect(closed.expanded).toBe(false)
-    expect(closed['data-state']).toBe('closed')
+    expect(api(conn).open).toBe(false)
 
     m.send({ type: 'trigger.click', items: ITEMS })
-    const open = api(m).parts.trigger.attrs
+    const open = api(conn).parts.trigger
     expect(open.expanded).toBe(true)
-    expect(open['data-state']).toBe('open')
+    expect(open.controls).toBe(api(conn).parts.content.id)
+    expect(api(conn).open).toBe(true)
   })
 
   it('content is a vertical menu labelled by the trigger', () => {
-    const m = makeMachine({ defaultOpen: true })
-    const content = api(m).parts.content.attrs
+    const { conn } = make({ defaultOpen: true })
+    const content = api(conn).parts.content
     expect(content.role).toBe('menu')
-    expect(content['data-orientation']).toBe('vertical')
-    expect(content.labelledBy).toBe(api(m).parts.trigger.attrs.id)
+    expect(content.labelledBy).toBe(api(conn).parts.trigger.id)
   })
 
   it('items take the right role per kind and are not tab stops', () => {
-    const m = makeMachine({ defaultOpen: true })
-    const a = api(m)
-    expect(a.getItem({ value: 'a' }).attrs.role).toBe('menuitem')
-    expect(a.getItem({ value: 'b', kind: 'checkbox' }).attrs.role).toBe('menuitemcheckbox')
-    expect(a.getItem({ value: 'c', kind: 'radio' }).attrs.role).toBe('menuitemradio')
-    expect(a.getItem({ value: 'a' }).attrs.focusable).toBe(false)
+    const { conn } = make({ defaultOpen: true })
+    const a = api(conn)
+    expect(a.getItem({ value: 'a' }).role).toBe('menuitem')
+    expect(a.getItem({ value: 'b', kind: 'checkbox' }).role).toBe('menuitemcheckbox')
+    expect(a.getItem({ value: 'c', kind: 'radio' }).role).toBe('menuitemradio')
+    expect(a.getItem({ value: 'a' }).focusable).toBe(false)
   })
 
-  it('the highlighted item carries data-highlighted; disabled carries data-disabled', () => {
-    const m = makeMachine({ defaultOpen: true })
-    api(m).parts.content.handlers.onKeyDown?.({ key: 'ArrowDown' } as never) // highlight a
-    const a = api(m)
-    expect(a.getItem({ value: 'a' }).attrs['data-highlighted']).toBe('')
-    expect(a.getItem({ value: 'b' }).attrs['data-highlighted']).toBeUndefined()
-    expect(a.getItem({ value: 'x', disabled: true }).attrs['data-disabled']).toBe('')
+  it('the highlighted item reports `highlighted`; disabled reports `disabled`', () => {
+    const { conn } = make({ defaultOpen: true })
+    api(conn).parts.content.onKeyDown?.({ key: 'ArrowDown' } as never) // highlight a
+    const a = api(conn)
+    expect(a.getItem({ value: 'a' }).highlighted).toBe(true)
+    expect(a.getItem({ value: 'b' }).highlighted).toBe(false)
+    expect(a.getItem({ value: 'x', disabled: true }).disabled).toBe(true)
   })
 
-  it('content is only `rendered` while open', () => {
-    const m = makeMachine()
-    expect(api(m).parts.content.rendered).toBe(false)
+  it('is only `open` while open', () => {
+    const { m, conn } = make()
+    expect(api(conn).open).toBe(false)
     m.send({ type: 'trigger.click', items: ITEMS })
-    expect(api(m).parts.content.rendered).toBe(true)
+    expect(api(conn).open).toBe(true)
   })
 })

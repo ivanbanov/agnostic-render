@@ -35,7 +35,6 @@ import {
   type ReactNode,
 } from 'react'
 import {
-  BackHandler,
   Dimensions,
   Pressable,
   Text,
@@ -65,14 +64,15 @@ import {
   useDropdownMenuRadioGroup,
   type DropdownMenuRadioGroupValue,
 } from './context'
-import {
-  resolveContent,
-  resolveGroup,
-  resolveItem,
-  resolveLabel,
-  resolvePositioner,
-  resolveSeparator,
-} from './generated/elements'
+import * as Styled from './generated/elements'
+
+// Painted text presentation — the styled parts are Views; RN Text doesn't
+// inherit color from a parent View, so text labels carry these explicitly.
+// (Mirror the shared item/label colors.)
+const ITEM_TEXT = '#222428'
+const ITEM_TEXT_HIGHLIGHTED = '#314CD9'
+const ITEM_TEXT_DISABLED = '#AEB2C0'
+const LABEL_TEXT = '#AEB2C0'
 
 // =============================================================================
 // <DropdownMenu> — root provider
@@ -131,7 +131,7 @@ export function DropdownMenuTrigger(props: DropdownMenuTriggerProps) {
     [measure],
   )
 
-  const normalized = normalize(api.parts.trigger.handlers as unknown as Record<string, unknown>)
+  const normalized = normalize(api.parts.trigger as unknown as Record<string, unknown>)
 
   const machineProps: Record<string, unknown> = {
     ...(normalized as object),
@@ -165,48 +165,37 @@ export function DropdownMenuContent(props: DropdownMenuContentProps) {
   void triggerRef
 
   const registry = useDropdownMenuItemRegistry()
-  const rendered = api.parts.content.rendered
+  const rendered = api.open
 
   // Subscribe to registry mutations so items show up after first paint.
   const [, forceUpdate] = useState(0)
   useEffect(() => registry.subscribe(() => forceUpdate(n => n + 1)), [registry])
 
-  // Android back closes the menu.
-  useEffect(() => {
-    if (!rendered) return
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      api.setOpen(false)
-      return true
-    })
-    return () => sub.remove()
-  }, [rendered, api])
+  // The Android back button is wired in effects.ts (a ComponentEffect the
+  // generated useDropdownMenuApi runs via useEffects) — mirror of the web
+  // Escape listener — so it isn't re-implemented here.
 
   if (!rendered) return null
 
   const items = registry.read()
   const apiWithItems = api.withItems(items)
 
-  const positionerStyle = resolvePositioner({
-    anchored: anchor ? 'true' : 'false',
-  })
-  const contentStyle = resolveContent(apiWithItems.parts.content.variants)
+  // Runtime anchor coords layer onto the styled Positioner (base position:absolute).
   const positionedStyle = anchor
     ? {
-        ...positionerStyle,
         left: anchor.x,
         top: anchor.y + anchor.height + apiWithItems.parts.content.offsetY,
       }
-    : positionerStyle
+    : undefined
 
   // Full-screen invisible backdrop to catch tap-outside. RN has no
   // document-level pointer listener.
   const { width: screenW, height: screenH } = Dimensions.get('window')
 
-  const machineContentProps: Record<string, unknown> = {
-    style: contentStyle,
+  const merged = mergeProps(consumerProps as Record<string, unknown>, {
+    side: apiWithItems.parts.content.side,
     pointerEvents: 'auto',
-  }
-  const merged = mergeProps(consumerProps as Record<string, unknown>, machineContentProps)
+  })
 
   return (
     <>
@@ -221,13 +210,13 @@ export function DropdownMenuContent(props: DropdownMenuContentProps) {
         }}
         accessible={false}
       />
-      <View style={positionedStyle} pointerEvents='box-none'>
-        <View {...(merged as ViewProps)}>
+      <Styled.Positioner style={positionedStyle} pointerEvents='box-none'>
+        <Styled.Content {...merged}>
           <DropdownMenuCurrentApiRef.Provider value={apiWithItems}>
             {children}
           </DropdownMenuCurrentApiRef.Provider>
-        </View>
-      </View>
+        </Styled.Content>
+      </Styled.Positioner>
     </>
   )
 }
@@ -274,28 +263,31 @@ function ItemBase({
     checked,
     onSelect,
   })
-  const handlers = normalize(part.handlers as unknown as Record<string, unknown>)
+  const handlers = normalize(part as unknown as Record<string, unknown>)
 
-  const itemStyle = resolveItem(part.variants)
+  // `highlighted` / `disabled` are styling variants on the styled Item
+  // (a Pressable); the resolved text color follows the same state.
+  const textColor = part.disabled
+    ? ITEM_TEXT_DISABLED
+    : part.highlighted
+      ? ITEM_TEXT_HIGHLIGHTED
+      : ITEM_TEXT
 
-  const machineProps: Record<string, unknown> = {
+  const merged = mergeProps(consumerProps, {
     onPress: () => {
       if (disabled) return
       ;(handlers as { onPress?: () => void }).onPress?.()
     },
     disabled,
-    style: itemStyle,
-  }
-  const merged = mergeProps(consumerProps, machineProps)
+    highlighted: part.highlighted,
+  })
 
   return (
-    <Pressable {...(merged as PressableProps)}>
+    <Styled.Item {...merged}>
       <DropdownMenuItemCheckedRef.Provider value={checked ?? false}>
-        {renderTextSafe(children, {
-          color: (itemStyle.color as string) ?? '#fff',
-        })}
+        {renderTextSafe(children, { color: textColor })}
       </DropdownMenuItemCheckedRef.Provider>
-    </Pressable>
+    </Styled.Item>
   )
 }
 
@@ -434,9 +426,7 @@ export function DropdownMenuItemIndicator({ children }: DropdownMenuItemIndicato
 export type DropdownMenuSeparatorProps = ViewProps
 
 export function DropdownMenuSeparator(props: DropdownMenuSeparatorProps) {
-  const style = resolveSeparator({})
-  const merged = mergeProps(props as Record<string, unknown>, { style })
-  return <View {...(merged as ViewProps)} />
+  return <Styled.Separator {...(props as Record<string, unknown>)} />
 }
 
 export interface DropdownMenuLabelProps extends Omit<ViewProps, 'children'> {
@@ -445,12 +435,10 @@ export interface DropdownMenuLabelProps extends Omit<ViewProps, 'children'> {
 
 export function DropdownMenuLabel(props: DropdownMenuLabelProps) {
   const { children, ...consumerProps } = props
-  const style = resolveLabel({})
-  const merged = mergeProps(consumerProps as Record<string, unknown>, { style })
   return (
-    <View {...(merged as ViewProps)}>
-      <Text style={{ color: (style.color as string) ?? '#9ca3af' }}>{children}</Text>
-    </View>
+    <Styled.Label {...(consumerProps as Record<string, unknown>)}>
+      <Text style={{ color: LABEL_TEXT }}>{children}</Text>
+    </Styled.Label>
   )
 }
 
@@ -460,9 +448,7 @@ export interface DropdownMenuGroupProps extends Omit<ViewProps, 'children'> {
 
 export function DropdownMenuGroup(props: DropdownMenuGroupProps) {
   const { children, ...consumerProps } = props
-  const style = resolveGroup({})
-  const merged = mergeProps(consumerProps as Record<string, unknown>, { style })
-  return <View {...(merged as ViewProps)}>{children}</View>
+  return <Styled.Group {...(consumerProps as Record<string, unknown>)}>{children}</Styled.Group>
 }
 
 // =============================================================================

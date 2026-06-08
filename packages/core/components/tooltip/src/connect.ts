@@ -21,6 +21,7 @@ import { makeReaction } from '@render-experiment/machine-core'
 import { placementToSide } from '@render-experiment/utils'
 import type {
   TooltipApi,
+  TooltipComputed,
   TooltipContext,
   TooltipEvent,
   TooltipMachineProps,
@@ -32,8 +33,9 @@ export const connectTooltip: Connect<
   TooltipContext,
   TooltipEvent,
   TooltipMachineProps,
-  TooltipApi
-> = ({ state, context, props, send }) => {
+  TooltipApi,
+  TooltipComputed
+> = ({ state, context, computed, props, send }) => {
   const open = state === 'open' || state === 'closing'
   const triggerId = `tooltip:${context.id}:trigger`
   const contentId = `tooltip:${context.id}:content`
@@ -41,6 +43,12 @@ export const connectTooltip: Connect<
 
   return {
     open,
+    // Derived presentation values — SEMANTIC, not render concerns. Core stays
+    // blind to how a target paints them; a DOM view maps these to
+    // `data-state` / `data-side` / `data-disabled`, another target to its own.
+    presentation: computed.presentation,
+    side,
+    disabled: props.disabled,
     setOpen(next) {
       if (open === next) return
       send({ type: next ? 'open' : 'close' })
@@ -97,7 +105,13 @@ export const connectTooltip: Connect<
  * declared once and fired identically on every target. (Escape is NOT here —
  * it's a DOM listener, so it lives in each target's effects.)
  */
-const reaction = makeReaction<TooltipState, TooltipContext, TooltipEvent, TooltipMachineProps>()
+const reaction = makeReaction<
+  TooltipState,
+  TooltipContext,
+  TooltipEvent,
+  TooltipMachineProps,
+  TooltipComputed
+>()
 
 /** Fire onOpenChange whenever the tooltip becomes visible (open or closing) or hides. */
 const onOpenChange = reaction(

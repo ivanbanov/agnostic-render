@@ -108,9 +108,44 @@ export interface TooltipContext {
   closeDelay: number
   skipDelayDuration: number
   disableHoverableContent: boolean
+  /**
+   * How the current/pending open was initiated — the second, orthogonal axis to
+   * the open/closed control flow. `'instant'` (focus, controlled, or a skip-delay
+   * window) vs `'delayed'` (a normal hover that waited out openDelay); `null`
+   * while closed. State stays the control axis; this is the data axis. The
+   * `presentation` value (`instant-open` / `delayed-open` / `closed`) is their
+   * PRODUCT, derived in `computed.presentation` — never stored.
+   */
+  timing: 'instant' | 'delayed' | null
 }
 
 export type TooltipState = 'closed' | 'opening' | 'open' | 'closing'
+
+/**
+ * How a visible tooltip opened — the non-null half of `context.timing`. Named so
+ * the presentation type below is derived from it rather than re-spelling the
+ * literals.
+ */
+export type TooltipTiming = NonNullable<TooltipContext['timing']>
+
+/**
+ * The presentation vocabulary, DERIVED from the two underlying axes rather than
+ * hand-written: either closed, or `${timing}-open` for the visible states.
+ * Change `timing` and this set updates with it — no magic strings to keep in
+ * sync. This is a SEMANTIC value, not a render concern: a DOM target may surface
+ * it as a `data-state` attribute, a canvas/TUI target as a style key — core
+ * doesn't assume any of that.
+ */
+export type TooltipPresentation = 'closed' | `${TooltipTiming}-open`
+
+/**
+ * Derived presentation values. `presentation` mixes the control axis (state)
+ * with the data axis (context.timing) — a product of data, so it lives in
+ * `computed`, not as a state node or a stored flag.
+ */
+export interface TooltipComputed {
+  presentation: TooltipPresentation
+}
 
 // -----------------------------------------------------------------------------
 // Events
@@ -155,6 +190,18 @@ export type TooltipContentPart = TooltipPart & {
 
 export interface TooltipApi {
   open: boolean
+  /**
+   * Derived presentation state (computed.presentation). A SEMANTIC value — a DOM
+   * view may surface it as `data-state`, another target however it paints. Core
+   * exposes the value; the target owns how it's rendered.
+   */
+  presentation: TooltipComputed['presentation']
+  /** Preferred side (from placement). A view may flip it on collision; the
+   * resolved side is the one it surfaces (DOM view: `data-side`). */
+  side: Side
+  /** Whether the tooltip is disabled — a view derives its own marker (DOM view:
+   * `data-disabled`) from it. */
+  disabled: boolean
   setOpen: (next: boolean) => void
   parts: {
     trigger: TooltipPart

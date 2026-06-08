@@ -1,28 +1,26 @@
 /* eslint-disable */
-import { resolveStyle, type TranslatedNativeStyle } from '@render-experiment/style-engine-native'
+import { styled } from '@render-experiment/style-engine-native/styled'
 
 // Source: shared/components/dropdown-menu/src/styles → content
-export const content: TranslatedNativeStyle = {
-  base: {
-    position: 'absolute',
-    backgroundColor: '#FFFFFF',
-    color: '#222428',
-    borderRadius: 4,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    fontSize: 14,
-    lineHeight: 20,
-    minWidth: 180,
-    maxWidth: 500,
-    shadowColor: '#050038',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.07058823529411765,
-    shadowRadius: 16,
-    elevation: 8,
+export const Content = styled('View', {
+  position: 'absolute',
+  backgroundColor: '#FFFFFF',
+  color: '#222428',
+  borderRadius: 4,
+  paddingVertical: 12,
+  paddingHorizontal: 12,
+  fontSize: 14,
+  lineHeight: 20,
+  minWidth: 180,
+  maxWidth: 500,
+  shadowColor: '#050038',
+  shadowOffset: {
+    width: 0,
+    height: 4,
   },
+  shadowOpacity: 0.07058823529411765,
+  shadowRadius: 16,
+  elevation: 8,
   variants: {
     side: {
       top: {
@@ -39,41 +37,25 @@ export const content: TranslatedNativeStyle = {
       },
     },
   },
-  compoundVariants: [],
   defaultVariants: {
     side: 'bottom',
   },
-}
-
-export function resolveContent(selections: Record<string, string | boolean> = {}) {
-  return resolveStyle(content, selections)
-}
+} as any)
 
 // Source: shared/components/dropdown-menu/src/styles → group
-export const group: TranslatedNativeStyle = {
-  base: {},
-  variants: {},
-  compoundVariants: [],
-  defaultVariants: {},
-}
-
-export function resolveGroup(selections: Record<string, string | boolean> = {}) {
-  return resolveStyle(group, selections)
-}
+export const Group = styled('View', {} as any)
 
 // Source: shared/components/dropdown-menu/src/styles → item
-export const item: TranslatedNativeStyle = {
-  base: {
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#222428',
-    borderRadius: 4,
-    position: 'relative',
-  },
+export const Item = styled('Pressable', {
+  alignItems: 'center',
+  gap: 8,
+  paddingVertical: 10,
+  paddingHorizontal: 8,
+  fontSize: 14,
+  lineHeight: 20,
+  color: '#222428',
+  borderRadius: 4,
+  position: 'relative',
   variants: {
     highlighted: {
       true: {
@@ -91,72 +73,42 @@ export const item: TranslatedNativeStyle = {
       false: {},
     },
   },
-  compoundVariants: [],
   defaultVariants: {
     highlighted: false,
     disabled: false,
   },
-}
-
-export function resolveItem(selections: Record<string, string | boolean> = {}) {
-  return resolveStyle(item, selections)
-}
+} as any)
 
 // Source: shared/components/dropdown-menu/src/styles → label
-export const label: TranslatedNativeStyle = {
-  base: {
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: 600,
-    color: '#AEB2C0',
-  },
-  variants: {},
-  compoundVariants: [],
-  defaultVariants: {},
-}
-
-export function resolveLabel(selections: Record<string, string | boolean> = {}) {
-  return resolveStyle(label, selections)
-}
+export const Label = styled('View', {
+  paddingVertical: 6,
+  paddingHorizontal: 8,
+  fontSize: 12,
+  lineHeight: 16,
+  fontWeight: 600,
+  color: '#AEB2C0',
+} as any)
 
 // Source: shared/components/dropdown-menu/src/styles → positioner
-export const positioner: TranslatedNativeStyle = {
-  base: {
-    position: 'absolute',
-    width: 0,
-    height: 0,
-  },
+export const Positioner = styled('View', {
+  position: 'absolute',
+  width: 0,
+  height: 0,
   variants: {
     anchored: {
       true: {},
       false: {},
     },
   },
-  compoundVariants: [],
   defaultVariants: {
     anchored: false,
   },
-}
-
-export function resolvePositioner(selections: Record<string, string | boolean> = {}) {
-  return resolveStyle(positioner, selections)
-}
+} as any)
 
 // Source: shared/components/dropdown-menu/src/styles → separator
-export const separator: TranslatedNativeStyle = {
-  base: {
-    height: 1,
-    marginVertical: 4,
-    marginHorizontal: 0,
-    backgroundColor: '#E9EAEF',
-  },
-  variants: {},
-  compoundVariants: [],
-  defaultVariants: {},
-}
-
-export function resolveSeparator(selections: Record<string, string | boolean> = {}) {
-  return resolveStyle(separator, selections)
-}
+export const Separator = styled('View', {
+  height: 1,
+  marginVertical: 4,
+  marginHorizontal: 0,
+  backgroundColor: '#E9EAEF',
+} as any)

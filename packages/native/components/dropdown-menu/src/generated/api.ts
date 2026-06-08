@@ -1,24 +1,28 @@
 /* eslint-disable */
-import { withAdapter } from '@render-experiment/machine-core'
-import { useApi } from '@render-experiment/machine-native'
+import { useMachine, useEffects } from '@render-experiment/machine-native'
 import {
-  connectDropdownMenu,
-  dropdownMenuMachine,
   DROPDOWN_MENU_DEFAULTS,
+  connectDropdownMenu,
+  dropdownMenuMachineConfig,
   type DropdownMenuApi,
-  type DropdownMenuContext as DropdownMenuMachineContext,
-  type DropdownMenuEvent,
   type DropdownMenuMachineProps,
   type DropdownMenuProps,
-  type DropdownMenuState,
 } from '@render-experiment/dropdown-menu-core'
 import { dropdownMenuAdapter } from '../adapter'
+import { dropdownMenuEffects } from '../effects'
 
-const dropdownMenuMachineWithAdapter = withAdapter(dropdownMenuMachine, dropdownMenuAdapter)
-
-/** Wire the core machine to native and return the connect() API. */
+/** Wire the core dropdownMenu machine to native and return the connect() API. */
 export function useDropdownMenuApi(props: DropdownMenuProps): DropdownMenuApi {
-  // Resolve defaults ONCE here; the machine + connect receive concrete config.
-  const config: DropdownMenuMachineProps = { ...DROPDOWN_MENU_DEFAULTS, ...props }
-  return useApi(dropdownMenuMachineWithAdapter, config, connectDropdownMenu)
+  // Resolve defaults once (machine + connector operate on the concrete shape).
+  const resolved: DropdownMenuMachineProps = { ...DROPDOWN_MENU_DEFAULTS, ...props }
+  const { api, machine } = useMachine(
+    dropdownMenuMachineConfig,
+    connectDropdownMenu,
+    dropdownMenuAdapter,
+    resolved,
+  )
+  // Substrate-specific transport declared as a ComponentEffect; useEffects owns
+  // the React effect + builds its dep array.
+  useEffects(dropdownMenuEffects, machine, resolved)
+  return api
 }

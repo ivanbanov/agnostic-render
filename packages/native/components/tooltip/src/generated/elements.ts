@@ -1,21 +1,19 @@
 /* eslint-disable */
-import { resolveStyle, type TranslatedNativeStyle } from '@render-experiment/style-engine-native'
+import { styled } from '@render-experiment/style-engine-native/styled'
 
 // Source: shared/components/tooltip/src/styles → content
-export const content: TranslatedNativeStyle = {
-  base: {
-    position: 'absolute',
-    backgroundColor: '#191a1c',
-    color: '#ffffff',
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    borderRadius: 3,
-    fontSize: 14,
-    fontWeight: 400,
-    lineHeight: 20,
-    fontFamily: 'inherit',
-    zIndex: 2147483647,
-  },
+export const Content = styled('View', {
+  position: 'absolute',
+  backgroundColor: '#191a1c',
+  color: '#ffffff',
+  paddingVertical: 6,
+  paddingHorizontal: 8,
+  borderRadius: 3,
+  fontSize: 14,
+  fontWeight: 400,
+  lineHeight: 20,
+  fontFamily: 'inherit',
+  zIndex: 2147483647,
   variants: {
     side: {
       top: {
@@ -32,35 +30,23 @@ export const content: TranslatedNativeStyle = {
       },
     },
   },
-  compoundVariants: [],
   defaultVariants: {
     side: 'bottom',
   },
-}
-
-export function resolveContent(selections: Record<string, string | boolean> = {}) {
-  return resolveStyle(content, selections)
-}
+} as any)
 
 // Source: shared/components/tooltip/src/styles → positioner
-export const positioner: TranslatedNativeStyle = {
-  base: {
-    position: 'absolute',
-    width: 0,
-    height: 0,
-  },
+export const Positioner = styled('View', {
+  position: 'absolute',
+  width: 0,
+  height: 0,
   variants: {
     anchored: {
       true: {},
       false: {},
     },
   },
-  compoundVariants: [],
   defaultVariants: {
     anchored: false,
   },
-}
-
-export function resolvePositioner(selections: Record<string, string | boolean> = {}) {
-  return resolveStyle(positioner, selections)
-}
+} as any)

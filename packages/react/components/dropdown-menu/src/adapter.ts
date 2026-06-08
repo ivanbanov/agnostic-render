@@ -1,35 +1,15 @@
-/**
- * React DOM adapter for DropdownMenu.
- *
- * Implements effects that the core machine declares as placeholders but
- * can't implement portably (DOM listeners). The generated api.ts merges
- * this map into the machine via withAdapter() before useMachine.
- */
 import type { Adapter } from '@render-experiment/machine-core'
 import type {
   DropdownMenuComputed,
   DropdownMenuContext,
   DropdownMenuEvent,
-  DropdownMenuMachineProps,
 } from '@render-experiment/dropdown-menu-core'
 
+// No machine effects to override on web: Escape is a prop-dependent listener
+// (gated by closeOnEscape), so it lives in effects.ts as a ComponentEffect the
+// generated useApi runs via useEffects — not as a withAdapter machine effect.
 export const dropdownMenuAdapter: Adapter<
   DropdownMenuContext,
-  DropdownMenuMachineProps,
   DropdownMenuEvent,
   DropdownMenuComputed
-> = {
-  // Capture-phase Escape closer so we run before nested popovers/dialogs
-  // that might also be listening. Stops propagation so the menu's close
-  // doesn't cascade upward.
-  trackEscapeKey: ({ props, send }) => {
-    if (!props.closeOnEscape) return
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-      event.stopPropagation()
-      send({ type: 'escape', src: 'keydown.escape' })
-    }
-    document.addEventListener('keydown', onKeyDown, true)
-    return () => document.removeEventListener('keydown', onKeyDown, true)
-  },
-}
+> = {}

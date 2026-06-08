@@ -1,12 +1,12 @@
 import { useState } from 'react'
-// NOTE: dropdown-menu is temporarily dropped from the sandbox while it's being
-// migrated to the new signals engine (task #17). Re-enable the import + the
-// <DropdownMenuDemos /> section below once dropdown-menu-core compiles again.
-// import { DropdownMenu } from '@render-experiment/dropdown-menu-react'
+import { DropdownMenu } from '@render-experiment/dropdown-menu-react'
 import { Tooltip } from '@render-experiment/tooltip-react'
 
 export function App() {
   const [openCount, setOpenCount] = useState(0)
+  const [lastAction, setLastAction] = useState('(nothing yet)')
+  const [theme, setTheme] = useState('system')
+  const [bookmarks, setBookmarks] = useState({ urls: true, github: false })
 
   return (
     <div
@@ -120,8 +120,62 @@ export function App() {
       <section style={{ marginTop: 32 }}>
         <h2>dropdown-menu</h2>
         <p style={{ color: '#888', fontSize: 13 }}>
-          Temporarily disabled while dropdown-menu migrates to the new engine (task #17).
+          Click to open. Arrow keys / Home / End navigate, typeahead matches, Escape closes. Last
+          action: {lastAction}
         </p>
+        <DropdownMenu>
+          <DropdownMenu.Trigger>
+            <button>Open menu</button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content>
+            <DropdownMenu.Label>Actions</DropdownMenu.Label>
+            <DropdownMenu.Item value='new' onSelect={() => setLastAction('new')}>
+              New
+            </DropdownMenu.Item>
+            <DropdownMenu.Item value='open' onSelect={() => setLastAction('open')}>
+              Open…
+            </DropdownMenu.Item>
+            <DropdownMenu.Item value='save-as' disabled>
+              Save As… (disabled)
+            </DropdownMenu.Item>
+            <DropdownMenu.Separator />
+
+            <DropdownMenu.Label>Bookmarks</DropdownMenu.Label>
+            <DropdownMenu.CheckboxItem
+              value='urls'
+              checked={bookmarks.urls}
+              onCheckedChange={c => setBookmarks(b => ({ ...b, urls: c }))}
+            >
+              <DropdownMenu.ItemIndicator />
+              Show URLs
+            </DropdownMenu.CheckboxItem>
+            <DropdownMenu.CheckboxItem
+              value='github'
+              checked={bookmarks.github}
+              onCheckedChange={c => setBookmarks(b => ({ ...b, github: c }))}
+            >
+              <DropdownMenu.ItemIndicator />
+              Show GitHub
+            </DropdownMenu.CheckboxItem>
+            <DropdownMenu.Separator />
+
+            <DropdownMenu.Label>Theme: {theme}</DropdownMenu.Label>
+            <DropdownMenu.RadioGroup value={theme} onValueChange={setTheme}>
+              <DropdownMenu.RadioItem value='light'>
+                <DropdownMenu.ItemIndicator>●</DropdownMenu.ItemIndicator>
+                Light
+              </DropdownMenu.RadioItem>
+              <DropdownMenu.RadioItem value='dark'>
+                <DropdownMenu.ItemIndicator>●</DropdownMenu.ItemIndicator>
+                Dark
+              </DropdownMenu.RadioItem>
+              <DropdownMenu.RadioItem value='system'>
+                <DropdownMenu.ItemIndicator>●</DropdownMenu.ItemIndicator>
+                System
+              </DropdownMenu.RadioItem>
+            </DropdownMenu.RadioGroup>
+          </DropdownMenu.Content>
+        </DropdownMenu>
       </section>
     </div>
   )

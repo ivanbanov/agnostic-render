@@ -1,28 +1,12 @@
-/**
- * Tooltip machine — substrate-agnostic state machine.
- *
- * States: closed → opening → open → closing
- *
- * The machine never sees props (see ARCHITECTURE.md). `createTooltipMachine`
- * takes the resolved props ONCE, seeds the config the transitions need into
- * context, and computes the initial state. From then on the machine reads only
- * context/events:
- *   - openDelay / closeDelay → named `after` delays reading context
- *   - skipDelayDuration / id → context, used to drive the global store
- *   - disableHoverableContent → a guard over context
- *   - the single-open store + skip-delay window → store.ts (a shared signal)
- *
- * Callbacks (onOpenChange) and controlled `open` are NOT here — the connector
- * observes the machine and fires them.
- *
- * `trackEscapeKey` is a named effect each adapter overrides via withAdapter().
- *
- * Sibling files: types.ts · props.ts · store.ts · connect.ts · index.ts
- */
-
-import { config, type Machine } from '@render-experiment/machine-core'
+import { act, config, type Machine } from '@render-experiment/machine-core'
 import { tooltipStore } from './store'
-import type { TooltipContext, TooltipEvent, TooltipMachineProps, TooltipState } from './types'
+import type {
+  TooltipComputed,
+  TooltipContext,
+  TooltipEvent,
+  TooltipMachineProps,
+  TooltipState,
+} from './types'
 
 /**
  * Build the tooltip machine CONFIG from already-resolved props (defaults
@@ -31,6 +15,8 @@ import type { TooltipContext, TooltipEvent, TooltipMachineProps, TooltipState } 
  * the edge. Props are read ONCE here to seed context + initial state.
  */
 export function tooltipMachineConfig(props: TooltipMachineProps) {
+  const openInitially = props.open ?? props.defaultOpen
+
   const context: TooltipContext = {
     id: props.id,
     placement: props.placement,
@@ -38,28 +24,67 @@ export function tooltipMachineConfig(props: TooltipMachineProps) {
     closeDelay: props.closeDelay,
     skipDelayDuration: props.skipDelayDuration,
     disableHoverableContent: props.disableHoverableContent,
+    // A controlled / default-open tooltip is shown without a hover delay → instant.
+    timing: openInitially ? 'instant' : null,
   }
 
-  return config<TooltipState, TooltipContext, TooltipEvent>({
-    initial: (props.open ?? props.defaultOpen) ? 'open' : 'closed',
+  return config<TooltipState, TooltipContext, TooltipEvent, TooltipComputed>({
+    initial: openInitially ? 'open' : 'closed',
     context,
+
+    computed: {
+      // Presentation state: a PRODUCT of the control axis (state) and the data
+      // axis (timing) — derived, never stored as its own state node. Closed (or
+      // still pending in `opening`) reads as closed; once visible the value is
+      // literally `${timing}-open`, built from timing rather than re-spelled.
+      // Targets map this semantic value however they paint (a DOM target as a
+      // `data-state` attr, a canvas target as a style key) — core stays blind to
+      // how it's rendered.
+      presentation: ({ context, state }) =>
+        state === 'closed' || state === 'opening' || context.timing === null
+          ? 'closed'
+          : `${context.timing}-open`,
+    },
 
     states: {
       closed: {
-        entry: ['clearGlobalId'],
+        // Clear the timing axis on every entry into closed — the next open
+        // re-stamps it. (clearGlobalId releases the single-open slot.)
+        entry: ['clearGlobalId', act({ timing: null })],
         on: {
-          open: { target: 'open' },
-          'pointer.move': [{ guard: 'shouldSkipDelay', target: 'open' }, { target: 'opening' }],
+          // Focus / controlled open — no hover delay paid → instant.
+          open: {
+            target: 'open',
+            actions: act({ timing: 'instant' }),
+          },
+          'pointer.move': [
+            // Skip-delay window active → open immediately → instant.
+            {
+              guard: 'shouldSkipDelay',
+              target: 'open',
+              actions: act({ timing: 'instant' }),
+            },
+            // Normal hover → wait out openDelay in `opening` → delayed.
+            {
+              target: 'opening',
+              actions: act({ timing: 'delayed' }),
+            },
+          ],
         },
       },
 
       opening: {
         // openDelay elapses → open. Auto-cancelled if the pointer leaves first.
+        // `timing` was stamped 'delayed' on the way in and carries through.
         after: {
           openDelay: { target: 'open' },
         },
         on: {
-          open: { target: 'open' },
+          // A focus arriving mid-delay promotes to an instant open.
+          open: {
+            target: 'open',
+            actions: act({ timing: 'instant' }),
+          },
           close: { target: 'closed' },
           'pointer.leave': { target: 'closed' },
         },
@@ -82,13 +107,18 @@ export function tooltipMachineConfig(props: TooltipMachineProps) {
       },
 
       closing: {
+        // Still visible → keep the existing `timing` so `presentation` stays
+        // stable through the grace period; re-entering open from here preserves it.
         after: {
           closeDelay: { target: 'closed' },
         },
         on: {
           'content.pointer.move': { target: 'open' },
           'pointer.move': { target: 'open' },
-          open: { target: 'open' },
+          open: {
+            target: 'open',
+            actions: act({ timing: 'instant' }),
+          },
         },
       },
     },
@@ -138,4 +168,4 @@ export function tooltipMachineConfig(props: TooltipMachineProps) {
 export type TooltipMachineConfig = ReturnType<typeof tooltipMachineConfig>
 
 /** The running tooltip machine service type (built by the bridge). */
-export type TooltipMachine = Machine<TooltipState, TooltipContext, TooltipEvent>
+export type TooltipMachine = Machine<TooltipState, TooltipContext, TooltipEvent, TooltipComputed>

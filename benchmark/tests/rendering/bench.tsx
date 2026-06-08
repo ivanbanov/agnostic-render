@@ -273,10 +273,12 @@ export async function runRenderingBench(N: number, moves: number) {
       k => {
         cur = k % N
         setHi(cur)
-        // --- SHARED arena: xstate selector (one actor + useSelector per row) ---
-        // XState's fine-grained path, parallel to core's selector: one actor holds the
-        // highlighted index; each row useSelectors "am I highlighted?", so a `move`
-        // wakes only the 2 rows whose answer flipped.
+        // --- xstate selector (one actor + useSelector per row) ---
+        // XState's fine-grained path, the counterpart to core's selector: one actor
+        // holds the highlighted index; each row useSelectors "am I highlighted?", so a
+        // `move` wakes only the 2 rows whose answer flipped. NOTE: this block sits
+        // inside the zag/instance move callback, so it re-runs each move and the last
+        // run's numbers are what land in results['xstate/selector'].
         {
           const actor = createXActor(xstateListMachine)
           actor.start()

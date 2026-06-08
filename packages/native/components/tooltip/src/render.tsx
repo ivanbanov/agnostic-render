@@ -27,14 +27,12 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useId,
   useRef,
   useState,
   type ReactNode,
 } from 'react'
 import {
-  BackHandler,
   Pressable,
   Text,
   View,
@@ -50,8 +48,13 @@ import {
   type TooltipProps,
 } from '@render-experiment/tooltip-core'
 import { useTooltipApi } from './generated/api'
-import { resolveContent, resolvePositioner } from './generated/elements'
+import * as Styled from './generated/elements'
 import { useTooltipProviderConfig } from './context'
+
+// Painted text presentation for the content box. The styled Content is a View;
+// RN Text doesn't inherit color from a parent View, so the label carries these
+// explicitly. (Mirrors the shared content style's color/fontSize.)
+const CONTENT_TEXT = { color: '#ffffff', fontSize: 14 } as const
 
 // -----------------------------------------------------------------------------
 // Internal context — Trigger and Content read api + triggerRef + anchor
@@ -178,61 +181,39 @@ export interface TooltipContentProps extends Omit<ViewProps, 'children'> {
 
 export function TooltipContent(props: TooltipContentProps) {
   const { children, ...consumerProps } = props
-  const { api, props: ctxProps, anchor } = useTooltipCtxOrThrow()
+  const { api, anchor } = useTooltipCtxOrThrow()
 
   const rendered = api.open
   const { side } = api.parts.content
 
-  // Wire Android back button to close (mirror of trackEscapeKey on web).
-  useEffect(() => {
-    if (!rendered) return
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      api.setOpen(false)
-      return true
-    })
-    return () => sub.remove()
-  }, [rendered, api])
+  // The Android back button is wired in effects.ts (a ComponentEffect the
+  // generated useTooltipApi runs via useEffects) — mirror of the web Escape
+  // listener — so it isn't re-implemented here.
 
   if (!rendered) return null
 
-  const positionerStyle = resolvePositioner({ anchored: !!anchor })
-  const contentStyle = resolveContent({ side })
-
-  // Convert anchor center → absolute coords for the positioner.
+  // Convert anchor center → absolute coords, layered onto the styled Positioner
+  // (its base is position:absolute). The styled Content takes `side` as a
+  // variant prop; runtime transform layers via its `style` prop.
   const positionedStyle = anchor
-    ? {
-        ...positionerStyle,
-        left: anchor.x + anchor.width / 2,
-        top: anchor.y + anchor.height,
-      }
-    : positionerStyle
+    ? { left: anchor.x + anchor.width / 2, top: anchor.y + anchor.height }
+    : undefined
 
-  // Inline rendering. The tooltip is absolutely positioned in window-space.
-  // Consumer props land on the inner content View (the painted box);
-  // the positioner is structural and consumer-opaque.
   const machineProps: Record<string, unknown> = {
-    style: [contentStyle, anchorContentTransform(side)],
+    side,
+    style: anchorContentTransform(side),
     pointerEvents: 'auto',
   }
   const merged = mergeProps(consumerProps as Record<string, unknown>, machineProps)
 
+  // Inline rendering. The tooltip is absolutely positioned in window-space.
+  // Consumer props land on the inner content box; the positioner is structural.
   return (
-    <View style={positionedStyle} pointerEvents='box-none'>
-      <View {...(merged as ViewProps)}>
-        {typeof children === 'string' ? (
-          <Text
-            style={{
-              color: (contentStyle.color as string) ?? '#fff',
-              fontSize: contentStyle.fontSize as number,
-            }}
-          >
-            {children}
-          </Text>
-        ) : (
-          children
-        )}
-      </View>
-    </View>
+    <Styled.Positioner style={positionedStyle} pointerEvents='box-none'>
+      <Styled.Content {...merged}>
+        {typeof children === 'string' ? <Text style={CONTENT_TEXT}>{children}</Text> : children}
+      </Styled.Content>
+    </Styled.Positioner>
   )
 }
 

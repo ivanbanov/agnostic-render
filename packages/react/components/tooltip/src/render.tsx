@@ -78,8 +78,13 @@ export function TooltipTrigger(props: TooltipTriggerProps) {
 
   const merged = mergeProps(consumerProps as Record<string, unknown>, machineProps)
 
+  // DOM presentation markers — this is where the agnostic api values become
+  // `data-*` (the attribute name is a DOM concern, so it lives in the view, not
+  // core). Radix-compatible: data-state ∈ closed | delayed-open | instant-open.
   const triggerProps = {
     ...merged,
+    'data-state': api.presentation,
+    ...(api.disabled ? { 'data-disabled': '' } : {}),
     ref: mergeRefs(setRef, getChildRef(children)),
   }
   return cloneOnly(children, triggerProps)
@@ -125,7 +130,7 @@ function PositionedContent({
 
   const contentRef = useRef<HTMLDivElement | null>(null)
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null)
-  const [effectiveSide, setEffectiveSide] = useState<Side>(api.parts.content.side)
+  const [side, setSide] = useState<Side>(api.parts.content.side)
 
   // Measure: read both rects, compute the effective side (collision
   // flip), then anchor against the effective placement so the offsets
@@ -146,7 +151,7 @@ function PositionedContent({
         { width: window.innerWidth, height: window.innerHeight },
         mainOffsetFor(placement, offsetX, offsetY),
       )
-      setEffectiveSide(next)
+      setSide(next)
 
       // Re-anchor against the (possibly flipped) side.
       const flippedPlacement = next === preferred ? placement : (next as typeof placement)
@@ -190,7 +195,7 @@ function PositionedContent({
         { width: window.innerWidth, height: window.innerHeight },
         mainOffsetFor(placement, offsetX, offsetY),
       )
-      setEffectiveSide(next)
+      setSide(next)
       const flippedPlacement = next === preferred ? placement : (next as typeof placement)
       setAnchor(anchorOf(triggerRect, flippedPlacement, offsetX, offsetY))
     })
@@ -233,7 +238,13 @@ function PositionedContent({
 
   return (
     <Styled.Positioner anchored={!!anchor} css={anchorCoords}>
-      <Styled.Content {...merged} side={effectiveSide} ref={contentRef}>
+      <Styled.Content
+        {...merged}
+        side={side}
+        data-state={api.presentation}
+        data-side={side}
+        ref={contentRef}
+      >
         {children}
       </Styled.Content>
     </Styled.Positioner>

@@ -232,25 +232,37 @@ function emitNativeElements(
   component: DiscoveredComponent,
   styles: Record<string, unknown>,
 ): string {
-  // Emit each element as a TranslatedNativeStyle literal + a `resolveX()`
-  // helper that the view calls with current variant selections.
+  // Emit each element as a `styled(<primitive>, config)` component — the
+  // stitches-like surface, mirroring the React target's styled('div', config).
+  // The styled config is the translated base props spread flat +
+  // variants/compoundVariants/defaultVariants (the shape styleProps() consumes).
+  // The element name is PascalCase (a component): `Content`, `Item`, ….
+  //
+  // Primitive by part-name convention: interactive parts (item, trigger) fire
+  // press, so they map to `Pressable` (the RN analog of the web's clickable
+  // element); everything else is a `View`.
+  const INTERACTIVE_PARTS = new Set(['item', 'trigger'])
   const decls: string[] = []
   for (const [elementName, spec] of Object.entries(styles)) {
     const camel = elementName[0]!.toLowerCase() + elementName.slice(1)
-    const translated = translateAgnosticSpecToNative(spec as never)
-    const inlined = JSON.stringify(translated, null, 2)
+    const primitive = INTERACTIVE_PARTS.has(camel) ? 'Pressable' : 'View'
+    const { base, variants, compoundVariants, defaultVariants } = translateAgnosticSpecToNative(
+      spec as never,
+    )
+    // styled config: flat base + structural keys (omit empties to keep it tidy).
+    const config: Record<string, unknown> = { ...base }
+    if (Object.keys(variants).length > 0) config.variants = variants
+    if (compoundVariants.length > 0) config.compoundVariants = compoundVariants
+    if (Object.keys(defaultVariants).length > 0) config.defaultVariants = defaultVariants
+    const inlined = JSON.stringify(config, null, 2)
     decls.push(
       `// Source: shared/components/${component.slug}/src/styles → ${camel}
-export const ${camel}: TranslatedNativeStyle = ${inlined};
-
-export function resolve${elementName}(selections: Record<string, string | boolean> = {}) {
-  return resolveStyle(${camel}, selections);
-}`,
+export const ${elementName} = styled("${primitive}", ${inlined} as any);`,
     )
   }
 
   return `${ESLINT_DISABLE}
-import { resolveStyle, type TranslatedNativeStyle } from "@render-experiment/style-engine-native";
+import { styled } from "@render-experiment/style-engine-native/styled";
 
 ${decls.join('\n\n')}
 `

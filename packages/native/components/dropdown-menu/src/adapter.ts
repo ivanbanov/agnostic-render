@@ -9,15 +9,13 @@ import type {
   DropdownMenuComputed,
   DropdownMenuContext,
   DropdownMenuEvent,
-  DropdownMenuMachineProps,
 } from '@render-experiment/dropdown-menu-core'
 
-// No substrate effects to override: the core's trackEscapeKey no-op stands
-// (RN has no general Escape key; the Android back button is wired in render.tsx
-// via BackHandler). Left empty intentionally rather than re-stating the no-op.
+// No machine effects to override on RN. The Android back button (the RN analog
+// of web Escape) is a prop-dependent listener, so it lives in effects.ts as a
+// ComponentEffect — not a withAdapter machine effect. Left empty intentionally.
 export const dropdownMenuAdapter: Adapter<
   DropdownMenuContext,
-  DropdownMenuMachineProps,
   DropdownMenuEvent,
   DropdownMenuComputed
 > = {}
