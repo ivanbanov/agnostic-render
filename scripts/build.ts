@@ -209,16 +209,16 @@ import { ${camel}Effects } from "../effects";
 /** Wire the core ${camel} machine to React and return the connect() API. */
 export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
   // Resolve defaults once (machine + connector operate on the concrete shape).
-  const resolved: ${pascal}MachineProps = { ...${CONST}_DEFAULTS, ...props };
+  const ${camel}Props: ${pascal}MachineProps = { ...${CONST}_DEFAULTS, ...props };
   const { api, machine } = useMachine(
     ${camel}MachineConfig,
     connect${pascal},
     ${camel}Adapter,
-    resolved,
+    ${camel}Props,
   );
   // Substrate-specific transport (Escape, back-button, …) declared as a
   // ComponentEffect; useEffects owns the React effect + builds its dep array.
-  useEffects(${camel}Effects, machine, resolved);
+  useEffects(machine, ${camel}Effects, ${camel}Props);
   return api;
 }
 `
@@ -287,16 +287,16 @@ import { ${camel}Effects } from "../effects";
 /** Wire the core ${camel} machine to native and return the connect() API. */
 export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
   // Resolve defaults once (machine + connector operate on the concrete shape).
-  const resolved: ${pascal}MachineProps = { ...${CONST}_DEFAULTS, ...props };
+  const ${camel}Props: ${pascal}MachineProps = { ...${CONST}_DEFAULTS, ...props };
   const { api, machine } = useMachine(
     ${camel}MachineConfig,
     connect${pascal},
     ${camel}Adapter,
-    resolved,
+    ${camel}Props,
   );
   // Substrate-specific transport declared as a ComponentEffect; useEffects owns
   // the React effect + builds its dep array.
-  useEffects(${camel}Effects, machine, resolved);
+  useEffects(machine, ${camel}Effects, ${camel}Props);
   return api;
 }
 `
