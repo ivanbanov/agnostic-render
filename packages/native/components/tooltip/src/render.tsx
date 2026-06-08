@@ -33,6 +33,7 @@ import {
   type ReactNode,
 } from 'react'
 import {
+  Modal,
   Pressable,
   Text,
   View,
@@ -184,7 +185,6 @@ export function TooltipContent(props: TooltipContentProps) {
   const { api, anchor } = useTooltipCtxOrThrow()
 
   const rendered = api.open
-  const { side } = api.parts.content
 
   // The Android back button is wired in effects.ts (a ComponentEffect the
   // generated useTooltipApi runs via useEffects) — mirror of the web Escape
@@ -192,46 +192,33 @@ export function TooltipContent(props: TooltipContentProps) {
 
   if (!rendered) return null
 
-  // Convert anchor center → absolute coords, layered onto the styled Positioner
-  // (its base is position:absolute). The styled Content takes `side` as a
-  // variant prop; runtime transform layers via its `style` prop.
-  const positionedStyle = anchor
-    ? { left: anchor.x + anchor.width / 2, top: anchor.y + anchor.height }
-    : undefined
-
-  const machineProps: Record<string, unknown> = {
-    side,
-    style: anchorContentTransform(side),
-    pointerEvents: 'auto',
+  // Render through a Modal so the tooltip lives in WINDOW space — RN's
+  // `position: absolute` is relative to the nearest positioned ancestor, not the
+  // window, so an inline tooltip would be offset by the trigger's distance from
+  // its container (the same "wrong place" bug the dropdown had). Inside the
+  // Modal, the window anchor coords from measureInWindow place it correctly.
+  //
+  // The styled Content's `side` variant carries web CSS offsets (top/left:'100%')
+  // and percentage transforms that don't translate to RN, so we don't pass
+  // `side`; the absolute top/left below positions it directly under the trigger.
+  const positionedStyle = {
+    position: 'absolute' as const,
+    left: anchor ? anchor.x : 0,
+    top: anchor ? anchor.y + anchor.height + 4 : 0,
   }
-  const merged = mergeProps(consumerProps as Record<string, unknown>, machineProps)
 
-  // Inline rendering. The tooltip is absolutely positioned in window-space.
-  // Consumer props land on the inner content box; the positioner is structural.
+  const merged = mergeProps(consumerProps as Record<string, unknown>, {
+    style: positionedStyle,
+    pointerEvents: 'auto',
+  })
+
   return (
-    <Styled.Positioner style={positionedStyle} pointerEvents='box-none'>
+    <Modal transparent visible animationType='fade' onRequestClose={() => api.setOpen(false)}>
       <Styled.Content {...merged}>
         {typeof children === 'string' ? <Text style={CONTENT_TEXT}>{children}</Text> : children}
       </Styled.Content>
-    </Styled.Positioner>
+    </Modal>
   )
-}
-
-// Equivalent of RN's edge-pinning trick: shift the content so the pinned
-// edge sits on the anchor point.
-function anchorContentTransform(side: 'top' | 'bottom' | 'left' | 'right'): {
-  transform?: Array<{ translateX?: number; translateY?: number }>
-} {
-  switch (side) {
-    case 'top':
-      return { transform: [{ translateY: -8 }, { translateX: -50 }] }
-    case 'bottom':
-      return { transform: [{ translateY: 8 }, { translateX: -50 }] }
-    case 'left':
-      return { transform: [{ translateX: -8 }, { translateY: -50 }] }
-    case 'right':
-      return { transform: [{ translateX: 8 }, { translateY: -50 }] }
-  }
 }
 
 // -----------------------------------------------------------------------------
