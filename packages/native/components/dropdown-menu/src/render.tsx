@@ -180,20 +180,28 @@ export function DropdownMenuContent(props: DropdownMenuContentProps) {
   const items = registry.read()
   const apiWithItems = api.withItems(items)
 
-  // Runtime anchor coords layer onto the styled Positioner (base position:absolute).
-  const positionedStyle = anchor
-    ? {
-        left: anchor.x,
-        top: anchor.y + anchor.height + apiWithItems.parts.content.offsetY,
-      }
-    : undefined
+  // Place the Positioner at the measured anchor (below the trigger). Until the
+  // async measureInWindow lands, fall back to {0,0} so the menu renders top-left
+  // rather than flashing at its inline-flow position; the measured value snaps
+  // it into place a tick later.
+  const positionedStyle = {
+    left: anchor ? anchor.x : 0,
+    top: anchor ? anchor.y + anchor.height + apiWithItems.parts.content.offsetY : 0,
+  }
 
   // Full-screen invisible backdrop to catch tap-outside. RN has no
   // document-level pointer listener.
   const { width: screenW, height: screenH } = Dimensions.get('window')
 
+  // The shared content style's `side` variant places the menu with web CSS
+  // offsets (top/bottom/left/right: '100%') against a positioned wrapper — a DOM
+  // trick that's meaningless on RN. On native the Positioner is already placed
+  // at the anchor (left/top below the trigger), so the Content sits at the
+  // positioner's top-left: skip the `side` prop and pin to {top:0,left:0} so the
+  // base `position:absolute` anchors to the positioner instead of escaping with
+  // a '100%' offset.
   const merged = mergeProps(consumerProps as Record<string, unknown>, {
-    side: apiWithItems.parts.content.side,
+    style: { top: 0, left: 0 },
     pointerEvents: 'auto',
   })
 
