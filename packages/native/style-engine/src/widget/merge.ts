@@ -1,13 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-shadow */
 
-/**
- * Compose several style sources (objects, arrays, or other styleProps fns) into
- * one StyleConfig. Ported from xwidget: later sources win on flat props;
- * variants deep-merge; compoundVariants concatenate then group. Memoized by
- * argument identity so repeated composition of stable inputs is free.
- */
-
 import type { StyleConfig, StyleVariants } from './types'
 import { isObject, memo } from './utils'
 import { isStyleRuntimeFn, mergeVariants, mergeCompoundVariants } from './variants'

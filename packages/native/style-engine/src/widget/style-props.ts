@@ -1,19 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-continue, no-param-reassign */
 
-/**
- * `styleProps()` — the heart of the RN widget engine, ported from xwidget.
- *
- * Composes any number of style sources into one resolver `styleFn(variants?,
- * conditions?)` that returns a flat RN style. Supports variants, compound
- * variants, default variants, and conditional states (`_pressed` / `_focused` /
- * `_disabled`). The merged config is exposed on `.config` for introspection.
- *
- * Difference from the Surface original: no design-token pre-resolution — RN
- * style values are already literal (numbers / strings), so the resolver just
- * merges layers in priority order.
- */
-
 import type {
   NestedStyle,
   Style,

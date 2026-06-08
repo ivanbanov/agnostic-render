@@ -1,11 +1,3 @@
-/**
- * Conditional-state vocabulary for the RN widget engine.
- *
- * Authored keys (`_pressed`, …) map to runtime flags (`pressed`, …) the styled
- * component tracks. Priority order = the order conditions are layered when more
- * than one is active (later wins), matching xwidget's approach.
- */
-
 import type { StyleConditionsKey, StyleConditionsMapping, StyleConditionsValue } from './types'
 
 export const conditionsMapping: StyleConditionsMapping = {

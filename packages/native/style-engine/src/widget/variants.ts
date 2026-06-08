@@ -1,12 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-continue */
 
-/**
- * Variant + compound-variant merging, ported from xwidget. Used by `merge.ts`
- * to deep-merge variant option styles and to dedupe/combine compound variants
- * when several style sources are composed.
- */
-
 import type {
   StyleConfig,
   StyleResolve,

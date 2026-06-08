@@ -9,7 +9,7 @@ export type RNStyle = ViewStyle & TextStyle & ImageStyle
 export type StyleValue = RNStyle[keyof RNStyle]
 
 // -----------------------------------------------------------------------------
-// Conditions — RN's interaction states (the analog of xwidget's _hover/_focus)
+// Conditions
 // -----------------------------------------------------------------------------
 
 /** Condition KEY as authored in a style object (`_pressed`, …). */
