@@ -13,7 +13,29 @@
  *
  * Codegen calls `translateAgnosticSpecToNative(spec)` at build time and inlines
  * the result as a literal.
+ *
+ * The stitches-like authoring surface lives under ./widget:
+ *  - `styleProps` (pure — composition + resolution) is re-exported here.
+ *  - `styled` (the RN component factory — imports react-native) ships from the
+ *    separate `@render-experiment/style-engine-native/styled` entry, so pure
+ *    consumers (codegen, logic tests) never load react-native.
  */
+
+export { styleProps } from './widget/style-props'
+export { conditionsMapping, conditionsKeys } from './widget/conditions'
+export type {
+  Style as WidgetStyle,
+  NestedStyle,
+  RNStyle as WidgetRNStyle,
+  StyleConfig,
+  StyleResolve,
+  StyleInput,
+  StyleVariants,
+  StyleVariantsArgs,
+  StyleConditionsArgs,
+  StyleConditionsKey,
+  StyleConditionsValue,
+} from './widget/types'
 
 type StyleValue = string | number | boolean
 

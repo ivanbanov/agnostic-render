@@ -1,40 +1,28 @@
 /**
  * Core spec tests for the Tooltip — framework-free.
  *
- * Drives `tooltipMachine` directly via `createMachine` and exercises
- * `connectTooltip` on raw snapshots. No React, no DOM rendering. This is
- * the source-of-truth layer: it asserts the SPEC.md behavior once, at the
- * agnostic level, independent of any substrate.
- *
- * Mapping to packages/core/components/tooltip/SPEC.md:
- *   - States: closed → opening → open → closing
- *   - Opening: hover-after-delay, focus-immediate, skip-delay window, controlled
- *   - Closing: pointer-leave grace, hoverable content, blur, escape (via event)
- *   - Mutual exclusion: only one open at a time
- *   - Disabled: no source opens; open ones dismiss
- *   - Accessibility (connect): role=tooltip, describedBy, data-state, data-side
+ * Builds the machine from `tooltipMachineConfig` and drives it directly;
+ * exercises `connectTooltip` through a `connector` (so the snapshot + the
+ * onOpenChange reaction are real). No React, no DOM. This is the
+ * source-of-truth layer asserting SPEC.md behavior at the agnostic level.
  *
  * Notes:
- *   - Delay effects use setTimeout, so we use vitest fake timers.
- *   - `trackEscapeKey` is a substrate effect (no-op in core); the adapter
- *     turns a real Escape keypress into a `close` event. At the core level
- *     we assert the machine's response to that `close`, plus the connect's
- *     closeOnEscape/onEscapeKeyDown handling is an adapter concern tested in
- *     the React suite. Here we cover the state-machine contract.
+ *   - `after` delays use setTimeout → vitest fake timers.
+ *   - Escape's listener + prevent-able onEscapeKeyDown gate are a substrate
+ *     (React) concern; here we assert the machine closes on the `escape`/`close`
+ *     event the adapter sends after gating.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   connectTooltip,
   TOOLTIP_DEFAULTS,
-  tooltipMachine,
+  tooltipMachineConfig,
   tooltipStore,
   type TooltipApi,
-  type TooltipContext,
   type TooltipMachineProps,
   type TooltipProps,
-  type TooltipState,
 } from '@render-experiment/tooltip-core'
-import { createMachine } from '@render-experiment/machine-core'
+import { connector, machine } from '@render-experiment/machine-core'
 
 // -----------------------------------------------------------------------------
 // Harness
@@ -42,29 +30,19 @@ import { createMachine } from '@render-experiment/machine-core'
 
 let nextId = 0
 
-/** Build a started machine for a fresh tooltip instance. Resolves defaults
- * the same way the adapter entry does, so the machine gets concrete config. */
-function makeMachine(props: Partial<TooltipProps> = {}) {
-  const raw: TooltipProps = { id: `t${nextId++}`, ...props }
-  const config: TooltipMachineProps = { ...TOOLTIP_DEFAULTS, ...raw }
-  const machine = createMachine(tooltipMachine, config)
-  machine.start()
-  return machine
+/** Build + start a tooltip machine and its connector (defaults resolved as the
+ * adapter entry does). The connector makes connect's snapshot + reactions real. */
+function make(props: Partial<TooltipProps> = {}) {
+  const resolved: TooltipMachineProps = { ...TOOLTIP_DEFAULTS, id: `t${nextId++}`, ...props }
+  const m = machine(tooltipMachineConfig(resolved))
+  const conn = connector(m, connectTooltip, resolved)
+  m.start() // wires the connector's reactions automatically (onStart)
+  return { m, conn }
 }
 
-/**
- * Snapshot the machine and run connect over it — what a view would see.
- * `connector` is curried: connect(snapshot)(...extras). Tooltip takes no
- * extras, so the inner call is argument-less.
- */
-function api(machine: ReturnType<typeof makeMachine>): TooltipApi {
-  return connectTooltip({
-    state: machine.getState() as TooltipState,
-    context: machine.getContext() as TooltipContext,
-    props: machine.getProps(),
-    send: machine.send,
-    computed: machine.getComputed(),
-  })()
+/** What a view would see — the connector's current api snapshot. */
+function api(conn: ReturnType<typeof make>['conn']): TooltipApi {
+  return conn.snapshot
 }
 
 beforeEach(() => {
@@ -84,18 +62,18 @@ afterEach(() => {
 
 describe('initial state', () => {
   it('starts closed by default', () => {
-    const m = makeMachine()
-    expect(m.getState()).toBe('closed')
+    const { m } = make()
+    expect(m.state).toBe('closed')
   })
 
   it('starts open when defaultOpen is true', () => {
-    const m = makeMachine({ defaultOpen: true })
-    expect(m.getState()).toBe('open')
+    const { m } = make({ defaultOpen: true })
+    expect(m.state).toBe('open')
   })
 
   it('starts open when controlled open is true', () => {
-    const m = makeMachine({ open: true })
-    expect(m.getState()).toBe('open')
+    const { m } = make({ open: true })
+    expect(m.state).toBe('open')
   })
 })
 
@@ -105,41 +83,38 @@ describe('initial state', () => {
 
 describe('opening', () => {
   it('hover enters `opening`, then `open` after the open delay', () => {
-    const m = makeMachine({ openDelay: 400 })
+    const { m } = make({ openDelay: 400 })
     m.send({ type: 'pointer.move' })
-    expect(m.getState()).toBe('opening')
-
+    expect(m.state).toBe('opening')
     vi.advanceTimersByTime(399)
-    expect(m.getState()).toBe('opening')
-
+    expect(m.state).toBe('opening')
     vi.advanceTimersByTime(1)
-    expect(m.getState()).toBe('open')
+    expect(m.state).toBe('open')
   })
 
   it('honors a custom open delay', () => {
-    const m = makeMachine({ openDelay: 1000 })
+    const { m } = make({ openDelay: 1000 })
     m.send({ type: 'pointer.move' })
     vi.advanceTimersByTime(999)
-    expect(m.getState()).toBe('opening')
+    expect(m.state).toBe('opening')
     vi.advanceTimersByTime(1)
-    expect(m.getState()).toBe('open')
+    expect(m.state).toBe('open')
   })
 
   it('pointer leaving during `opening` aborts the open', () => {
-    const m = makeMachine({ openDelay: 500 })
+    const { m } = make({ openDelay: 500 })
     m.send({ type: 'pointer.move' })
     vi.advanceTimersByTime(200)
     m.send({ type: 'pointer.leave' })
-    expect(m.getState()).toBe('closed')
+    expect(m.state).toBe('closed')
     vi.advanceTimersByTime(500)
-    expect(m.getState()).toBe('closed')
+    expect(m.state).toBe('closed')
   })
 
   it('focus opens immediately with no delay (via `open` event)', () => {
-    const m = makeMachine()
-    // The connect's onFocus sends `open` (src: trigger.focus).
-    api(m).parts.trigger.handlers.onFocus?.()
-    expect(m.getState()).toBe('open')
+    const { m, conn } = make()
+    api(conn).parts.trigger.onFocus?.()
+    expect(m.state).toBe('open')
   })
 })
 
@@ -149,28 +124,25 @@ describe('opening', () => {
 
 describe('skip-delay window', () => {
   it('opens instantly while the skip window is active', () => {
-    // First tooltip opens (focus) and starts the skip window via setGlobalId.
-    const first = makeMachine({ skipDelayDuration: 300 })
-    first.send({ type: 'open' })
-    expect(first.getState()).toBe('open')
+    const first = make({ skipDelayDuration: 300 })
+    first.m.send({ type: 'open' })
+    expect(first.m.state).toBe('open')
     expect(tooltipStore.isInSkipWindow()).toBe(true)
 
-    // A second tooltip hovered within the window skips the delay.
-    const second = makeMachine({ skipDelayDuration: 300 })
-    second.send({ type: 'pointer.move' })
-    expect(second.getState()).toBe('open')
-    expect(second.getContext().hasInstantOpen).toBe(true)
+    // A pointer move inside the skip window opens immediately — no `opening`.
+    const second = make({ skipDelayDuration: 300 })
+    second.m.send({ type: 'pointer.move' })
+    expect(second.m.state).toBe('open')
   })
 
   it('skipDelayDuration=0 never starts a skip window', () => {
-    const first = makeMachine({ skipDelayDuration: 0 })
-    first.send({ type: 'open' })
+    const first = make({ skipDelayDuration: 0 })
+    first.m.send({ type: 'open' })
     expect(tooltipStore.isInSkipWindow()).toBe(false)
 
-    const second = makeMachine({ skipDelayDuration: 0 })
-    second.send({ type: 'pointer.move' })
-    // No skip window → goes through `opening`, not instant.
-    expect(second.getState()).toBe('opening')
+    const second = make({ skipDelayDuration: 0 })
+    second.m.send({ type: 'pointer.move' })
+    expect(second.m.state).toBe('opening')
   })
 })
 
@@ -180,55 +152,51 @@ describe('skip-delay window', () => {
 
 describe('closing', () => {
   it('pointer leave from open enters `closing`, then `closed` after close delay (hoverable)', () => {
-    const m = makeMachine({ closeDelay: 150 })
+    const { m } = make({ closeDelay: 150 })
     m.send({ type: 'open' })
     m.send({ type: 'pointer.leave' })
-    // Hoverable content is the default → grace period.
-    expect(m.getState()).toBe('closing')
-
+    expect(m.state).toBe('closing')
     vi.advanceTimersByTime(149)
-    expect(m.getState()).toBe('closing')
+    expect(m.state).toBe('closing')
     vi.advanceTimersByTime(1)
-    expect(m.getState()).toBe('closed')
+    expect(m.state).toBe('closed')
   })
 
   it('re-entering during the grace period returns to open', () => {
-    const m = makeMachine({ closeDelay: 150 })
+    const { m } = make({ closeDelay: 150 })
     m.send({ type: 'open' })
     m.send({ type: 'pointer.leave' })
-    expect(m.getState()).toBe('closing')
-
+    expect(m.state).toBe('closing')
     m.send({ type: 'pointer.move' })
-    expect(m.getState()).toBe('open')
+    expect(m.state).toBe('open')
   })
 
   it('disableHoverableContent closes immediately on pointer leave (no grace)', () => {
-    const m = makeMachine({ disableHoverableContent: true })
+    const { m } = make({ disableHoverableContent: true })
     m.send({ type: 'open' })
     m.send({ type: 'pointer.leave' })
-    expect(m.getState()).toBe('closed')
+    expect(m.state).toBe('closed')
   })
 
-  it('a `close` event (what the Escape adapter sends) closes from open', () => {
-    const m = makeMachine()
+  it('an `escape` event (sent by the adapter after gating) closes from open', () => {
+    const { m } = make()
     m.send({ type: 'open' })
-    expect(m.getState()).toBe('open')
-    m.send({ type: 'close', src: 'keydown.escape' })
-    expect(m.getState()).toBe('closed')
+    expect(m.state).toBe('open')
+    m.send({ type: 'escape', src: 'keydown.escape' })
+    expect(m.state).toBe('closed')
   })
 })
 
 // -----------------------------------------------------------------------------
-// onOpenChange callback
+// onOpenChange callback (fired by the connector reaction)
 // -----------------------------------------------------------------------------
 
 describe('onOpenChange', () => {
   it('fires {open:true} on open and {open:false} on close', () => {
     const onOpenChange = vi.fn()
-    const m = makeMachine({ onOpenChange })
+    const { m } = make({ onOpenChange })
     m.send({ type: 'open' })
     expect(onOpenChange).toHaveBeenCalledWith({ open: true })
-
     m.send({ type: 'close' })
     expect(onOpenChange).toHaveBeenLastCalledWith({ open: false })
   })
@@ -240,16 +208,15 @@ describe('onOpenChange', () => {
 
 describe('mutual exclusion', () => {
   it('opening a second tooltip closes the first', () => {
-    const first = makeMachine()
-    first.send({ type: 'open' })
-    expect(first.getState()).toBe('open')
+    const first = make()
+    first.m.send({ type: 'open' })
+    expect(first.m.state).toBe('open')
 
-    const second = makeMachine()
-    second.send({ type: 'open' })
+    const second = make()
+    second.m.send({ type: 'open' })
 
-    // first's trackGlobalStore subscription fires `close` when the store id changes.
-    expect(second.getState()).toBe('open')
-    expect(first.getState()).toBe('closed')
+    expect(second.m.state).toBe('open')
+    expect(first.m.state).toBe('closed') // first's trackGlobalStore closed it
   })
 })
 
@@ -259,18 +226,16 @@ describe('mutual exclusion', () => {
 
 describe('disabled', () => {
   it('the connect handlers no-op when disabled (no source opens it)', () => {
-    const m = makeMachine({ disabled: true })
-    const t = api(m).parts.trigger.handlers
-    t.onPointerMove?.({ pointerType: 'mouse' } as never)
+    const { m, conn } = make({ disabled: true })
+    const t = api(conn).parts.trigger
+    t.onPointerMove?.({ pointerType: 'mouse' })
     t.onFocus?.()
-    expect(m.getState()).toBe('closed')
+    expect(m.state).toBe('closed')
   })
 
-  it('connect exposes aria/data-disabled on the trigger when disabled', () => {
-    const m = makeMachine({ disabled: true })
-    const attrs = api(m).parts.trigger.attrs
-    expect(attrs.disabled).toBe(true)
-    expect(attrs['data-disabled']).toBe('')
+  it('connect exposes the disabled attr on the trigger when disabled', () => {
+    const { conn } = make({ disabled: true })
+    expect(api(conn).parts.trigger.disabled).toBe(true)
   })
 })
 
@@ -280,46 +245,26 @@ describe('disabled', () => {
 
 describe('connect accessibility surface', () => {
   it('content carries role=tooltip and the resolved side', () => {
-    const m = makeMachine({ open: true, placement: 'right' })
-    const content = api(m).parts.content
-    expect(content.attrs.role).toBe('tooltip')
-    expect(content.attrs['data-side']).toBe('right')
-    expect(content.variants.side).toBe('right')
+    const { conn } = make({ open: true, placement: 'right' })
+    const content = api(conn).parts.content
+    expect(content.role).toBe('tooltip')
+    expect(content.side).toBe('right')
   })
 
   it('trigger describedBy points at the content id only while open', () => {
-    const closed = makeMachine()
-    expect(api(closed).parts.trigger.attrs.describedBy).toBeUndefined()
+    const closed = make()
+    expect(api(closed.conn).parts.trigger.describedBy).toBeUndefined()
 
-    const open = makeMachine({ open: true })
-    const a = api(open)
-    expect(a.parts.trigger.attrs.describedBy).toBe(a.parts.content.attrs.id)
+    const open = make({ open: true })
+    const a = api(open.conn)
+    expect(a.parts.trigger.describedBy).toBe(a.parts.content.id)
   })
-
-  it('data-state reflects closed / delayed-open / instant-open', () => {
-    const closed = makeMachine()
-    expect(api(closed).parts.content.attrs['data-state']).toBe('closed')
-
-    // delayed open (hover path)
-    const delayed = makeMachine({ openDelay: 10 })
-    delayed.send({ type: 'pointer.move' })
-    vi.advanceTimersByTime(10)
-    expect(api(delayed).parts.content.attrs['data-state']).toBe('delayed-open')
-
-    // instant open (skip window)
-    const first = makeMachine()
-    first.send({ type: 'open' })
-    const second = makeMachine()
-    second.send({ type: 'pointer.move' })
-    expect(api(second).parts.content.attrs['data-state']).toBe('instant-open')
-  })
-
-  it('content is only `rendered` while visually open (open or closing)', () => {
-    const m = makeMachine()
-    expect(api(m).parts.content.rendered).toBe(false)
+  it('reports open while visually open (open or closing) — the mount gate', () => {
+    const { m, conn } = make()
+    expect(api(conn).open).toBe(false)
     m.send({ type: 'open' })
-    expect(api(m).parts.content.rendered).toBe(true)
+    expect(api(conn).open).toBe(true)
     m.send({ type: 'pointer.leave' }) // → closing (hoverable default)
-    expect(api(m).parts.content.rendered).toBe(true)
+    expect(api(conn).open).toBe(true)
   })
 })

@@ -16,7 +16,7 @@ export default function App() {
         <StatusBar style='auto' />
         <Text style={styles.title}>render-experiment / native</Text>
         <Text style={styles.subtitle}>
-          Long-press a chip to open its tooltip. Tap the menu button below to try the dropdown.
+          Long-press a chip to open its tooltip. Tap the menu button to try the dropdown.
           {'\n'}Tooltip opens: {openCount} Last menu action: {lastAction}
         </Text>
 

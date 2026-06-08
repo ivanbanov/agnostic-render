@@ -80,15 +80,15 @@ export function DropdownMenuTrigger(props: DropdownMenuTriggerProps) {
     triggerRef.current = node
   }
 
-  const machineProps = {
-    ...normalize(api.parts.trigger.handlers as unknown as Record<string, unknown>),
-    ...normalize(api.parts.trigger.attrs as unknown as Record<string, unknown>),
-  }
+  const machineProps = normalize(api.parts.trigger as unknown as Record<string, unknown>)
 
   const merged = mergeProps(consumerProps as Record<string, unknown>, machineProps)
 
+  // DOM presentation markers — the agnostic api value becomes `data-state` here
+  // (the attr name is a DOM concern; core stays attr-name-blind).
   const triggerProps = {
     ...merged,
+    'data-state': api.open ? 'open' : 'closed',
     ref: mergeRefs(setRef, getChildRef(children)),
   }
   return cloneOnly(children, triggerProps)
@@ -108,7 +108,7 @@ export interface DropdownMenuContentProps extends Omit<
 export function DropdownMenuContent(props: DropdownMenuContentProps) {
   const { children, ...consumerProps } = props
   const { api, triggerRef } = useDropdownMenuContext()
-  if (!api.parts.content.rendered) return null
+  if (!api.open) return null
   return (
     <PositionedContent api={api} triggerRef={triggerRef} consumerProps={consumerProps}>
       {children}
@@ -135,7 +135,7 @@ function PositionedContent({
   useEffect(() => registry.subscribe(() => forceUpdate(n => n + 1)), [registry])
 
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null)
-  const [effectiveSide, setEffectiveSide] = useState<Side>(api.parts.content.variants.side)
+  const [effectiveSide, setEffectiveSide] = useState<Side>(api.parts.content.side)
 
   // Measure: read both rects, compute the effective side (collision
   // flip), then anchor against the effective placement so the offsets
@@ -147,7 +147,7 @@ function PositionedContent({
       const triggerRect = trigger.getBoundingClientRect()
       const contentRect = contentRef.current?.getBoundingClientRect() ?? null
 
-      const preferred = api.parts.content.variants.side
+      const preferred = api.parts.content.side
       const { placement, offsetX, offsetY } = api.parts.content
       const next = pickSide(
         preferred,
@@ -172,7 +172,7 @@ function PositionedContent({
     api.parts.content.placement,
     api.parts.content.offsetX,
     api.parts.content.offsetY,
-    api.parts.content.variants.side,
+    api.parts.content.side,
     triggerRef,
   ])
 
@@ -187,7 +187,7 @@ function PositionedContent({
       if (!t) return
       const triggerRect = t.getBoundingClientRect()
       const contentRect = contentRef.current?.getBoundingClientRect() ?? null
-      const preferred = api.parts.content.variants.side
+      const preferred = api.parts.content.side
       const { placement, offsetX, offsetY } = api.parts.content
       const next = pickSide(
         preferred,
@@ -206,7 +206,7 @@ function PositionedContent({
     api.parts.content.placement,
     api.parts.content.offsetX,
     api.parts.content.offsetY,
-    api.parts.content.variants.side,
+    api.parts.content.side,
     triggerRef,
   ])
 
@@ -266,29 +266,30 @@ function PositionedContent({
   const items = registry.read()
   const apiWithItems = api.withItems(items)
 
-  const handlerProps = normalize(
-    apiWithItems.parts.content.handlers as unknown as Record<string, unknown>,
-  )
-  const attrProps = normalize(
-    apiWithItems.parts.content.attrs as unknown as Record<string, unknown>,
-  )
+  // Strip the positioning fields the view CONSUMES (not spread); normalize the
+  // rest (handlers + attrs) by name.
+  const {
+    side: _s,
+    placement: _p,
+    offsetX: _ox,
+    offsetY: _oy,
+    ...spreadable
+  } = apiWithItems.parts.content
+  const machineProps = normalize(spreadable as unknown as Record<string, unknown>)
   const anchorCoords = anchor ? { top: anchor.y, left: anchor.x } : undefined
 
   const merged = mergeProps(consumerProps, {
-    ...handlerProps,
-    ...attrProps,
+    ...machineProps,
+    // DOM presentation markers derived in the view (core stays attr-name-blind).
+    'data-state': api.open ? 'open' : 'closed',
+    'data-orientation': 'vertical',
     'data-side': effectiveSide,
     onKeyDownCapture: onContentKeyDownCapture,
   })
 
   return (
     <Styled.Positioner anchored={!!anchor} css={anchorCoords}>
-      <Styled.Content
-        {...merged}
-        {...apiWithItems.parts.content.variants}
-        side={effectiveSide}
-        ref={contentRef}
-      >
+      <Styled.Content {...merged} side={effectiveSide} ref={contentRef}>
         <DropdownMenuCurrentApiRef.Provider value={apiWithItems}>
           {children}
         </DropdownMenuCurrentApiRef.Provider>
@@ -341,13 +342,32 @@ function ItemBase({
     checked,
     onSelect,
   })
-  const handlerProps = normalize(part.handlers as unknown as Record<string, unknown>)
-  const attrProps = normalize(part.attrs as unknown as Record<string, unknown>)
-  const machineProps = { ...handlerProps, ...attrProps }
-  const merged = mergeProps(consumerProps, machineProps)
+
+  // `highlighted` is a pure styling variant the view consumes — strip it.
+  // `disabled` stays in the bag so normalize() emits `aria-disabled`; it doubles
+  // as a styling variant (read from `part` below).
+  const { highlighted, ...spreadable } = part
+  const itemDisabled = part.disabled
+  const machineProps = normalize(spreadable as unknown as Record<string, unknown>)
+  const isToggleKind = kind === 'checkbox' || kind === 'radio'
+  const dataState = isToggleKind
+    ? checked === true
+      ? 'checked'
+      : checked === 'indeterminate'
+        ? 'indeterminate'
+        : 'unchecked'
+    : 'open'
+  const merged = mergeProps(consumerProps, {
+    ...machineProps,
+    // DOM presentation markers derived in the view.
+    'data-state': dataState,
+    'data-orientation': 'vertical',
+    ...(highlighted ? { 'data-highlighted': '' } : {}),
+    ...(itemDisabled ? { 'data-disabled': '' } : {}),
+  })
 
   return (
-    <Styled.Item {...merged} {...part.variants}>
+    <Styled.Item {...merged} highlighted={highlighted} disabled={itemDisabled}>
       <DropdownMenuItemCheckedRef.Provider value={checked ?? false}>
         {children}
       </DropdownMenuItemCheckedRef.Provider>
@@ -509,7 +529,7 @@ export type DropdownMenuSeparatorProps = ComponentPropsWithoutRef<'div'>
 
 export function DropdownMenuSeparator(props: DropdownMenuSeparatorProps) {
   const { api } = useDropdownMenuContext()
-  const attrProps = normalize(api.parts.separator.attrs as unknown as Record<string, unknown>)
+  const attrProps = normalize(api.parts.separator as unknown as Record<string, unknown>)
   const merged = mergeProps(props as Record<string, unknown>, attrProps)
   return <Styled.Separator {...merged} />
 }
@@ -521,7 +541,7 @@ export interface DropdownMenuLabelProps extends Omit<ComponentPropsWithoutRef<'d
 export function DropdownMenuLabel(props: DropdownMenuLabelProps) {
   const { children, ...consumerProps } = props
   const { api } = useDropdownMenuContext()
-  const attrProps = normalize(api.parts.label.attrs as unknown as Record<string, unknown>)
+  const attrProps = normalize(api.parts.label as unknown as Record<string, unknown>)
   const merged = mergeProps(consumerProps as Record<string, unknown>, attrProps)
   return <Styled.Label {...merged}>{children}</Styled.Label>
 }
@@ -533,7 +553,7 @@ export interface DropdownMenuGroupProps extends Omit<ComponentPropsWithoutRef<'d
 export function DropdownMenuGroup(props: DropdownMenuGroupProps) {
   const { children, ...consumerProps } = props
   const { api } = useDropdownMenuContext()
-  const attrProps = normalize(api.parts.group.attrs as unknown as Record<string, unknown>)
+  const attrProps = normalize(api.parts.group as unknown as Record<string, unknown>)
   const merged = mergeProps(consumerProps as Record<string, unknown>, attrProps)
   return <Styled.Group {...merged}>{children}</Styled.Group>
 }

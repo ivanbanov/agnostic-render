@@ -9,9 +9,8 @@
  * No defaults, no implementation — those live in props.ts and machine.ts.
  */
 
-import type { AttrBindings, Part } from '@render-experiment/machine-core'
-import type { Placement } from '@render-experiment/utils'
-import type { DropdownMenuContentVariants, DropdownMenuItemVariants } from './parts'
+import type { AttrBindings, EventBindings } from '@render-experiment/machine-core'
+import type { Placement, Side } from '@render-experiment/utils'
 
 export type { Placement }
 
@@ -117,12 +116,26 @@ export interface DropdownMenuItemProps {
 // -----------------------------------------------------------------------------
 
 export interface DropdownMenuContext {
+  // --- config the transitions need, seeded from props ONCE at construction ---
+  // (the machine never re-reads props; see ARCHITECTURE.md "machine never sees
+  // props"). Callbacks + controlled `open` stay on props and are handled by the
+  // connector, never here.
+  /** Stable id for the menu instance — drives the derived element ids + store. */
+  id: string
+  /** Preferred placement (collision flip happens in the view, not here). */
+  placement: Placement
+  /** Whether keyboard navigation wraps at the boundaries. */
+  loop: boolean
+  /** Whether typeahead character matching is enabled. */
+  typeahead: boolean
+  /** Default close-on-select for regular items (per-item override wins). */
+  closeOnSelect: boolean
+
+  // --- internal state ---
   /** value of the currently-highlighted item, or null. */
   highlightedValue: string | null
   /** When true, pointer-move highlight is paused (during keyboard nav). */
   suspendPointer: boolean
-  /** Resolved placement after collision logic (today: just the prop). */
-  currentPlacement: Placement
   /** Type-ahead buffer; cleared after a quiet period. */
   typeaheadBuffer: string
   /** Time of last typeahead key — adapters compare to clear the buffer. */
@@ -185,98 +198,71 @@ export type DropdownMenuEvent =
 export type DropdownMenuState = 'closed' | 'open'
 
 // -----------------------------------------------------------------------------
-// Machine vocabulary (the Schema)
+// Computed — derived data (from context + state, never props)
 // -----------------------------------------------------------------------------
 
-/** Every action name the machine references. */
-export type DropdownMenuActions =
-  | 'invokeOnOpen'
-  | 'invokeOnClose'
-  | 'setGlobalId'
-  | 'clearGlobalId'
-  | 'clearHighlight'
-  | 'highlightItem'
-  | 'clearHighlightIfMatch'
-  | 'suspendPointer'
-  | 'resumePointer'
-  | 'setPendingFirst'
-  | 'setPendingLast'
-  | 'clearPendingHighlight'
-  | 'applyPendingHighlight'
-  | 'highlightFirst'
-  | 'highlightLast'
-  | 'highlightNext'
-  | 'highlightPrev'
-  | 'clickHighlightedItem'
-  | 'typeaheadMatch'
-
-/** Every guard name the machine references. */
-export type DropdownMenuGuards = 'shouldCloseOnSelect'
-
-/** Every effect name the machine references. */
-export type DropdownMenuEffects = 'trackEscapeKey' | 'trackGlobalStore'
-
 /**
- * Derived values, memoized by machine version. Available to actions,
- * guards, effects (via `params.computed`) and to the connect (via the
- * snapshot's `computed` field).
+ * Derived values, lazily memoized. Available to guards/actions/effects (via
+ * `params.computed`) and to the connect (via the snapshot's `computed` field).
+ * All derive from context/state — the machine never reads props.
  */
-export type DropdownMenuComputed = {
+export interface DropdownMenuComputed {
   /** True iff the machine is in the `open` state. */
   open: boolean
-  /** Stable id for the trigger element — derived from `props.id`. */
+  /** Stable id for the trigger element — derived from `context.id`. */
   triggerId: string
-  /** Stable id for the content element — derived from `props.id`. */
+  /** Stable id for the content element — derived from `context.id`. */
   contentId: string
-}
-
-/**
- * Single source of truth for the dropdown-menu machine — wired into
- * `setup<DropdownMenuSchema>().createMachine({ ... })`. The compiler enforces:
- *   - every name referenced in `entry / exit / actions / effects / guard`
- *     belongs to one of these unions
- *   - every transition `target` is a declared `state`
- *   - `implementations.{actions,guards,effects}` are exhaustive — missing
- *     keys fail, extra keys fail
- *   - `computed` returns the declared result type for each key
- */
-export type DropdownMenuSchema = {
-  context: DropdownMenuContext
-  props: DropdownMenuMachineProps
-  event: DropdownMenuEvent
-  state: DropdownMenuState
-  actions: DropdownMenuActions
-  guards: DropdownMenuGuards
-  effects: DropdownMenuEffects
-  computed: DropdownMenuComputed
 }
 
 // -----------------------------------------------------------------------------
 // Connect API
 // -----------------------------------------------------------------------------
 
-export type DropdownMenuItemPart = Part<DropdownMenuItemVariants, { highlighted: boolean }>
+/**
+ * A named part — one flat bag the view spreads: event handlers + substrate
+ * attributes. Matches the tooltip's flat part shape; the adapter's normalize()
+ * maps each key by name. Core emits no `data-*`; each adapter derives whatever
+ * `data-*` it wants from the machine state + these fields.
+ */
+export type DropdownMenuPart = EventBindings & AttrBindings
+
+/**
+ * The content part also carries positioning fields the view CONSUMES (reads by
+ * name) rather than spreads — render destructures these out before normalize().
+ */
+export type DropdownMenuContentPart = DropdownMenuPart & {
+  side: Side
+  placement: Placement
+  offsetX: number
+  offsetY: number
+}
+
+/**
+ * A per-item part: the flat handler/attr bag plus the `highlighted` flag the
+ * view uses for its styling variant.
+ */
+export type DropdownMenuItemPart = DropdownMenuPart & {
+  highlighted: boolean
+  disabled: boolean
+}
 
 export interface DropdownMenuApi {
   open: boolean
   setOpen: (next: boolean) => void
   /**
-   * Resolved focus-trap mode (default false). The render layer reads this
-   * to decide whether to refocus the trigger on Tab — see connect's Tab
-   * handler. Surfaced here so the default lives in one place (props.ts).
+   * Resolved focus-trap mode (default false). The render layer reads this to
+   * decide whether to refocus the trigger on Tab — see connect's Tab handler.
    */
   focusTrap: boolean
 
   parts: {
-    trigger: Part
-    content: Part<
-      DropdownMenuContentVariants,
-      { placement: Placement; offsetX: number; offsetY: number; rendered: boolean }
-    >
+    trigger: DropdownMenuPart
+    content: DropdownMenuContentPart
     /** Static parts — same attrs for every render call. */
-    separator: { attrs: AttrBindings }
-    label: { attrs: AttrBindings }
-    group: { attrs: AttrBindings }
+    separator: DropdownMenuPart
+    label: DropdownMenuPart
+    group: DropdownMenuPart
   }
 
   /** Per-item part producer. */
@@ -285,8 +271,8 @@ export interface DropdownMenuApi {
   /**
    * Re-derive the api with the ordered list of menu items wired into the
    * keyboard / pointer handlers. The render layer calls this with the items
-   * it's about to render so that ARROW_DOWN, typeahead, etc. can compute
-   * "next item" without storing the list inside the machine context.
+   * it's about to render so ARROW_DOWN, typeahead, etc. can compute "next item"
+   * without storing the list inside the machine context.
    */
   withItems: (items: DropdownMenuItemProps[]) => DropdownMenuApi
 }

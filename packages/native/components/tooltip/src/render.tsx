@@ -27,14 +27,13 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useId,
   useRef,
   useState,
   type ReactNode,
 } from 'react'
 import {
-  BackHandler,
+  Modal,
   Pressable,
   Text,
   View,
@@ -50,8 +49,13 @@ import {
   type TooltipProps,
 } from '@render-experiment/tooltip-core'
 import { useTooltipApi } from './generated/api'
-import { resolveContent, resolvePositioner } from './generated/elements'
+import * as Styled from './generated/elements'
 import { useTooltipProviderConfig } from './context'
+
+// Painted text presentation for the content box. The styled Content is a View;
+// RN Text doesn't inherit color from a parent View, so the label carries these
+// explicitly. (Mirrors the shared content style's color/fontSize.)
+const CONTENT_TEXT = { color: '#ffffff', fontSize: 14 } as const
 
 // -----------------------------------------------------------------------------
 // Internal context — Trigger and Content read api + triggerRef + anchor
@@ -142,7 +146,7 @@ export function TooltipTrigger(props: TooltipTriggerProps) {
   // Machine-supplied bindings (handler functions). The native normalizer
   // drops hover-only handlers; we supplement with onLongPress/onPressOut
   // below to actually open/close.
-  const normalized = normalize(api.parts.trigger.handlers as unknown as Record<string, unknown>)
+  const normalized = normalize(api.parts.trigger as unknown as Record<string, unknown>)
 
   const machineProps: Record<string, unknown> = {
     ...(normalized as object),
@@ -178,79 +182,43 @@ export interface TooltipContentProps extends Omit<ViewProps, 'children'> {
 
 export function TooltipContent(props: TooltipContentProps) {
   const { children, ...consumerProps } = props
-  const { api, props: ctxProps, anchor } = useTooltipCtxOrThrow()
+  const { api, anchor } = useTooltipCtxOrThrow()
 
-  const rendered = api.parts.content.rendered
-  const { side } = api.parts.content.variants
+  const rendered = api.open
 
-  // Wire Android back button to close (mirror of trackEscapeKey on web).
-  useEffect(() => {
-    if (!rendered) return
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      api.setOpen(false)
-      return true
-    })
-    return () => sub.remove()
-  }, [rendered, api])
+  // The Android back button is wired in effects.ts (a ComponentEffect the
+  // generated useTooltipApi runs via useEffects) — mirror of the web Escape
+  // listener — so it isn't re-implemented here.
 
   if (!rendered) return null
 
-  const positionerStyle = resolvePositioner({ anchored: !!anchor })
-  const contentStyle = resolveContent({ side })
-
-  // Convert anchor center → absolute coords for the positioner.
-  const positionedStyle = anchor
-    ? {
-        ...positionerStyle,
-        left: anchor.x + anchor.width / 2,
-        top: anchor.y + anchor.height,
-      }
-    : positionerStyle
-
-  // Inline rendering. The tooltip is absolutely positioned in window-space.
-  // Consumer props land on the inner content View (the painted box);
-  // the positioner is structural and consumer-opaque.
-  const machineProps: Record<string, unknown> = {
-    style: [contentStyle, anchorContentTransform(side)],
-    pointerEvents: 'auto',
+  // Render through a Modal so the tooltip lives in WINDOW space — RN's
+  // `position: absolute` is relative to the nearest positioned ancestor, not the
+  // window, so an inline tooltip would be offset by the trigger's distance from
+  // its container (the same "wrong place" bug the dropdown had). Inside the
+  // Modal, the window anchor coords from measureInWindow place it correctly.
+  //
+  // The styled Content's `side` variant carries web CSS offsets (top/left:'100%')
+  // and percentage transforms that don't translate to RN, so we don't pass
+  // `side`; the absolute top/left below positions it directly under the trigger.
+  const positionedStyle = {
+    position: 'absolute' as const,
+    left: anchor ? anchor.x : 0,
+    top: anchor ? anchor.y + anchor.height + 4 : 0,
   }
-  const merged = mergeProps(consumerProps as Record<string, unknown>, machineProps)
+
+  const merged = mergeProps(consumerProps as Record<string, unknown>, {
+    style: positionedStyle,
+    pointerEvents: 'auto',
+  })
 
   return (
-    <View style={positionedStyle} pointerEvents='box-none'>
-      <View {...(merged as ViewProps)}>
-        {typeof children === 'string' ? (
-          <Text
-            style={{
-              color: (contentStyle.color as string) ?? '#fff',
-              fontSize: contentStyle.fontSize as number,
-            }}
-          >
-            {children}
-          </Text>
-        ) : (
-          children
-        )}
-      </View>
-    </View>
+    <Modal transparent visible animationType='fade' onRequestClose={() => api.setOpen(false)}>
+      <Styled.Content {...merged}>
+        {typeof children === 'string' ? <Text style={CONTENT_TEXT}>{children}</Text> : children}
+      </Styled.Content>
+    </Modal>
   )
-}
-
-// Equivalent of RN's edge-pinning trick: shift the content so the pinned
-// edge sits on the anchor point.
-function anchorContentTransform(side: 'top' | 'bottom' | 'left' | 'right'): {
-  transform?: Array<{ translateX?: number; translateY?: number }>
-} {
-  switch (side) {
-    case 'top':
-      return { transform: [{ translateY: -8 }, { translateX: -50 }] }
-    case 'bottom':
-      return { transform: [{ translateY: 8 }, { translateX: -50 }] }
-    case 'left':
-      return { transform: [{ translateX: -8 }, { translateY: -50 }] }
-    case 'right':
-      return { transform: [{ translateX: 8 }, { translateY: -50 }] }
-  }
 }
 
 // -----------------------------------------------------------------------------

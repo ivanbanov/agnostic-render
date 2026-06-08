@@ -4,6 +4,9 @@ import { Tooltip } from '@render-experiment/tooltip-react'
 
 export function App() {
   const [openCount, setOpenCount] = useState(0)
+  const [lastAction, setLastAction] = useState('(nothing yet)')
+  const [theme, setTheme] = useState('system')
+  const [bookmarks, setBookmarks] = useState({ urls: true, github: false })
 
   return (
     <div
@@ -116,58 +119,28 @@ export function App() {
 
       <section style={{ marginTop: 32 }}>
         <h2>dropdown-menu</h2>
-        <DropdownMenuDemos />
-      </section>
-    </div>
-  )
-}
-
-function DropdownMenuDemos() {
-  const [lastAction, setLastAction] = useState<string>('(nothing yet)')
-  const [bookmarks, setBookmarks] = useState({ urls: true, github: false })
-  const [theme, setTheme] = useState('system')
-
-  return (
-    <div style={{ display: 'grid', gap: 24 }}>
-      <p style={{ color: '#888', fontSize: 13 }}>
-        Last action: <code>{lastAction}</code>
-      </p>
-
-      <section>
-        <h3>Basic — items + label + separator</h3>
+        <p style={{ color: '#888', fontSize: 13 }}>
+          Click to open. Arrow keys / Home / End navigate, typeahead matches, Escape closes. Last
+          action: {lastAction}
+        </p>
         <DropdownMenu>
           <DropdownMenu.Trigger>
             <button>Open menu</button>
           </DropdownMenu.Trigger>
           <DropdownMenu.Content>
             <DropdownMenu.Label>Actions</DropdownMenu.Label>
-            <DropdownMenu.Item value='new' onSelect={() => setLastAction('new file')}>
-              New File
+            <DropdownMenu.Item value='new' onSelect={() => setLastAction('new')}>
+              New
             </DropdownMenu.Item>
-            <DropdownMenu.Item value='open' onSelect={() => setLastAction('open file')}>
-              Open File…
-            </DropdownMenu.Item>
-            <DropdownMenu.Item value='save' onSelect={() => setLastAction('save')}>
-              Save
+            <DropdownMenu.Item value='open' onSelect={() => setLastAction('open')}>
+              Open…
             </DropdownMenu.Item>
             <DropdownMenu.Item value='save-as' disabled>
               Save As… (disabled)
             </DropdownMenu.Item>
             <DropdownMenu.Separator />
-            <DropdownMenu.Item value='quit' onSelect={() => setLastAction('quit')}>
-              Quit
-            </DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu>
-      </section>
 
-      <section>
-        <h3>Checkbox items</h3>
-        <DropdownMenu>
-          <DropdownMenu.Trigger>
-            <button>Bookmarks</button>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Content>
+            <DropdownMenu.Label>Bookmarks</DropdownMenu.Label>
             <DropdownMenu.CheckboxItem
               value='urls'
               checked={bookmarks.urls}
@@ -184,18 +157,9 @@ function DropdownMenuDemos() {
               <DropdownMenu.ItemIndicator />
               Show GitHub
             </DropdownMenu.CheckboxItem>
-          </DropdownMenu.Content>
-        </DropdownMenu>
-      </section>
+            <DropdownMenu.Separator />
 
-      <section>
-        <h3>Radio group</h3>
-        <DropdownMenu>
-          <DropdownMenu.Trigger>
-            <button>Theme: {theme}</button>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Content>
-            <DropdownMenu.Label>Theme</DropdownMenu.Label>
+            <DropdownMenu.Label>Theme: {theme}</DropdownMenu.Label>
             <DropdownMenu.RadioGroup value={theme} onValueChange={setTheme}>
               <DropdownMenu.RadioItem value='light'>
                 <DropdownMenu.ItemIndicator>●</DropdownMenu.ItemIndicator>
@@ -210,72 +174,6 @@ function DropdownMenuDemos() {
                 System
               </DropdownMenu.RadioItem>
             </DropdownMenu.RadioGroup>
-          </DropdownMenu.Content>
-        </DropdownMenu>
-      </section>
-
-      <section>
-        <h3>focusTrap — Tab behavior</h3>
-        <p style={{ color: '#888', fontSize: 13 }}>
-          Open a menu, then press Tab. Default (<code>focusTrap: false</code>) closes the menu and
-          moves focus to the next button. With <code>focusTrap</code>, Tab is swallowed — the menu
-          stays open and only Escape (or selecting an item) exits.
-        </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button>before</button>
-
-          <DropdownMenu>
-            <DropdownMenu.Trigger>
-              <button>Tab exits (default)</button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Content>
-              <DropdownMenu.Item value='a' onSelect={() => setLastAction('loose / A')}>
-                Item A
-              </DropdownMenu.Item>
-              <DropdownMenu.Item value='b' onSelect={() => setLastAction('loose / B')}>
-                Item B
-              </DropdownMenu.Item>
-            </DropdownMenu.Content>
-          </DropdownMenu>
-
-          <DropdownMenu focusTrap>
-            <DropdownMenu.Trigger>
-              <button>Tab trapped</button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Content>
-              <DropdownMenu.Item value='a' onSelect={() => setLastAction('trapped / A')}>
-                Item A
-              </DropdownMenu.Item>
-              <DropdownMenu.Item value='b' onSelect={() => setLastAction('trapped / B')}>
-                Item B
-              </DropdownMenu.Item>
-            </DropdownMenu.Content>
-          </DropdownMenu>
-
-          <button>after</button>
-        </div>
-      </section>
-
-      <section>
-        <h3>Groups</h3>
-        <DropdownMenu>
-          <DropdownMenu.Trigger>
-            <button>Categories</button>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Content>
-            <DropdownMenu.Group>
-              <DropdownMenu.Label>Fruits</DropdownMenu.Label>
-              <DropdownMenu.Item value='apple'>Apple</DropdownMenu.Item>
-              <DropdownMenu.Item value='banana'>Banana</DropdownMenu.Item>
-              <DropdownMenu.Item value='cherry'>Cherry</DropdownMenu.Item>
-            </DropdownMenu.Group>
-            <DropdownMenu.Separator />
-            <DropdownMenu.Group>
-              <DropdownMenu.Label>Vegetables</DropdownMenu.Label>
-              <DropdownMenu.Item value='asparagus'>Asparagus</DropdownMenu.Item>
-              <DropdownMenu.Item value='broccoli'>Broccoli</DropdownMenu.Item>
-              <DropdownMenu.Item value='carrot'>Carrot</DropdownMenu.Item>
-            </DropdownMenu.Group>
           </DropdownMenu.Content>
         </DropdownMenu>
       </section>

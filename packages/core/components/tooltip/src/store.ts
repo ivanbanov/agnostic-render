@@ -1,41 +1,28 @@
 /**
- * Tooltip global store — singleton state shared across all tooltip
- * instances. Used to enforce "only one tooltip open at a time" and the
- * skip-delay window that lets a newly-hovered tooltip open instantly
- * after another has just closed.
+ * Tooltip global store — singleton shared across all tooltip instances:
+ * enforces "only one open at a time" + the skip-delay window (a newly hovered
+ * tooltip opens instantly right after another closes).
  *
- * The facade below names the operations so machine effects and the rare
- * external consumer (e.g. test setup that resets between tests) read
- * cleanly.
+ * Built on machine-core's signal-backed `createStore`; base get/set/subscribe
+ * come for free, domain methods are declared inline.
  */
 
-import { createStore } from '@render-experiment/store'
+import { createStore } from '@render-experiment/machine-core'
 
 interface TooltipStoreState {
   openId: string | null
-  /** When non-null, new tooltips skip openDelay until skipUntil. */
+  /** When non-null, new tooltips skip openDelay until this timestamp. */
   skipUntil: number | null
 }
 
-const store = createStore<TooltipStoreState>({
-  openId: null,
-  skipUntil: null,
-})
+const initialStore: TooltipStoreState = { openId: null, skipUntil: null }
 
-export const tooltipStore = {
-  get: store.getState,
-  subscribe: store.subscribe,
-  setOpen(id: string | null) {
-    store.setState({ openId: id })
-  },
-  startSkipWindow(ms: number) {
-    store.setState({ skipUntil: Date.now() + ms })
-  },
-  endSkipWindow() {
-    store.setState({ skipUntil: null })
-  },
-  isInSkipWindow() {
-    const { skipUntil } = store.getState()
+export const tooltipStore = createStore(initialStore, state => ({
+  setOpen: (id: string | null) => state.set({ openId: id }),
+  startSkipWindow: (delay: number) => state.set({ skipUntil: Date.now() + delay }),
+  endSkipWindow: () => state.set({ skipUntil: null }),
+  isInSkipWindow: () => {
+    const { skipUntil } = state.get()
     return skipUntil !== null && Date.now() < skipUntil
   },
-}
+}))

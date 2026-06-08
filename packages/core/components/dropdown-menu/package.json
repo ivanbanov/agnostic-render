@@ -11,7 +11,7 @@
   "dependencies": {
     "@render-experiment/dropdown-menu-shared": "workspace:*",
     "@render-experiment/machine-core": "workspace:*",
-    "@render-experiment/store": "workspace:*",
+    "@render-experiment/style-engine-core": "workspace:*",
     "@render-experiment/utils": "workspace:*"
   }
 }

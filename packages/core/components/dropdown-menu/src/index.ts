@@ -24,4 +24,4 @@ export {
   type PositioningOptions,
   type Side,
 } from '@render-experiment/utils'
-export type { Style, StyleSpec, StyleValue } from '@render-experiment/machine-core'
+export type { Style, StyleSpec, StyleValue } from '@render-experiment/style-engine-core'

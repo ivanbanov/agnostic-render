@@ -1,275 +1,257 @@
 /**
  * DropdownMenu machine — substrate-agnostic state machine.
  *
- * States: closed → open → closed
+ * States: closed ↔ open
  *
- * Mirrors the W3C menu-button pattern + Radix's DropdownMenu behavior:
- *   - Click trigger to toggle
- *   - Arrow / Enter / Space on trigger to open with focus on first item
- *   - Up Arrow on trigger to open with focus on last item
- *   - Arrow Up/Down to navigate; Home/End to jump
- *   - Enter / Space to activate; Escape to close
- *   - Type-ahead (printable chars match item text)
- *   - Tab closes the menu
- *   - Global single-open store: opening one closes any other
+ * The machine never sees props (see ARCHITECTURE.md). `dropdownMenuMachineConfig`
+ * takes the resolved props ONCE, seeds the config the transitions need into
+ * context (id, placement, loop, typeahead, closeOnSelect), and computes the
+ * initial state. From then on it reads only context/events:
+ *   - id → context, drives the global single-open store + derived element ids
+ *   - loop / typeahead / closeOnSelect → context, read by guards/actions
+ *   - the single-open store → store.ts (a shared signal)
  *
- * What is NOT here (intentional):
- *   - DOM event listeners outside named effects (substrate-specific)
- *   - Submenus / intent polygon / parent-child wiring (v2)
- *   - Modal backdrop, portal, focus trap (render-layer concerns)
+ * Callbacks (onOpenChange) and controlled `open` are NOT here — the connector
+ * observes the machine and fires them (see connect.ts reactions).
  *
- * Sibling files:
- *   - types.ts    — public types
- *   - props.ts    — defaults + resolver
- *   - store.ts    — global singleton state
- *   - connect.ts  — logical surface (handlers + attrs the view consumes)
- *   - utils.ts    — item walkers (step, typeaheadFind, …)
- *   - elements/   — paint-only style specs per element
- *   - index.ts    — public exports
+ * Escape is NOT a machine effect: its listener + prevent-able gate live in the
+ * target's effects.ts, which sends the plain `escape` event the machine handles.
+ *
+ * Sibling files: types.ts · props.ts · store.ts · connect.ts · utils.ts · index.ts
  */
 
-import { setup } from '@render-experiment/machine-core'
+import { act, config, type Machine } from '@render-experiment/machine-core'
 import { TYPEAHEAD_RESET_MS } from './props'
 import { dropdownMenuStore } from './store'
-import type { DropdownMenuSchema } from './types'
+import type {
+  DropdownMenuComputed,
+  DropdownMenuContext,
+  DropdownMenuEvent,
+  DropdownMenuMachineProps,
+  DropdownMenuState,
+} from './types'
 import { firstEnabled, lastEnabled, makeSelectEvent, step, typeaheadFind } from './utils'
 
-// Receives already-resolved config (defaults applied at the adapter entry),
-// so every prop is concrete and read directly off `props`.
-export const dropdownMenuMachine = setup<DropdownMenuSchema>().createMachine({
-  computed: {
-    open: ({ state }) => state === 'open',
-    triggerId: ({ props }) => `dropdown-menu:${props.id}:trigger`,
-    contentId: ({ props }) => `dropdown-menu:${props.id}:content`,
-  },
-  initial: props => ((props.open ?? props.defaultOpen) ? 'open' : 'closed'),
-
-  context: props => ({
+/**
+ * Build the dropdown-menu machine CONFIG from already-resolved props (defaults
+ * applied). Returns a config — the target bridge applies its adapter
+ * (withAdapter) and builds the running machine. Props are read ONCE here to
+ * seed context + initial state.
+ */
+export function dropdownMenuMachineConfig(props: DropdownMenuMachineProps) {
+  const context: DropdownMenuContext = {
+    id: props.id,
+    placement: props.placement,
+    loop: props.loop,
+    typeahead: props.typeahead,
+    closeOnSelect: props.closeOnSelect,
     highlightedValue: null,
     suspendPointer: false,
-    currentPlacement: props.placement,
     typeaheadBuffer: '',
     typeaheadLastTime: 0,
     pendingHighlight: null,
-  }),
+  }
 
-  states: {
-    closed: {
-      entry: ['clearGlobalId', 'clearHighlight', 'clearPendingHighlight'],
-      on: {
-        'trigger.click': {
-          target: 'open',
-          actions: ['invokeOnOpen', 'setGlobalId'],
-        },
-        'trigger.key.open': {
-          target: 'open',
-          actions: ['invokeOnOpen', 'setGlobalId', 'setPendingFirst'],
-        },
-        'trigger.key.open.last': {
-          target: 'open',
-          actions: ['invokeOnOpen', 'setGlobalId', 'setPendingLast'],
-        },
-        open: {
-          target: 'open',
-          actions: ['invokeOnOpen', 'setGlobalId'],
-        },
-      },
+  return config<DropdownMenuState, DropdownMenuContext, DropdownMenuEvent, DropdownMenuComputed>({
+    initial: (props.open ?? props.defaultOpen) ? 'open' : 'closed',
+    context,
+
+    computed: {
+      open: ({ state }) => state === 'open',
+      triggerId: ({ context }) => `dropdown-menu:${context.id}:trigger`,
+      contentId: ({ context }) => `dropdown-menu:${context.id}:content`,
     },
 
-    open: {
-      effects: ['trackEscapeKey', 'trackGlobalStore'],
-      on: {
-        close: { target: 'closed', actions: ['invokeOnClose'] },
-        'trigger.click': { target: 'closed', actions: ['invokeOnClose'] },
-        escape: { target: 'closed', actions: ['invokeOnClose'] },
-
-        'item.pointermove': { actions: ['highlightItem'] },
-        'item.pointerleave': { actions: ['clearHighlightIfMatch'] },
-        'item.click': [
-          {
-            guard: 'shouldCloseOnSelect',
-            target: 'closed',
-            // onSelect was already invoked synchronously at the connect's
-            // call site so the guard could read event.defaultPrevented.
-            actions: ['invokeOnClose'],
+    states: {
+      closed: {
+        // Release the global slot + reset transient highlight state on close.
+        entry: ['clearGlobalId', act({ highlightedValue: null, pendingHighlight: null })],
+        on: {
+          'trigger.click': { target: 'open', actions: ['setGlobalId'] },
+          'trigger.key.open': {
+            target: 'open',
+            actions: ['setGlobalId', act({ pendingHighlight: 'first' })],
           },
-          {},
-        ],
-
-        'arrow.down': { actions: ['suspendPointer', 'highlightNext'] },
-        'arrow.up': { actions: ['suspendPointer', 'highlightPrev'] },
-        home: { actions: ['suspendPointer', 'highlightFirst'] },
-        end: { actions: ['suspendPointer', 'highlightLast'] },
-
-        enter: { actions: ['clickHighlightedItem'] },
-        space: { actions: ['clickHighlightedItem'] },
-
-        'typeahead.char': { actions: ['typeaheadMatch'] },
-
-        'pointer.resume': { actions: ['resumePointer'] },
-
-        'items.ready': { actions: ['applyPendingHighlight'] },
-      },
-    },
-  },
-
-  implementations: {
-    guards: {
-      shouldCloseOnSelect: ({ props, event }) => {
-        // Only meaningful for `item.click`. Guarding by type also narrows
-        // the payload so `selectEvent` / `closeOnSelect` are typed.
-        if (event.type !== 'item.click') return false
-        // Consumer can cancel close via onSelect(event).preventDefault().
-        if (event.selectEvent.defaultPrevented) return false
-        // Per-item override (false for checkbox/radio); otherwise resolved prop.
-        if (event.closeOnSelect !== undefined) return event.closeOnSelect
-        return props.closeOnSelect
-      },
-    },
-
-    actions: {
-      invokeOnOpen: ({ props }) => {
-        props.onOpenChange?.({ open: true })
-      },
-      invokeOnClose: ({ props }) => {
-        props.onOpenChange?.({ open: false })
-      },
-      setGlobalId: ({ props }) => {
-        dropdownMenuStore.setOpen(props.id)
-      },
-      clearGlobalId: ({ props }) => {
-        const { id } = props
-        if (dropdownMenuStore.get().openId === id) {
-          dropdownMenuStore.setOpen(null)
-        }
+          'trigger.key.open.last': {
+            target: 'open',
+            actions: ['setGlobalId', act({ pendingHighlight: 'last' })],
+          },
+          open: { target: 'open', actions: ['setGlobalId'] },
+        },
       },
 
-      clearHighlight: ({ setContext }) => {
-        setContext({ highlightedValue: null })
-      },
-      highlightItem: ({ context, setContext, event }) => {
-        if (context.suspendPointer) return
-        if (event.type !== 'item.pointermove') return
-        setContext({ highlightedValue: event.value })
-      },
-      clearHighlightIfMatch: ({ context, setContext, event }) => {
-        if (context.suspendPointer) return
-        if (event.type !== 'item.pointerleave') return
-        if (context.highlightedValue === event.value) {
-          setContext({ highlightedValue: null })
-        }
-      },
-      suspendPointer: ({ setContext }) => {
-        setContext({ suspendPointer: true })
-      },
-      resumePointer: ({ setContext }) => {
-        setContext({ suspendPointer: false })
-      },
+      open: {
+        entry: ['setGlobalId'],
+        effects: ['trackGlobalStore'],
+        on: {
+          close: { target: 'closed' },
+          'trigger.click': { target: 'closed' },
+          escape: { target: 'closed' },
 
-      setPendingFirst: ({ setContext }) => {
-        setContext({ pendingHighlight: 'first' })
-      },
-      setPendingLast: ({ setContext }) => {
-        setContext({ pendingHighlight: 'last' })
-      },
-      clearPendingHighlight: ({ setContext }) => {
-        setContext({ pendingHighlight: null })
-      },
-      applyPendingHighlight: ({ context, setContext, event }) => {
-        if (!context.pendingHighlight) return
-        if (!('items' in event)) return
-        const next =
-          context.pendingHighlight === 'first'
-            ? firstEnabled(event.items)
-            : lastEnabled(event.items)
-        if (next) {
-          setContext({
-            highlightedValue: next.value,
-            pendingHighlight: null,
-          })
-        }
-      },
+          'item.pointermove': { actions: ['highlightItem'] },
+          'item.pointerleave': { actions: ['clearHighlightIfMatch'] },
+          'item.click': [
+            // onSelect was already invoked synchronously at the connect call
+            // site so the guard can read selectEvent.defaultPrevented.
+            { guard: 'shouldCloseOnSelect', target: 'closed' },
+            {},
+          ],
 
-      highlightFirst: ({ setContext, event }) => {
-        if (!('items' in event)) return
-        const next = firstEnabled(event.items)
-        if (next) setContext({ highlightedValue: next.value })
-      },
-      highlightLast: ({ setContext, event }) => {
-        if (!('items' in event)) return
-        const next = lastEnabled(event.items)
-        if (next) setContext({ highlightedValue: next.value })
-      },
-      highlightNext: ({ context, setContext, props, event }) => {
-        if (!('items' in event)) return
-        const next = step(event.items, context.highlightedValue, 1, props.loop)
-        if (next) setContext({ highlightedValue: next.value })
-      },
-      highlightPrev: ({ context, setContext, props, event }) => {
-        if (!('items' in event)) return
-        const next = step(event.items, context.highlightedValue, -1, props.loop)
-        if (next) setContext({ highlightedValue: next.value })
-      },
+          'arrow.down': { actions: [act({ suspendPointer: true }), 'highlightNext'] },
+          'arrow.up': { actions: [act({ suspendPointer: true }), 'highlightPrev'] },
+          home: { actions: [act({ suspendPointer: true }), 'highlightFirst'] },
+          end: { actions: [act({ suspendPointer: true }), 'highlightLast'] },
 
-      clickHighlightedItem: ({ context, send, event }) => {
-        if (!('items' in event)) return
-        const current = event.items.find(i => i.value === context.highlightedValue)
-        if (!current || current.disabled) return
-        // Invoke onSelect synchronously so the guard can read
-        // event.defaultPrevented — matches the pointer-click path in
-        // connect.ts.
-        const selectEvent = makeSelectEvent()
-        current.onSelect?.(selectEvent)
-        send({
-          type: 'item.click',
-          value: current.value,
-          onSelect: current.onSelect,
-          selectEvent,
-          // explicit per-item override; falls through to default behavior
-          // when undefined (regular items close, toggles don't)
-          closeOnSelect:
-            current.closeOnSelect ??
-            (current.kind === 'checkbox' || current.kind === 'radio' ? false : undefined),
-          items: event.items,
-        })
-      },
+          enter: { actions: ['clickHighlightedItem'] },
+          space: { actions: ['clickHighlightedItem'] },
 
-      typeaheadMatch: ({ context, setContext, event }) => {
-        if (event.type !== 'typeahead.char') return
-        const char = event.char.toLowerCase()
-        if (!char) return
+          'typeahead.char': { actions: ['typeaheadMatch'] },
 
-        const now = Date.now()
-        const expired = now - context.typeaheadLastTime > TYPEAHEAD_RESET_MS
-        const buffer = expired ? char : context.typeaheadBuffer + char
+          'pointer.resume': { actions: [act({ suspendPointer: false })] },
 
-        const match = typeaheadFind(event.items, buffer, context.highlightedValue)
-        if (match) {
-          setContext({
-            typeaheadBuffer: buffer,
-            typeaheadLastTime: now,
-            highlightedValue: match.value,
-            suspendPointer: true,
-          })
-        } else {
-          setContext({ typeaheadBuffer: buffer, typeaheadLastTime: now })
-        }
+          'items.ready': { actions: ['applyPendingHighlight'] },
+        },
       },
     },
 
-    effects: {
-      // Substrate-specific: each adapter overrides via withAdapter().
-      trackEscapeKey: () => undefined,
+    implementations: {
+      guards: {
+        shouldCloseOnSelect: ({ context, event }) => {
+          // Only meaningful for `item.click`. Guarding by type narrows the
+          // payload so `selectEvent` / `closeOnSelect` are typed.
+          if (event.type !== 'item.click') return false
+          // Consumer can cancel close via onSelect(event).preventDefault().
+          if (event.selectEvent.defaultPrevented) return false
+          // Per-item override (false for checkbox/radio); else the resolved default.
+          if (event.closeOnSelect !== undefined) return event.closeOnSelect
+          return context.closeOnSelect
+        },
+      },
 
-      trackGlobalStore: ({ props, send }) => {
-        const { id } = props
-        return dropdownMenuStore.subscribe(() => {
-          const openId = dropdownMenuStore.get().openId
-          if (openId !== id && openId !== null) {
-            send({ type: 'close', src: 'store.id.change' })
+      actions: {
+        setGlobalId: ({ context }) => {
+          dropdownMenuStore.setOpen(context.id)
+        },
+        clearGlobalId: ({ context }) => {
+          if (dropdownMenuStore.get().openId === context.id) {
+            dropdownMenuStore.setOpen(null)
           }
-        })
+        },
+
+        highlightItem: ({ context, setContext, event }) => {
+          if (context.suspendPointer) return
+          if (event.type !== 'item.pointermove') return
+          setContext({ highlightedValue: event.value })
+        },
+        clearHighlightIfMatch: ({ context, setContext, event }) => {
+          if (context.suspendPointer) return
+          if (event.type !== 'item.pointerleave') return
+          if (context.highlightedValue === event.value) {
+            setContext({ highlightedValue: null })
+          }
+        },
+
+        applyPendingHighlight: ({ context, setContext, event }) => {
+          if (!context.pendingHighlight) return
+          if (!('items' in event)) return
+          const next =
+            context.pendingHighlight === 'first'
+              ? firstEnabled(event.items)
+              : lastEnabled(event.items)
+          if (next) {
+            setContext({ highlightedValue: next.value, pendingHighlight: null })
+          }
+        },
+
+        highlightFirst: ({ setContext, event }) => {
+          if (!('items' in event)) return
+          const next = firstEnabled(event.items)
+          if (next) setContext({ highlightedValue: next.value })
+        },
+        highlightLast: ({ setContext, event }) => {
+          if (!('items' in event)) return
+          const next = lastEnabled(event.items)
+          if (next) setContext({ highlightedValue: next.value })
+        },
+        highlightNext: ({ context, setContext, event }) => {
+          if (!('items' in event)) return
+          const next = step(event.items, context.highlightedValue, 1, context.loop)
+          if (next) setContext({ highlightedValue: next.value })
+        },
+        highlightPrev: ({ context, setContext, event }) => {
+          if (!('items' in event)) return
+          const next = step(event.items, context.highlightedValue, -1, context.loop)
+          if (next) setContext({ highlightedValue: next.value })
+        },
+
+        clickHighlightedItem: ({ context, send, event }) => {
+          if (!('items' in event)) return
+          const current = event.items.find(i => i.value === context.highlightedValue)
+          if (!current || current.disabled) return
+          // Invoke onSelect synchronously so the guard can read
+          // defaultPrevented — matches the pointer-click path in connect.ts.
+          const selectEvent = makeSelectEvent()
+          current.onSelect?.(selectEvent)
+          send({
+            type: 'item.click',
+            value: current.value,
+            onSelect: current.onSelect,
+            selectEvent,
+            // explicit per-item override; falls through to default behavior
+            // when undefined (regular items close, toggles don't).
+            closeOnSelect:
+              current.closeOnSelect ??
+              (current.kind === 'checkbox' || current.kind === 'radio' ? false : undefined),
+            items: event.items,
+          })
+        },
+
+        typeaheadMatch: ({ context, setContext, event }) => {
+          if (event.type !== 'typeahead.char') return
+          const char = event.char.toLowerCase()
+          if (!char) return
+
+          const now = Date.now()
+          const expired = now - context.typeaheadLastTime > TYPEAHEAD_RESET_MS
+          const buffer = expired ? char : context.typeaheadBuffer + char
+
+          const match = typeaheadFind(event.items, buffer, context.highlightedValue)
+          if (match) {
+            setContext({
+              typeaheadBuffer: buffer,
+              typeaheadLastTime: now,
+              highlightedValue: match.value,
+              suspendPointer: true,
+            })
+          } else {
+            setContext({ typeaheadBuffer: buffer, typeaheadLastTime: now })
+          }
+        },
+      },
+
+      effects: {
+        // While open, watch the global store: if another menu claims the
+        // single-open slot, close this one. (Escape is NOT a machine effect —
+        // its listener lives in the target's effects.ts, which sends `escape`.)
+        trackGlobalStore: ({ context, send }) =>
+          dropdownMenuStore.subscribe(() => {
+            const openId = dropdownMenuStore.get().openId
+            if (openId !== context.id && openId !== null) {
+              send({ type: 'close', src: 'store.id.change' })
+            }
+          }),
       },
     },
-  },
-})
+  })
+}
+
+/** The config type produced by `dropdownMenuMachineConfig`. */
+export type DropdownMenuMachineConfig = ReturnType<typeof dropdownMenuMachineConfig>
+
+/** The running dropdown-menu machine service type (built by the bridge). */
+export type DropdownMenuMachine = Machine<
+  DropdownMenuState,
+  DropdownMenuContext,
+  DropdownMenuEvent,
+  DropdownMenuComputed
+>
