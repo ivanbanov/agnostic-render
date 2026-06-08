@@ -1,11 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-/**
- * Pure helpers for the widget layer — ported from Miro's `xwidget/utils.ts`
- * (the Surface styling engine), trimmed to what the RN port needs. No
- * Surface/DOM dependencies.
- */
-
 const MEMO: unique symbol = Symbol('memo') as any
 
 /**

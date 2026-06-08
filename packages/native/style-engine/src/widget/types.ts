@@ -1,13 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-/**
- * Type vocabulary for the RN widget styling engine — the stitches-like surface
- * ported from Miro's `xwidget`. Adapted for React Native: style values are RN
- * style values (numbers / strings / nested objects like `transform`), and the
- * conditional states are RN's (`_pressed` / `_focused` / `_disabled`) rather
- * than web hover.
- */
-
 import type { ViewStyle, TextStyle, ImageStyle } from 'react-native'
 
 /** Any RN style object (View / Text / Image share the shape for our purposes). */

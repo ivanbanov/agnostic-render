@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "Tooltip RN Sandbox",
-    "slug": "tooltip-rn-sandbox",
+    "name": "Sandbox",
+    "slug": "sandbox",
     "version": "0.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.miro.render-experiment.native"
+      "bundleIdentifier": "com.sandbox.native"
     },
     "android": {
-      "package": "com.miro.render_experiment.native",
+      "package": "com.sandbox.native",
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       }

@@ -1,36 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-/**
- * `styled()` — the RN component factory, the stitches-like surface ported from
- * Miro's xwidget and adapted for React Native.
- *
- *   const Button = styled(Pressable, {
- *     backgroundColor: '#357',
- *     paddingHorizontal: 14,
- *     variants: { variant: { primary: { backgroundColor: '#357' }, danger: { backgroundColor: '#c33' } } },
- *     defaultVariants: { variant: 'primary' },
- *     _pressed: { opacity: 0.7 },
- *     _disabled: { opacity: 0.4 },
- *   })
- *
- *   <Button variant="danger" onPress={...} />
- *
- * It:
- *  - resolves variants from props (and splits variant props out so they don't
- *    leak onto the RN element),
- *  - auto-wires the conditional states the config declares: `_pressed` (via
- *    onPressIn/onPressOut), `_focused` (onFocus/onBlur), `_disabled` (the
- *    `disabled` prop) — tracking them in state and re-rendering,
- *  - merges the resolved style under any consumer-passed `style`,
- *  - supports `defaultProps` and `shouldForwardProp`, and composition
- *    (`styled(Base, extraSpec)`).
- *
- * RN differences from the Surface original: no hover (touch), no keyboard-focus
- * ring; conditions are press/focus/disabled. Primitives are RN components, not
- * Surface strings — but a string name ('View' | 'Text' | 'Pressable') is also
- * accepted for parity.
- */
-
 import {
   createElement,
   forwardRef,

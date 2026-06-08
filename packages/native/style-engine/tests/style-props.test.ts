@@ -1,10 +1,3 @@
-/**
- * Widget engine — `styleProps()` pure-logic tests (no RN runtime).
- *
- * Mirrors the behaviors documented in Miro's xwidget README, adapted for RN:
- * composition, variants, default variants, compound variants, conditions
- * (`_pressed`/`_focused`/`_disabled`), and `.config` introspection.
- */
 import { describe, expect, it } from 'vitest'
 // The package root is RN-free (styleProps + translate); `styled` ships from the
 // separate /styled entry, covered by the jest+RNTL suite (styled.test.tsx).
