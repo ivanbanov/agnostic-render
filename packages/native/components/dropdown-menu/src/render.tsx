@@ -274,6 +274,11 @@ function ItemBase({
     },
     disabled,
     highlighted: part.highlighted,
+    // The shared item lays its slots out with CSS grid (indicator | text |
+    // right-slot); grid has no RN equivalent and is dropped by the translator,
+    // leaving the default column flow (which stacked the indicator above the
+    // text — the "invisible row" bug). Restore the horizontal row here.
+    style: { flexDirection: 'row' as const, alignItems: 'center' as const },
   })
 
   return (
@@ -409,11 +414,18 @@ export interface DropdownMenuItemIndicatorProps {
 
 export function DropdownMenuItemIndicator({ children }: DropdownMenuItemIndicatorProps) {
   const checked = useDropdownMenuItemChecked()
-  if (!checked) return null
+  // A fixed-width slot so the row layout stays stable whether or not the mark is
+  // shown (the web grid reserved this column; RN flex needs an explicit slot).
   return (
-    <Text style={{ marginRight: 6, color: '#fff' }}>
-      {typeof children === 'string' || typeof children === 'number' ? children : (children ?? '✓')}
-    </Text>
+    <View style={{ width: 16, marginRight: 6, alignItems: 'center' }}>
+      {checked ? (
+        <Text style={{ color: ITEM_TEXT }}>
+          {typeof children === 'string' || typeof children === 'number'
+            ? children
+            : (children ?? '✓')}
+        </Text>
+      ) : null}
+    </View>
   )
 }
 
