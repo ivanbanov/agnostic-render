@@ -35,7 +35,7 @@ import {
   type ReactNode,
 } from 'react'
 import {
-  Dimensions,
+  Modal,
   Pressable,
   Text,
   View,
@@ -180,52 +180,38 @@ export function DropdownMenuContent(props: DropdownMenuContentProps) {
   const items = registry.read()
   const apiWithItems = api.withItems(items)
 
-  // Place the Positioner at the measured anchor (below the trigger). Until the
-  // async measureInWindow lands, fall back to {0,0} so the menu renders top-left
-  // rather than flashing at its inline-flow position; the measured value snaps
-  // it into place a tick later.
+  // Render the menu through a Modal so it lives in WINDOW space — RN's
+  // `position: absolute` is relative to the nearest positioned ancestor, not the
+  // window, so an inline menu would be offset by the trigger's distance from its
+  // container (the "floats to the bottom" bug). Inside the Modal, the window
+  // anchor coords from measureInWindow place it correctly below the trigger.
+  //
+  // The styled Content's `side` variant carries web CSS offsets (top/left: '100%')
+  // which are meaningless on RN, so we don't pass `side`; the absolute top/left
+  // below positions it directly.
   const positionedStyle = {
+    position: 'absolute' as const,
     left: anchor ? anchor.x : 0,
     top: anchor ? anchor.y + anchor.height + apiWithItems.parts.content.offsetY : 0,
   }
 
-  // Full-screen invisible backdrop to catch tap-outside. RN has no
-  // document-level pointer listener.
-  const { width: screenW, height: screenH } = Dimensions.get('window')
-
-  // The shared content style's `side` variant places the menu with web CSS
-  // offsets (top/bottom/left/right: '100%') against a positioned wrapper — a DOM
-  // trick that's meaningless on RN. On native the Positioner is already placed
-  // at the anchor (left/top below the trigger), so the Content sits at the
-  // positioner's top-left: skip the `side` prop and pin to {top:0,left:0} so the
-  // base `position:absolute` anchors to the positioner instead of escaping with
-  // a '100%' offset.
   const merged = mergeProps(consumerProps as Record<string, unknown>, {
-    style: { top: 0, left: 0 },
+    style: positionedStyle,
     pointerEvents: 'auto',
   })
 
   return (
-    <>
-      <Pressable
-        onPress={() => api.setOpen(false)}
-        style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          width: screenW,
-          height: screenH,
-        }}
-        accessible={false}
-      />
-      <Styled.Positioner style={positionedStyle} pointerEvents='box-none'>
-        <Styled.Content {...merged}>
+    <Modal transparent visible animationType='none' onRequestClose={() => api.setOpen(false)}>
+      {/* Full-screen backdrop: tap outside the menu closes it. */}
+      <Pressable style={{ flex: 1 }} onPress={() => api.setOpen(false)} accessible={false}>
+        {/* Stop the press from bubbling to the backdrop when tapping the menu. */}
+        <Styled.Content {...merged} onStartShouldSetResponder={() => true}>
           <DropdownMenuCurrentApiRef.Provider value={apiWithItems}>
             {children}
           </DropdownMenuCurrentApiRef.Provider>
         </Styled.Content>
-      </Styled.Positioner>
-    </>
+      </Pressable>
+    </Modal>
   )
 }
 
