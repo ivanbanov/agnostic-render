@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { ScrollView, StyleSheet, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
-import { LinearGradient } from 'expo-linear-gradient'
 import { Tooltip, TooltipProvider } from '@render-experiment/tooltip-native'
 import { DropdownMenu } from '@render-experiment/dropdown-menu-native'
 
@@ -31,7 +30,7 @@ export default function App() {
   const [bookmarks, setBookmarks] = useState({ urls: true, github: false })
 
   return (
-    <LinearGradient colors={['#eef1f6', '#ffffff']} locations={[0, 0.6]} style={styles.root}>
+    <View style={styles.root}>
       <TooltipProvider>
         <StatusBar style='dark' />
         <ScrollView contentContainerStyle={styles.container}>
@@ -130,12 +129,19 @@ export default function App() {
           </View>
         </ScrollView>
       </TooltipProvider>
-    </LinearGradient>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  // Soft light-gray → white gradient via RN core's experimental_backgroundImage
+  // (no native module needed — works in the prebuilt dev client). Mirrors the
+  // React sandbox's CSS gradient.
+  root: {
+    flex: 1,
+    backgroundColor: '#f4f6fa',
+    experimental_backgroundImage: 'linear-gradient(180deg, #eef1f6 0%, #ffffff 60%)',
+  },
   container: {
     paddingTop: 88,
     paddingBottom: 120,

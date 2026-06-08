@@ -15,9 +15,8 @@
     "expo": "^56.0.0",
     "expo-dev-client": "^56.0.18",
     "expo-dev-menu": "^56.0.16",
-    "expo-linear-gradient": "^56.0.4",
     "expo-status-bar": "^3.0.0",
-    "react": "19.2.0",
+    "react": "19.2.3",
     "react-native": "0.85.0"
   },
   "devDependencies": {
