@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { useMachine, useEffects } from '@render-experiment/machine-react'
+import { useMachine } from '@render-experiment/machine-react'
 import {
   DIALOG_DEFAULTS,
   connectDialog,
@@ -14,9 +14,8 @@ import { dialogEffects } from '../effects'
 export function useDialogApi(props: DialogProps): DialogApi {
   // Resolve defaults once (machine + connector operate on the concrete shape).
   const dialogProps: DialogMachineProps = { ...DIALOG_DEFAULTS, ...props }
-  const { api, machine } = useMachine(dialogMachineConfig, connectDialog, dialogProps)
-  // Substrate-specific transport (Escape, back-button, …) declared as a
-  // ComponentEffect; useEffects owns the React effect + builds its dep array.
-  useEffects(machine, dialogEffects, dialogProps)
+  // useMachine runs the component's prop-dependent effects (Escape, back-button)
+  // internally — one useEffect each, keyed on their named prop deps.
+  const { api } = useMachine(dialogMachineConfig, connectDialog, dialogEffects, dialogProps)
   return api
 }

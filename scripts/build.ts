@@ -215,7 +215,7 @@ function emitReactApi(component: DiscoveredComponent): string {
   const { pascal, slug, camel } = component
   const CONST = slug.toUpperCase().replace(/-/g, '_')
   return `${ESLINT_DISABLE}
-import { useMachine, useEffects } from "@render-experiment/machine-react";
+import { useMachine } from "@render-experiment/machine-react";
 import {
   ${CONST}_DEFAULTS,
   connect${pascal},
@@ -230,14 +230,14 @@ import { ${camel}Effects } from "../effects";
 export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
   // Resolve defaults once (machine + connector operate on the concrete shape).
   const ${camel}Props: ${pascal}MachineProps = { ...${CONST}_DEFAULTS, ...props };
-  const { api, machine } = useMachine(
+  // useMachine runs the component's prop-dependent effects (Escape, back-button)
+  // internally — one useEffect each, keyed on their named prop deps.
+  const { api } = useMachine(
     ${camel}MachineConfig,
     connect${pascal},
+    ${camel}Effects,
     ${camel}Props,
   );
-  // Substrate-specific transport (Escape, back-button, …) declared as a
-  // ComponentEffect; useEffects owns the React effect + builds its dep array.
-  useEffects(machine, ${camel}Effects, ${camel}Props);
   return api;
 }
 `
@@ -294,7 +294,7 @@ function emitNativeApi(component: DiscoveredComponent): string {
   const { pascal, slug, camel } = component
   const CONST = slug.toUpperCase().replace(/-/g, '_')
   return `${ESLINT_DISABLE}
-import { useMachine, useEffects } from "@render-experiment/machine-native";
+import { useMachine } from "@render-experiment/machine-native";
 import {
   ${CONST}_DEFAULTS,
   connect${pascal},
@@ -309,14 +309,14 @@ import { ${camel}Effects } from "../effects";
 export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
   // Resolve defaults once (machine + connector operate on the concrete shape).
   const ${camel}Props: ${pascal}MachineProps = { ...${CONST}_DEFAULTS, ...props };
-  const { api, machine } = useMachine(
+  // useMachine runs the component's prop-dependent effects (back-button, …)
+  // internally — one useEffect each, keyed on their named prop deps.
+  const { api } = useMachine(
     ${camel}MachineConfig,
     connect${pascal},
+    ${camel}Effects,
     ${camel}Props,
   );
-  // Substrate-specific transport declared as a ComponentEffect; useEffects owns
-  // the React effect + builds its dep array.
-  useEffects(machine, ${camel}Effects, ${camel}Props);
   return api;
 }
 `

@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { useMachine, useEffects } from '@render-experiment/machine-react'
+import { useMachine } from '@render-experiment/machine-react'
 import {
   TOOLTIP_DEFAULTS,
   connectTooltip,
@@ -14,9 +14,8 @@ import { tooltipEffects } from '../effects'
 export function useTooltipApi(props: TooltipProps): TooltipApi {
   // Resolve defaults once (machine + connector operate on the concrete shape).
   const tooltipProps: TooltipMachineProps = { ...TOOLTIP_DEFAULTS, ...props }
-  const { api, machine } = useMachine(tooltipMachineConfig, connectTooltip, tooltipProps)
-  // Substrate-specific transport (Escape, back-button, …) declared as a
-  // ComponentEffect; useEffects owns the React effect + builds its dep array.
-  useEffects(machine, tooltipEffects, tooltipProps)
+  // useMachine runs the component's prop-dependent effects (Escape, back-button)
+  // internally — one useEffect each, keyed on their named prop deps.
+  const { api } = useMachine(tooltipMachineConfig, connectTooltip, tooltipEffects, tooltipProps)
   return api
 }

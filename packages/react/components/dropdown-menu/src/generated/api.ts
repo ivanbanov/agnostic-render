@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { useMachine, useEffects } from '@render-experiment/machine-react'
+import { useMachine } from '@render-experiment/machine-react'
 import {
   DROPDOWN_MENU_DEFAULTS,
   connectDropdownMenu,
@@ -14,13 +14,13 @@ import { dropdownMenuEffects } from '../effects'
 export function useDropdownMenuApi(props: DropdownMenuProps): DropdownMenuApi {
   // Resolve defaults once (machine + connector operate on the concrete shape).
   const dropdownMenuProps: DropdownMenuMachineProps = { ...DROPDOWN_MENU_DEFAULTS, ...props }
-  const { api, machine } = useMachine(
+  // useMachine runs the component's prop-dependent effects (Escape, back-button)
+  // internally — one useEffect each, keyed on their named prop deps.
+  const { api } = useMachine(
     dropdownMenuMachineConfig,
     connectDropdownMenu,
+    dropdownMenuEffects,
     dropdownMenuProps,
   )
-  // Substrate-specific transport (Escape, back-button, …) declared as a
-  // ComponentEffect; useEffects owns the React effect + builds its dep array.
-  useEffects(machine, dropdownMenuEffects, dropdownMenuProps)
   return api
 }

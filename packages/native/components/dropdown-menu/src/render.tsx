@@ -172,7 +172,7 @@ export function DropdownMenuContent(props: DropdownMenuContentProps) {
   useEffect(() => registry.subscribe(() => forceUpdate(n => n + 1)), [registry])
 
   // The Android back button is wired in effects.ts (a ComponentEffect the
-  // generated useDropdownMenuApi runs via useEffects) — mirror of the web
+  // generated useDropdownMenuApi runs it via useMachine) — mirror of the web
   // Escape listener — so it isn't re-implemented here.
 
   if (!rendered) return null

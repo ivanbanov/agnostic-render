@@ -187,7 +187,7 @@ export function TooltipContent(props: TooltipContentProps) {
   const rendered = api.open
 
   // The Android back button is wired in effects.ts (a ComponentEffect the
-  // generated useTooltipApi runs via useEffects) — mirror of the web Escape
+  // generated useTooltipApi runs it via useMachine) — mirror of the web Escape
   // listener — so it isn't re-implemented here.
 
   if (!rendered) return null

@@ -11,7 +11,7 @@ type DropdownMenuEffect = ComponentEffect<DropdownMenuMachine, DropdownMenuMachi
  * RN analog of the web Escape listener: the Android hardware back button closes
  * the open menu. Gated by `closeOnEscape`; on accept it sends the plain
  * `escape` event the machine already handles. Prop-dependent, so it's a
- * ComponentEffect (the generated useApi owns the useEffect via useEffects).
+ * ComponentEffect (the generated useApi runs it via useMachine).
  */
 const trackBackButton: DropdownMenuEffect = [
   (machine, props) => {

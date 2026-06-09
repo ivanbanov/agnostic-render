@@ -10,7 +10,7 @@ type DropdownMenuEffect = ComponentEffect<DropdownMenuMachine, DropdownMenuMachi
  * Capture-phase Escape closer — runs before nested popovers/dialogs that might
  * also listen. Gated by `closeOnEscape`; on accept it sends the plain `escape`
  * event the machine already handles. Prop-dependent, so it's a ComponentEffect
- * (the generated useApi owns the useEffect via useEffects), not a machine effect.
+ * (the generated useApi runs it via useMachine), not a core config effect.
  */
 const trackEscape: DropdownMenuEffect = [
   (machine, props) => {
