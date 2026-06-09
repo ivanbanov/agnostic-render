@@ -10,7 +10,7 @@ import type {
 
 // Named impls registered once (they read context / the global store, never props)
 // — so a state's `guard`/`entry`/`effects`/`after` name is checked against these.
-const { createMachine } = setup<TooltipContext, TooltipEvent, TooltipComputed>()({
+const { createMachine } = setup<TooltipContext, TooltipEvent, TooltipComputed>().config({
   delays: {
     openDelay: ({ context }) => context.openDelay,
     closeDelay: ({ context }) => context.closeDelay,

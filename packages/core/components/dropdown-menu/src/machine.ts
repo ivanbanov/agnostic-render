@@ -35,7 +35,11 @@ import { firstEnabled, lastEnabled, makeSelectEvent, step, typeaheadFind } from 
 // Named impls registered once (they read context / events / the global store,
 // never props) — so a state's `guard`/`entry`/`effects` name is checked against
 // these.
-const { createMachine } = setup<DropdownMenuContext, DropdownMenuEvent, DropdownMenuComputed>()({
+const { createMachine } = setup<
+  DropdownMenuContext,
+  DropdownMenuEvent,
+  DropdownMenuComputed
+>().config({
   guards: {
     shouldCloseOnSelect: ({ context, event }) => {
       // Only meaningful for `item.click`. Guarding by type narrows the

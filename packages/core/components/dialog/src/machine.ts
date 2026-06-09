@@ -30,7 +30,7 @@ import type {
 // The dialog machine has no named impls (no guards/actions/effects/delays) — its
 // transitions are unconditional. setup() is still used for a consistent shape:
 // an empty registry, so any future named slot is checked at compile time.
-const { createMachine } = setup<DialogContext, DialogEvent, DialogComputed>()({})
+const { createMachine } = setup<DialogContext, DialogEvent, DialogComputed>().config({})
 
 /**
  * Build the dialog machine CONFIG from already-resolved props (defaults

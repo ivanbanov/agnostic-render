@@ -10,7 +10,7 @@ import { toggleValue } from './utils'
 
 // Named impls registered once (they read context / event, never props) — so a
 // state's `guard`/`actions` name is checked against these.
-const { createMachine } = setup<AccordionContext, AccordionEvent, AccordionComputed>()({
+const { createMachine } = setup<AccordionContext, AccordionEvent, AccordionComputed>().config({
   guards: {
     isDisabled: ({ context }) => context.disabled,
   },
