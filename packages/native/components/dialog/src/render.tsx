@@ -15,10 +15,11 @@
  * - **No scroll lock.** The Content's own maxHeight scrolls tall content; the
  *   page behind a Modal is already non-interactive.
  * - **Android back button** maps to escape/close — see effects.ts.
- * - **Text doesn't inherit color from a View**, so the Title/Description/Close
- *   text carries its color explicitly.
+ * - **Title / Description are `Text` elements** (codegen maps text parts → RN
+ *   Text), so the shared title/description styles carry their own color/font and
+ *   the text just renders — no per-view constants, no string wrapping.
  */
-import { Children, Fragment, useId, useRef, type ReactNode } from 'react'
+import { useId, useRef, type ReactNode } from 'react'
 import {
   Modal,
   Pressable,
@@ -26,6 +27,7 @@ import {
   Text,
   View,
   type PressableProps,
+  type TextProps,
   type ViewProps,
 } from 'react-native'
 import { mergeProps, normalize } from '@render-experiment/machine-native'
@@ -38,24 +40,6 @@ import {
 import { useDialogApi } from './generated/api'
 import * as Styled from './generated/elements'
 import { DialogContextRef, useDialogContext } from './context'
-
-// Painted text presentation (RN Text doesn't inherit a parent View's color).
-const TITLE_TEXT = { color: '#0d0f16', fontSize: 18, fontWeight: '600' as const }
-const DESCRIPTION_TEXT = { color: '#5b6172', fontSize: 14 }
-const CLOSE_TEXT = { color: '#1c1e26', fontSize: 14, fontWeight: '600' as const }
-
-/** Wrap stray string/number children in <Text>; leave elements alone. */
-function renderText(children: ReactNode, style: object): ReactNode {
-  return Children.map(children, (child, i) =>
-    typeof child === 'string' || typeof child === 'number' ? (
-      <Text key={`t-${i}`} style={style}>
-        {child}
-      </Text>
-    ) : (
-      <Fragment key={`f-${i}`}>{child}</Fragment>
-    ),
-  )
-}
 
 // =============================================================================
 // <Dialog> — root, owns the machine + trigger ref
@@ -143,21 +127,19 @@ export function DialogOverlay(props: DialogOverlayProps) {
     if (close) api.setOpen(false)
   }
 
-  // The backdrop must be a Pressable to catch the tap-outside (a styled View
-  // won't fire onPress). We render it inline with the overlay look (dim +
-  // center) rather than via Styled.Overlay so the tap target is real; Content
-  // inside stops the touch from bubbling here.
-  const merged = mergeProps(consumerProps as Record<string, unknown>, {
-    onPress: onBackdropPress,
-  })
+  const merged = mergeProps(consumerProps as Record<string, unknown>, {})
 
+  // Styled.Overlay carries the shared dim + centering paint. A styled View can't
+  // fire onPress, so a transparent absolute-fill Pressable sits BEHIND the
+  // content to catch the tap-outside (no visual style of its own → nothing
+  // duplicated from the shared overlay). Content stops its own touches from
+  // reaching it.
   return (
     <Modal transparent visible animationType='fade' onRequestClose={() => api.setOpen(false)}>
-      <Pressable style={styles.backdrop} onPress={onBackdropPress} accessible={false}>
-        <View {...(merged as ViewProps)} style={styles.backdropInner} pointerEvents='box-none'>
-          {children}
-        </View>
-      </Pressable>
+      <Styled.Overlay {...(merged as ViewProps)} open={api.open}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onBackdropPress} accessible={false} />
+        {children}
+      </Styled.Overlay>
     </Modal>
   )
 }
@@ -189,10 +171,11 @@ export function DialogContent(props: DialogContentProps) {
 }
 
 // =============================================================================
-// <Dialog.Title> / <Dialog.Description>
+// <Dialog.Title> / <Dialog.Description> — styled RN Text; the shared style
+// carries the color/font, so children render directly.
 // =============================================================================
 
-export interface DialogTitleProps extends Omit<ViewProps, 'children'> {
+export interface DialogTitleProps extends Omit<TextProps, 'children'> {
   children: ReactNode
 }
 
@@ -205,13 +188,13 @@ export function DialogTitle(props: DialogTitleProps) {
     normalized as Record<string, unknown>,
   )
   return (
-    <Styled.Title {...(merged as ViewProps)} open={api.open}>
-      {renderText(children, TITLE_TEXT)}
+    <Styled.Title {...(merged as TextProps)} open={api.open}>
+      {children}
     </Styled.Title>
   )
 }
 
-export interface DialogDescriptionProps extends Omit<ViewProps, 'children'> {
+export interface DialogDescriptionProps extends Omit<TextProps, 'children'> {
   children: ReactNode
 }
 
@@ -224,14 +207,16 @@ export function DialogDescription(props: DialogDescriptionProps) {
     normalized as Record<string, unknown>,
   )
   return (
-    <Styled.Description {...(merged as ViewProps)} open={api.open}>
-      {renderText(children, DESCRIPTION_TEXT)}
+    <Styled.Description {...(merged as TextProps)} open={api.open}>
+      {children}
     </Styled.Description>
   )
 }
 
 // =============================================================================
-// <Dialog.Close> — closes on press
+// <Dialog.Close> — closes on press. The label is the consumer's child (an
+// element, e.g. a Button); a bare string is wrapped in a <Text> so RN can paint
+// it (Text can't be a raw child of a Pressable).
 // =============================================================================
 
 export interface DialogCloseProps extends Omit<PressableProps, 'children'> {
@@ -246,9 +231,10 @@ export function DialogClose(props: DialogCloseProps) {
     consumerProps as Record<string, unknown>,
     normalized as Record<string, unknown>,
   )
+  const label = children ?? 'Close'
   return (
     <Styled.Close {...(merged as PressableProps)} open={api.open}>
-      {renderText(children ?? 'Close', CLOSE_TEXT)}
+      {typeof label === 'string' ? <Text>{label}</Text> : label}
     </Styled.Close>
   )
 }
@@ -265,20 +251,4 @@ export const Dialog = Object.assign(DialogRoot, {
   Title: DialogTitle,
   Description: DialogDescription,
   Close: DialogClose,
-})
-
-const styles = StyleSheet.create({
-  // The dim, centered backdrop that fills the Modal (window space).
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(13, 15, 22, 0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  backdropInner: {
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 })

@@ -170,6 +170,16 @@ const ESLINT_DISABLE = `/* eslint-disable */`
  */
 const INTERACTIVE_PARTS = new Set(['item', 'trigger', 'close'])
 
+/**
+ * Parts that hold TEXT. They map to a real text element so the shared text
+ * styles (color / fontSize / fontWeight) land on the element and apply to the
+ * text directly — on React via a semantic tag, on native via `Text` (which,
+ * unlike a `View`, actually carries text color/font). Without this, native text
+ * parts would be `View`s and RN's Text children wouldn't inherit their color,
+ * forcing the view to re-declare the styles by hand.
+ */
+const TEXT_PARTS: Record<string, string> = { title: 'h2', description: 'p' }
+
 // -----------------------------------------------------------------------------
 // React DOM emitters
 // -----------------------------------------------------------------------------
@@ -181,9 +191,9 @@ function emitReactElements(
   const decls = Object.entries(styles)
     .map(([elementName, spec]) => {
       const camel = elementName[0]!.toLowerCase() + elementName.slice(1)
-      // Interactive parts render as a real <button> (focusable + Enter/Space);
-      // everything else is a <div>.
-      const tag = INTERACTIVE_PARTS.has(camel) ? 'button' : 'div'
+      // Interactive parts → <button> (focusable + Enter/Space); text parts → a
+      // semantic text tag (h2/p); everything else → <div>.
+      const tag = INTERACTIVE_PARTS.has(camel) ? 'button' : (TEXT_PARTS[camel] ?? 'div')
       const translated = translateAgnosticSpec(spec as never)
       const inlined = JSON.stringify(translated, null, 2)
       return `// Source: shared/components/${component.slug}/src/styles → ${camel}
@@ -249,13 +259,17 @@ function emitNativeElements(
   // variants/compoundVariants/defaultVariants (the shape styleProps() consumes).
   // The element name is PascalCase (a component): `Content`, `Item`, ….
   //
-  // Primitive by part-name convention (INTERACTIVE_PARTS): interactive parts
-  // fire press, so they map to `Pressable` (the RN analog of the web's clickable
-  // element); everything else is a `View`.
+  // Primitive by part-name convention: interactive parts → `Pressable` (the RN
+  // analog of the web's clickable element), text parts → `Text` (carries text
+  // color/font, which a `View` doesn't), everything else → `View`.
   const decls: string[] = []
   for (const [elementName, spec] of Object.entries(styles)) {
     const camel = elementName[0]!.toLowerCase() + elementName.slice(1)
-    const primitive = INTERACTIVE_PARTS.has(camel) ? 'Pressable' : 'View'
+    const primitive = INTERACTIVE_PARTS.has(camel)
+      ? 'Pressable'
+      : camel in TEXT_PARTS
+        ? 'Text'
+        : 'View'
     const { base, variants, compoundVariants, defaultVariants } = translateAgnosticSpecToNative(
       spec as never,
     )

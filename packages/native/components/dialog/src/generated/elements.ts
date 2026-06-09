@@ -58,7 +58,7 @@ export const Content = styled('View', {
 } as any)
 
 // Source: shared/components/dialog/src/styles → description
-export const Description = styled('View', {
+export const Description = styled('Text', {
   margin: 0,
   marginBottom: 20,
   fontSize: 14,
@@ -99,7 +99,7 @@ export const Overlay = styled('View', {
 } as any)
 
 // Source: shared/components/dialog/src/styles → title
-export const Title = styled('View', {
+export const Title = styled('Text', {
   margin: 0,
   marginBottom: 8,
   fontSize: 18,

@@ -16,6 +16,8 @@
  */
 import { runFanout } from './tests/fan-out'
 import { runCompose } from './tests/compose'
+import { runComputed } from './tests/computed'
+import { runEngine } from './tests/engine'
 import { runConstruct } from './tests/construct'
 import { runMemory } from './tests/memory'
 import { runRendering } from './tests/rendering/run'
@@ -27,6 +29,8 @@ async function main() {
   }
   await runFanout()
   await runCompose()
+  await runComputed()
+  await runEngine()
   await runConstruct()
   await runMemory()
   await runRendering() // last: imports react-dom (bootstraps its own jsdom)
