@@ -58,12 +58,29 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',')
 
-/** Tabbable elements inside `root`, in DOM order, skipping hidden ones. */
+/**
+ * Tabbable elements inside `root`, in DOM order, skipping hidden ones.
+ *
+ * Visibility is decided structurally (`hidden` attribute / ancestor, or
+ * `display:none` / `visibility:hidden`) rather than by measured layout —
+ * `offsetWidth`/`getClientRects` are always 0 in jsdom (no layout engine), which
+ * would drop every element under test. The structural check matches in both a
+ * real browser and jsdom.
+ */
 export function focusableWithin(root: HTMLElement): HTMLElement[] {
   const nodes = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-  return nodes.filter(
-    el => el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0,
-  )
+  return nodes.filter(el => !isHidden(el))
+}
+
+function isHidden(el: HTMLElement): boolean {
+  if (el.hidden || el.closest('[hidden]')) return true
+  // getComputedStyle exists in jsdom and returns the inline/sheet styles.
+  const win = el.ownerDocument.defaultView
+  if (win) {
+    const style = win.getComputedStyle(el)
+    if (style.display === 'none' || style.visibility === 'hidden') return true
+  }
+  return false
 }
 
 /**

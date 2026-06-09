@@ -2,7 +2,7 @@
 import { styled } from '@render-experiment/style-engine-react'
 
 // Source: shared/components/dialog/src/styles → close
-export const Close = styled('div', {
+export const Close = styled('button', {
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',

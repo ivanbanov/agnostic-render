@@ -5,9 +5,11 @@
  *
  * Exercises the cross-region machinery `compose` adds:
  *
- *   A. COMBINE   — one value-deduped Selection derived across M members. Change
- *      ONE member's observed field; only the combined selection should recompute.
- *      Scaled by member count to see if combine cost grows with M.
+ *   A. COMBINE   — one value-deduped Selection derived across M members, reading
+ *      ONLY m0. The selection RE-EVALUATES on any member change (it subscribes to
+ *      every member's bus) but only FIRES its listener when m0's value changes.
+ *      We rotate which member we hit, so most ops re-eval-and-dedup (no fire) and
+ *      1/M actually fire — scaled by M to see how the O(M) re-eval pass grows.
  *   B. SYNC      — a coarse cross-region rule (wakes on ANY member change). This
  *      is the O(members) path by design; measured so its cost is visible vs.
  *      combine's fine-grained path.
@@ -34,12 +36,13 @@ function benchCombine(M: number) {
   const g = buildGroup(M)
   g.start()
   const keys = Object.keys(g.members)
-  // combine reads ONE member's value; only that read field should wake it
+  // combine reads ONE member's value; it re-evaluates on ANY member change but
+  // only fires `bump` when m0's value changes.
   const sel = g.combine(() => g.members.m0.context.value)
   sel.subscribe(bump)
   let i = 0
-  bench.add(`combine — change 1 of ${M} members (only m0 observed)`, () => {
-    // rotate which member we hit; only m0's change should fire the combine
+  bench.add(`combine — change 1 of ${M} members (only m0 read)`, () => {
+    // rotate which member we hit; every hit re-evals the combine, only m0's fires
     g.members[keys[i++ % M]].send({ type: 'hit' })
   })
   return bench

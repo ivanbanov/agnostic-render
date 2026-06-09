@@ -3,12 +3,21 @@
 /**
  * Fan-out + fine-grain + throughput. DISPOSABLE first-look benchmark.
  *
- *   A. PROPAGATION  — N cells, change ONE. Does cost stay flat (O(changed)) or
- *      degrade with N? Each contender uses one independent machine per cell.
- *   B. FINE-GRAIN   — change a field NOBODY observes. Auto-tracked engines do
- *      ~zero subscriber work.
- *   C. THROUGHPUT   — one cell, fire one event. Per-transition cost (where
- *      signals may LOSE to a plain store reducer).
+ *   A. PROPAGATION  — ONE machine, N fields, N observers (one per field). Bump
+ *      ONE field. This exposes the cost of the SELECTION layer at scale. Core's
+ *      `select` is a coarse bus: every selection re-evaluates its selector on
+ *      every notify and value-compares, so only the touched field's LISTENER
+ *      fires (O(changed) downstream) — but the re-eval pass itself is O(N
+ *      observers) per write. So expect this to degrade with N for core; the
+ *      question the table answers is HOW it degrades vs xstate's coarse
+ *      `actor.subscribe` (also O(N) here, with a heavier per-notify constant).
+ *      (Per-cell-machine setups can't test this — one machine per cell is O(1)
+ *      by construction, which is why the old version couldn't show fan-out.)
+ *   B. FINE-GRAIN   — change a field NOBODY observes. The dedup layer re-evals
+ *      its selector and value-compares, so NO observer's listener fires — the
+ *      subscriber-side work is ~zero (the engine still pays one bus pass).
+ *   C. THROUGHPUT   — one cell, fire one event. Per-transition cost (where the
+ *      coarse bus may LOSE to a plain store reducer).
  *
  * Contenders (both SYNCHRONOUS statecharts, so the ops/sec loop is fair): core,
  * xstate (real statechart, coarse headless subscribe).
@@ -20,28 +29,50 @@
  * (`pnpm benchmark`).
  */
 import { Bench } from 'tinybench'
-import { makeCoreCell, makeXstateCell, SINK, type Cell } from '../competitors'
+import {
+  makeCoreCell,
+  makeXstateCell,
+  makeXstateRawCell,
+  makeCoreFanout,
+  makeXstateFanout,
+  SINK,
+  type Cell,
+  type Fanout,
+} from '../competitors'
 import { report } from '../report'
 
+// `xstate` diffs `value` in its listener (the same dedup core does for free);
+// `xstate-raw` is stock `actor.subscribe` (fires unconditionally, no diff) — so
+// the fine-grain (miss) table shows BOTH: what XState does out of the box vs.
+// with a hand-built differ.
 const CONTENDERS: Array<[string, (observe?: boolean) => Cell]> = [
-  ['core  ', makeCoreCell],
-  ['xstate', makeXstateCell],
+  ['core      ', makeCoreCell],
+  ['xstate    ', makeXstateCell],
+  ['xstate-raw', makeXstateRawCell],
 ]
 
+const FANOUT_CONTENDERS: Array<[string, (n: number) => Fanout]> = [
+  ['core  ', makeCoreFanout],
+  ['xstate', makeXstateFanout],
+]
+
+// A. ONE machine, N observers, bump ONE field per op (rotating which field so no
+// single field's value stays hot). Only the deduped layer keeps this O(changed):
+// the listener for the touched field fires, the other N-1 don't.
 function benchPropagation(N: number) {
-  const bench = new Bench({ time: 120, warmupTime: 40 })
-  for (const [label, make] of CONTENDERS) {
-    const cells = Array.from({ length: N }, () => make())
+  const bench = new Bench({ time: 500, warmupTime: 100 })
+  for (const [label, make] of FANOUT_CONTENDERS) {
+    const f = make(N)
     let i = 0
     bench.add(`${label} 1/${N}`, () => {
-      cells[i++ % N].hit()
+      f.hit(i++ % N)
     })
   }
   return bench
 }
 
 function benchFineGrain(N: number) {
-  const bench = new Bench({ time: 120, warmupTime: 40 })
+  const bench = new Bench({ time: 500, warmupTime: 100 })
   for (const [label, make] of CONTENDERS) {
     const cells = Array.from({ length: N }, () => make())
     let i = 0
@@ -53,7 +84,7 @@ function benchFineGrain(N: number) {
 }
 
 function benchThroughput() {
-  const bench = new Bench({ time: 150, warmupTime: 40 })
+  const bench = new Bench({ time: 500, warmupTime: 100 })
   for (const [label, make] of CONTENDERS) {
     const c = make()
     bench.add(`${label} single-event`, () => c.hit())

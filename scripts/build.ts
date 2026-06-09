@@ -162,6 +162,14 @@ async function loadCore(component: DiscoveredComponent): Promise<LoadedCore> {
 
 const ESLINT_DISABLE = `/* eslint-disable */`
 
+/**
+ * Parts that are interactive — they fire press / activation and must be real
+ * focusable, keyboard-operable controls. The React emitter maps them to a
+ * `<button>` (focusable + Enter/Space for free); the native emitter maps them
+ * to `Pressable`. Everything else is a `<div>` / `View`.
+ */
+const INTERACTIVE_PARTS = new Set(['item', 'trigger', 'close'])
+
 // -----------------------------------------------------------------------------
 // React DOM emitters
 // -----------------------------------------------------------------------------
@@ -173,11 +181,14 @@ function emitReactElements(
   const decls = Object.entries(styles)
     .map(([elementName, spec]) => {
       const camel = elementName[0]!.toLowerCase() + elementName.slice(1)
+      // Interactive parts render as a real <button> (focusable + Enter/Space);
+      // everything else is a <div>.
+      const tag = INTERACTIVE_PARTS.has(camel) ? 'button' : 'div'
       const translated = translateAgnosticSpec(spec as never)
       const inlined = JSON.stringify(translated, null, 2)
       return `// Source: shared/components/${component.slug}/src/styles → ${camel}
 export const ${elementName} = styled(
-  "div",
+  "${tag}",
   ${inlined} as any,
 );`
     })
@@ -238,10 +249,9 @@ function emitNativeElements(
   // variants/compoundVariants/defaultVariants (the shape styleProps() consumes).
   // The element name is PascalCase (a component): `Content`, `Item`, ….
   //
-  // Primitive by part-name convention: interactive parts (item, trigger) fire
-  // press, so they map to `Pressable` (the RN analog of the web's clickable
+  // Primitive by part-name convention (INTERACTIVE_PARTS): interactive parts
+  // fire press, so they map to `Pressable` (the RN analog of the web's clickable
   // element); everything else is a `View`.
-  const INTERACTIVE_PARTS = new Set(['item', 'trigger'])
   const decls: string[] = []
   for (const [elementName, spec] of Object.entries(styles)) {
     const camel = elementName[0]!.toLowerCase() + elementName.slice(1)

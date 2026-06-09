@@ -182,11 +182,14 @@ export function DialogContent(props: DialogContentProps) {
       }
       const first = focusables[0]!
       const last = focusables[focusables.length - 1]!
-      const active = document.activeElement
-      if (event.shiftKey && (active === first || active === node)) {
+      const active = document.activeElement as HTMLElement | null
+      // If focus somehow sits outside the focusable list (e.g. on the content
+      // surface itself), pull it to an end so Tab stays inside the dialog.
+      const inside = active ? focusables.includes(active) : false
+      if (event.shiftKey && (active === first || !inside)) {
         event.preventDefault()
         last.focus()
-      } else if (!event.shiftKey && active === last) {
+      } else if (!event.shiftKey && (active === last || !inside)) {
         event.preventDefault()
         first.focus()
       }

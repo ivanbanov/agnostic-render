@@ -192,4 +192,37 @@ describe('focus management', () => {
     const content = screen.getByTestId('content')
     expect(content.contains(document.activeElement)).toBe(true)
   })
+
+  it('moves initial focus to the first focusable element (a real button)', () => {
+    renderDialog()
+    fireEvent.click(screen.getByText('Open'))
+    // Interactive parts render as real <button>s, so they're focusable; initial
+    // focus lands on the first one, not the content surface.
+    expect(document.activeElement?.tagName).toBe('BUTTON')
+    expect(document.activeElement?.textContent).toBe('Inside')
+  })
+
+  it('traps Tab: wraps from the last focusable to the first', () => {
+    renderDialog()
+    fireEvent.click(screen.getByText('Open'))
+    const content = screen.getByTestId('content')
+    const focusables = Array.from(content.querySelectorAll('button'))
+    const first = focusables[0]!
+    const last = focusables[focusables.length - 1]!
+    last.focus()
+    fireEvent.keyDown(last, { key: 'Tab' })
+    expect(document.activeElement).toBe(first)
+  })
+
+  it('traps Shift+Tab: wraps from the first focusable to the last', () => {
+    renderDialog()
+    fireEvent.click(screen.getByText('Open'))
+    const content = screen.getByTestId('content')
+    const focusables = Array.from(content.querySelectorAll('button'))
+    const first = focusables[0]!
+    const last = focusables[focusables.length - 1]!
+    first.focus()
+    fireEvent.keyDown(first, { key: 'Tab', shiftKey: true })
+    expect(document.activeElement).toBe(last)
+  })
 })

@@ -273,30 +273,38 @@ export async function runRenderingBench(N: number, moves: number) {
       k => {
         cur = k % N
         setHi(cur)
-        // --- xstate selector (one actor + useSelector per row) ---
-        // XState's fine-grained path, the counterpart to core's selector: one actor
-        // holds the highlighted index; each row useSelectors "am I highlighted?", so a
-        // `move` wakes only the 2 rows whose answer flipped. NOTE: this block sits
-        // inside the zag/instance move callback, so it re-runs each move and the last
-        // run's numbers are what land in results['xstate/selector'].
-        {
-          const actor = createXActor(xstateListMachine)
-          actor.start()
-          results['xstate/selector'] = run(
-            'xstate/selector',
-            () =>
-              Array.from({ length: N }, (_, i) => (
-                <XStateSelectorRow key={i} actor={actor} index={i} />
-              )),
-            k => actor.send({ type: 'move', to: k % N }),
-          )
-          actor.stop()
-        }
       },
     )
   }
 
+  // --- FINE-GRAINED arena: xstate selector (one actor + useSelector per row) ---
+  // XState's fine-grained path, the counterpart to core's `selector`: ONE actor
+  // holds the highlighted index; each row useSelectors "am I highlighted?", so a
+  // `move` wakes only the 2 rows whose answer flipped. This is its OWN top-level
+  // arena (built/mounted/torn down once via run()'s REPS) — directly parallel to
+  // the `selector` arena above.
+  {
+    const actor = createXActor(xstateListMachine)
+    actor.start()
+    results['xstate/selector'] = run(
+      'xstate/selector',
+      () =>
+        Array.from({ length: N }, (_, i) => <XStateSelectorRow key={i} actor={actor} index={i} />),
+      k => actor.send({ type: 'move', to: k % N }),
+    )
+    actor.stop()
+  }
+
   console.log(`\n### Rendering — list of ${N}: first render (mount) + ${moves} highlight moves`)
+  // NOTE on the `mount (ms)` column: it is NOT apples-to-apples across rows — it
+  // reflects each library's idiomatic per-row primitive, which is the only fair
+  // way to compare them. core/instance + xstate/selector rows mount a
+  // `useSelector`/`useSyncExternalStore` subscription; zag/instance mounts a
+  // full `useMachine` + `React.memo` wrapper per row (required so a parent move
+  // re-renders only the 2 rows whose `active` prop flips — without memo the
+  // harness, not Zag, would dominate). selector/naive share ONE machine. So read
+  // `mount (ms)` as "cost of THIS library's idiomatic row", not a like-for-like
+  // primitive. The re-render COUNTS (avg rows/move) ARE directly comparable.
   console.table(
     Object.entries(results).map(([k, v]) => ({
       strategy: k,

@@ -46,7 +46,7 @@ export const Group = styled('div', {
 } as any)
 
 // Source: shared/components/dropdown-menu/src/styles → item
-export const Item = styled('div', {
+export const Item = styled('button', {
   boxSizing: 'border-box',
   display: 'grid',
   gridTemplateColumns: 'auto 1fr auto',
