@@ -27,15 +27,11 @@ import type {
   DialogState,
 } from './types'
 
-// The dialog machine has no named impls (no guards/actions/effects/delays) — its
-// transitions are unconditional. setup() is still used for a consistent shape:
-// an empty registry, so any future named slot is checked at compile time.
-const { createMachine } = setup<DialogContext, DialogEvent, DialogComputed>().config({})
-
 /**
  * Build the dialog machine CONFIG from already-resolved props (defaults
- * applied). Props are read ONCE here to seed context + initial state; named
- * impls (none here) are registered above via setup().
+ * applied). Props are read ONCE here to seed context + initial state. The dialog
+ * has no named impls (its transitions are unconditional), so it uses the
+ * lightweight `setup().createMachine(...)` — no registry, no name-checking needed.
  */
 export function dialogMachineConfig(props: DialogMachineProps) {
   const context: DialogContext = {
@@ -43,7 +39,7 @@ export function dialogMachineConfig(props: DialogMachineProps) {
     modal: props.modal,
   }
 
-  return createMachine({
+  return setup<DialogContext, DialogEvent, DialogComputed>().createMachine({
     initial: (props.open ?? props.defaultOpen) ? 'open' : 'closed',
     context,
 
