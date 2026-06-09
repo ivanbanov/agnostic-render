@@ -11,6 +11,8 @@
   "dependencies": {
     "@json-render/core": "^0.19.0",
     "@json-render/react": "^0.19.0",
+    "@render-experiment/accordion-core": "workspace:*",
+    "@render-experiment/accordion-react": "workspace:*",
     "@render-experiment/dialog-core": "workspace:*",
     "@render-experiment/dialog-react": "workspace:*",
     "@render-experiment/dropdown-menu-core": "workspace:*",

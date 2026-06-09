@@ -10,6 +10,7 @@
     "web": "expo start --web --clear"
   },
   "dependencies": {
+    "@render-experiment/accordion-native": "workspace:*",
     "@render-experiment/dialog-native": "workspace:*",
     "@render-experiment/dropdown-menu-native": "workspace:*",
     "@render-experiment/tooltip-native": "workspace:*",

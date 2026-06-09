@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Accordion } from '@render-experiment/accordion-react'
 import { Dialog } from '@render-experiment/dialog-react'
 import { DropdownMenu } from '@render-experiment/dropdown-menu-react'
 import { Tooltip } from '@render-experiment/tooltip-react'
@@ -22,14 +23,15 @@ export function App() {
   const [lastAction, setLastAction] = useState('—')
   const [theme, setTheme] = useState('system')
   const [bookmarks, setBookmarks] = useState({ urls: true, github: false })
+  const [openSections, setOpenSections] = useState<string[]>(['shipping'])
 
   return (
     <Container>
       <Hero>
         <Title>render-experiment</Title>
         <Lead>
-          A tooltip and a dropdown-menu driven by one substrate-agnostic state machine, rendered
-          through the React target.
+          A tooltip, dropdown-menu, dialog, and accordion driven by one substrate-agnostic state
+          machine, rendered through the React target.
         </Lead>
       </Hero>
 
@@ -152,6 +154,70 @@ export function App() {
             </Dialog.Portal>
           </Dialog>
         </Row>
+      </Card>
+
+      <Card>
+        <CardTitle>Accordion · single (collapsible)</CardTitle>
+        <CardHint>
+          One panel open at a time. Click a header to toggle; Arrow keys / Home / End move focus
+          between headers.
+        </CardHint>
+        <Accordion
+          type='single'
+          collapsible
+          value={openSections}
+          onValueChange={({ value }) => setOpenSections(value)}
+        >
+          <Accordion.Item value='shipping'>
+            <Accordion.Header>
+              <Accordion.Trigger>Shipping</Accordion.Trigger>
+            </Accordion.Header>
+            <Accordion.Content>
+              Orders ship within 2 business days. Tracking is emailed once the carrier scans the
+              package.
+            </Accordion.Content>
+          </Accordion.Item>
+          <Accordion.Item value='returns'>
+            <Accordion.Header>
+              <Accordion.Trigger>Returns</Accordion.Trigger>
+            </Accordion.Header>
+            <Accordion.Content>
+              Free returns within 30 days. The item must be unused and in its original packaging.
+            </Accordion.Content>
+          </Accordion.Item>
+          <Accordion.Item value='warranty' disabled>
+            <Accordion.Header>
+              <Accordion.Trigger>Warranty (disabled)</Accordion.Trigger>
+            </Accordion.Header>
+            <Accordion.Content>You should not be able to open this one.</Accordion.Content>
+          </Accordion.Item>
+        </Accordion>
+        <CardHint>open · {openSections.length ? openSections.join(', ') : 'none'}</CardHint>
+      </Card>
+
+      <Card>
+        <CardTitle>Accordion · multiple</CardTitle>
+        <CardHint>Each panel toggles independently — any number can be open at once.</CardHint>
+        <Accordion type='multiple' defaultValue={['a']}>
+          <Accordion.Item value='a'>
+            <Accordion.Header>
+              <Accordion.Trigger>What is it?</Accordion.Trigger>
+            </Accordion.Header>
+            <Accordion.Content>
+              A headless accordion driven by the same substrate-agnostic machine as the other
+              components on this page.
+            </Accordion.Content>
+          </Accordion.Item>
+          <Accordion.Item value='b'>
+            <Accordion.Header>
+              <Accordion.Trigger>How is it built?</Accordion.Trigger>
+            </Accordion.Header>
+            <Accordion.Content>
+              One core state machine; the React target supplies the view, focus handling, and styled
+              elements.
+            </Accordion.Content>
+          </Accordion.Item>
+        </Accordion>
       </Card>
     </Container>
   )

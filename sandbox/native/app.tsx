@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar'
 import { Tooltip, TooltipProvider } from '@render-experiment/tooltip-native'
 import { DropdownMenu } from '@render-experiment/dropdown-menu-native'
 import { Dialog } from '@render-experiment/dialog-native'
+import { Accordion } from '@render-experiment/accordion-native'
 
 // Premium light surface — mirrors the React sandbox: soft gray → white gradient,
 // a centered container, white cards with a soft shadow, clean buttons.
@@ -29,6 +30,7 @@ export default function App() {
   const [lastAction, setLastAction] = useState('—')
   const [theme, setTheme] = useState('system')
   const [bookmarks, setBookmarks] = useState({ urls: true, github: false })
+  const [openSections, setOpenSections] = useState<string[]>(['shipping'])
 
   return (
     <View style={styles.root}>
@@ -38,8 +40,8 @@ export default function App() {
           <View style={styles.hero}>
             <Text style={styles.title}>render-experiment</Text>
             <Text style={styles.lead}>
-              A tooltip and a dropdown-menu driven by one substrate-agnostic state machine, rendered
-              through the React Native target.
+              A tooltip, dropdown-menu, dialog, and accordion driven by one substrate-agnostic state
+              machine, rendered through the React Native target.
             </Text>
           </View>
 
@@ -158,6 +160,71 @@ export default function App() {
                 </Dialog.Overlay>
               </Dialog>
             </View>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Accordion · single (collapsible)</Text>
+            <Text style={styles.cardHint}>One panel open at a time. Tap a header to toggle.</Text>
+            <Accordion
+              id='faq'
+              type='single'
+              collapsible
+              value={openSections}
+              onValueChange={({ value }) => setOpenSections(value)}
+            >
+              <Accordion.Item value='shipping'>
+                <Accordion.Header>
+                  <Accordion.Trigger>Shipping</Accordion.Trigger>
+                </Accordion.Header>
+                <Accordion.Content>
+                  Orders ship within 2 business days. Tracking is emailed once the carrier scans the
+                  package.
+                </Accordion.Content>
+              </Accordion.Item>
+              <Accordion.Item value='returns'>
+                <Accordion.Header>
+                  <Accordion.Trigger>Returns</Accordion.Trigger>
+                </Accordion.Header>
+                <Accordion.Content>
+                  Free returns within 30 days. The item must be unused and in its original
+                  packaging.
+                </Accordion.Content>
+              </Accordion.Item>
+              <Accordion.Item value='warranty' disabled>
+                <Accordion.Header>
+                  <Accordion.Trigger>Warranty (disabled)</Accordion.Trigger>
+                </Accordion.Header>
+                <Accordion.Content>You should not be able to open this one.</Accordion.Content>
+              </Accordion.Item>
+            </Accordion>
+            <Text style={styles.cardHint}>
+              open · {openSections.length ? openSections.join(', ') : 'none'}
+            </Text>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Accordion · multiple</Text>
+            <Text style={styles.cardHint}>Each panel toggles independently.</Text>
+            <Accordion id='about' type='multiple' defaultValue={['a']}>
+              <Accordion.Item value='a'>
+                <Accordion.Header>
+                  <Accordion.Trigger>What is it?</Accordion.Trigger>
+                </Accordion.Header>
+                <Accordion.Content>
+                  A headless accordion driven by the same substrate-agnostic machine as the other
+                  components on this page.
+                </Accordion.Content>
+              </Accordion.Item>
+              <Accordion.Item value='b'>
+                <Accordion.Header>
+                  <Accordion.Trigger>How is it built?</Accordion.Trigger>
+                </Accordion.Header>
+                <Accordion.Content>
+                  One core state machine; the native target supplies the view, touch handling, and
+                  styled elements.
+                </Accordion.Content>
+              </Accordion.Item>
+            </Accordion>
           </View>
         </ScrollView>
       </TooltipProvider>
