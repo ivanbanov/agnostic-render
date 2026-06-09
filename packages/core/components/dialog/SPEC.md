@@ -1,8 +1,8 @@
 # Dialog — spec
 
-A window overlaid on the page that interrupts the flow and requires a response
+A window overlaid on the page that interrupts the flow and asks for a response
 before the user returns to the rest of the app. Modeled after the
-[Radix UI Dialog] API surface and the [W3C APG Modal Dialog pattern] for ARIA +
+[Radix UI Dialog] API surface and the [W3C APG Modal Dialog pattern] for the
 focus + keyboard semantics.
 
 [Radix UI Dialog]: https://www.radix-ui.com/primitives/docs/components/dialog
@@ -13,96 +13,78 @@ focus + keyboard semantics.
 ## Anatomy
 
 ```
-dialog                                 // owns the open/closed state
-├─ dialog.trigger                      // the button that opens it
-└─ dialog.portal                       // renders the layers at the page root
-   ├─ dialog.overlay                   // the backdrop behind the dialog
-   └─ dialog.content                   // the dialog surface (the window)
-      ├─ dialog.title                  // accessible name, announced on open
-      ├─ dialog.description            // optional accessible description
-      └─ dialog.close                  // a button that closes it
+dialog
+├─ dialog.trigger          // the element that opens it
+└─ dialog.content          // the dialog surface (the window)
+   ├─ dialog.overlay       // the backdrop behind the window
+   ├─ dialog.title         // the dialog's heading
+   ├─ dialog.description   // an optional supporting line
+   └─ dialog.close         // an element that closes it
 ```
 
-The portal lifts the overlay + content out to the page root so the dialog sits
-above the rest of the app regardless of where the trigger lives in the tree.
+The window and its backdrop are lifted above the rest of the app, so the dialog
+sits on top regardless of where the trigger lives in the page.
 
 ## States
 
-- **closed** — nothing rendered beyond the trigger.
-- **open** — overlay + content mounted; the dialog is visible and (when modal)
-  the rest of the page is inert.
-
-`data-state` reflects `open` / `closed` on the trigger, overlay, and content.
+- **closed** — only the trigger is present; the window is not shown.
+- **open** — the window is visible over the page; while modal, the rest of the
+  page is set aside until the dialog is dismissed.
 
 ## Behavior
 
 ### Opening
 
-- Activating the trigger (click, or Enter / Space) → opens.
-- A controlled `open` prop overrides the internal state; all internal opens and
-  closes route through `onOpenChange`, never mutating the controlled value.
+- Activating the trigger opens the dialog.
+- A consumer may drive the open state directly. When they do, the dialog never
+  changes its own visibility — it reports the intent and the consumer decides
+  whether to honor it.
 
 ### Closing
 
-- Activating a close button → closes.
-- Escape while open → closes. Cancelable via `onEscapeKeyDown` (preventDefault
-  keeps it open).
-- Pointer down outside the content (on the overlay / the rest of the page) →
-  closes. Cancelable via `onPointerDownOutside` (preventDefault keeps it open).
-- The component never closes itself when controlled — it asks via
-  `onOpenChange` and the controller decides.
+- Activating a close control dismisses the dialog.
+- Escape dismisses the dialog. A consumer can intercept and cancel this.
+- Pressing on the backdrop — anywhere outside the window — dismisses the dialog.
+  A consumer can intercept and cancel this.
 
 ### Modal vs non-modal
 
-`modal` (default `true`) governs whether the dialog makes the rest of the page
-inert:
+A dialog is modal by default: while it is open the rest of the page is set
+aside — it can't be interacted with, the backdrop covers it, and page scrolling
+is held — so attention stays on the dialog until it closes.
 
-- **modal** — content outside the dialog is inert (not focusable, not
-  interactive); the backdrop blocks pointer interaction with the page; page
-  scroll is locked; `aria-modal="true"` is set on the content.
-- **non-modal** — the dialog floats above the page but the rest stays
-  interactive; no scroll lock, no inert, no `aria-modal`.
+A dialog can instead be non-modal, floating above the page while the rest stays
+fully usable. A dialog presents itself as modal only when it both prevents
+interaction with the content behind it and visually obscures it.
 
-A dialog is marked modal only when both the code prevents interaction outside it
-**and** the styling obscures that content — per the W3C note.
+## Focus
 
-## Focus management
-
-- **On open** — focus moves into the dialog: to the first focusable element
-  inside the content, or to the content surface itself (a `tabindex=-1` target)
-  when there is none. Authors may redirect this.
-- **While open (modal)** — focus is trapped: Tab from the last focusable wraps
-  to the first; Shift+Tab from the first wraps to the last. Focus never leaves
-  the dialog via the keyboard.
-- **On close** — focus returns to the element that opened the dialog (the
-  trigger), unless that element is gone.
-
-## Accessibility
-
-- The content surface is announced as a dialog (`role="dialog"`), and as modal
-  (`aria-modal="true"`) when modal.
-- The content references its title as the accessible name
-  (`aria-labelledby` → the title's id) and its description as the accessible
-  description (`aria-describedby` → the description's id) when each is present.
-- The trigger reports that it opens a dialog and whether it is currently open;
-  while open it references the content's id.
-- The close button is a real button in the tab sequence.
+- **On open** — focus moves into the dialog, landing on the first thing the user
+  can act on, or on the window itself when there is nothing actionable inside.
+- **While open (modal)** — focus stays within the dialog: moving past the last
+  item loops back to the first, and moving back from the first loops to the
+  last. Keyboard navigation never escapes the open dialog.
+- **On close** — focus returns to whatever opened the dialog, so the user picks
+  up where they left off.
 
 ## Keyboard
 
-**On the trigger:**
+- **On the trigger** — the usual activation keys open the dialog.
+- **Inside the open dialog** — moving forward and backward cycles through the
+  dialog's contents and never leaves it (see Focus).
+- **Escape** — dismisses the dialog and returns focus to the trigger. Cancelable.
 
-- Enter / Space → open.
+## Accessibility
 
-**Inside the open dialog:**
-
-- Tab → next focusable inside the dialog; wraps to the first at the end.
-- Shift+Tab → previous focusable; wraps to the last at the start.
-- Escape → close; focus returns to the trigger. Cancelable.
+- The window is announced as a dialog, and as a modal one while it holds the
+  page aside.
+- The title gives the dialog its name; the description, when present, gives it
+  supporting context — both announced when the dialog opens.
+- The trigger conveys that it opens a dialog and whether that dialog is open.
+- The close control is a real, reachable control in the keyboard order.
 
 ## Controlled vs. uncontrolled
 
-Open state is uncontrolled by default (`defaultOpen`, default `false`). Authors
-can supply a controlled `open` + `onOpenChange`; the component then never
-mutates the value itself and routes every open/close intent through the
-callback.
+The dialog manages its own open state by default, optionally starting open. A
+consumer may take over that state instead; the dialog then never opens or closes
+itself, and routes every open/close intent to the consumer to decide.
