@@ -57,6 +57,9 @@ function buildXstate() {
 
 // Zag config is shared across all instances (built once), matching how the others
 // reuse a single config — so we time machine construction, not config building.
+// `hit`/`miss` transitions mirror core/xstate so all three build an EQUAL config
+// surface (same event handlers + actions) — otherwise zag would construct a
+// simpler machine and look artificially cheap.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const zagDef: any = createZagMachine({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -69,7 +72,22 @@ const zagDef: any = createZagMachine({
   initialState() {
     return 'idle'
   },
-  states: { idle: {} },
+  states: {
+    idle: {
+      on: {
+        hit: { actions: ['inc'] },
+        miss: { actions: ['incOther'] },
+      },
+    },
+  },
+  implementations: {
+    actions: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      inc: ({ context }: any) => context.set('value', context.get('value') + 1),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      incOther: ({ context }: any) => context.set('other', context.get('other') + 1),
+    },
+  },
 })
 function buildZag() {
   const m = new VanillaMachine(zagDef, {})

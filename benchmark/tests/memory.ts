@@ -80,39 +80,73 @@ function zagConfig(fields: number): any {
     initialState() {
       return 'idle'
     },
-    states: { idle: {} },
+    // `hit` mirrors core/xstate (which both bump f0) so all three machines carry
+    // an equal config surface — otherwise zag's per-instance footprint would be
+    // measured against a machine with no event handlers.
+    states: {
+      idle: {
+        on: { hit: { actions: ['inc'] } },
+      },
+    },
+    implementations: {
+      actions: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        inc: ({ context }: any) => context.set('f0', context.get('f0') + 1),
+      },
+    },
   })
 }
 
-const ENGINES: Record<string, (fields: number) => unknown> = {
-  core: buildCore,
-  xstate: buildXstate,
-  // bind a shared per-width config so we measure machine overhead, not config dup
-  zag: (() => {
-    const cache = new Map<number, unknown>()
-    return (fields: number) => {
-      if (!cache.has(fields)) cache.set(fields, zagConfig(fields))
-      return buildZag(fields, cache.get(fields))
-    }
-  })(),
+// A built machine that accepts a `hit` event — all three engines expose `.send`.
+type Sendable = { send: (e: { type: string }) => void }
+
+interface Engine {
+  build: (fields: number) => unknown
+  // Fire one `hit` so a write actually happens. For core this trips copy-on-write
+  // (each machine stops sharing the config's context object and owns a private
+  // copy), which is the footprint a real app pays — an idle machine that never
+  // wrote shares one context and is the best-case-only number.
+  write: (m: unknown) => void
 }
 
-function measureOnce(build: (fields: number) => unknown, N: number, fields: number): number {
+const sendHit = (m: unknown) => (m as Sendable).send({ type: 'hit' })
+
+const ENGINES: Record<string, Engine> = {
+  core: { build: buildCore, write: sendHit },
+  xstate: { build: buildXstate, write: sendHit },
+  // bind a shared per-width config so we measure machine overhead, not config dup
+  zag: {
+    build: (() => {
+      const cache = new Map<number, unknown>()
+      return (fields: number) => {
+        if (!cache.has(fields)) cache.set(fields, zagConfig(fields))
+        return buildZag(fields, cache.get(fields))
+      }
+    })(),
+    write: sendHit,
+  },
+}
+
+function measureOnce(engine: Engine, N: number, fields: number, write: boolean): number {
   const before = heapMB()
   const hold: unknown[] = Array.from({ length: N })
-  for (let i = 0; i < N; i++) hold[i] = build(fields)
+  for (let i = 0; i < N; i++) {
+    const m = engine.build(fields)
+    if (write) engine.write(m)
+    hold[i] = m
+  }
   const after = heapMB()
   // keep `hold` reachable across the sample so it isn't collected
   if ((hold as unknown[]).length !== N) throw new Error('unreachable')
   return after - before // MB retained by the N machines
 }
 
-// Best (minimum) of a few passes — the lowest retained-heap reading is the least
-// polluted by leftover GC garbage, so it's the trustworthy per-machine figure.
-function measure(build: (fields: number) => unknown, N: number, fields: number): number {
-  let best = Infinity
-  for (let r = 0; r < 3; r++) best = Math.min(best, measureOnce(build, N, fields))
-  return best
+// Median of a few passes — more honest than min-of-N, which biases toward the
+// pass where background GC happened to reclaim the most and can under-report the
+// true retained set. heapMB() already double-GCs before each sample.
+const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]
+function measure(engine: Engine, N: number, fields: number, write: boolean): number {
+  return median(Array.from({ length: 3 }, () => measureOnce(engine, N, fields, write)))
 }
 
 export async function runMemory() {
@@ -121,18 +155,24 @@ export async function runMemory() {
     console.warn('⚠️  no --expose-gc — numbers are noisy (the suite passes it for you).')
   }
   const N = 5000
-  for (const [width, fields] of Object.entries(FIELDS)) {
-    console.log(
-      `\n### Memory — ${N.toLocaleString()} machines, ${width} context (${fields} fields)`,
-    )
-    const rows = Object.entries(ENGINES).map(([engine, build]) => {
-      const mb = measure(build, N, fields)
-      return {
-        engine,
-        'total (MB)': mb.toFixed(1),
-        'KB / machine': ((mb * 1024) / N).toFixed(2),
-      }
-    })
-    console.table(rows)
+  // Two modes: IDLE (never written — core shares one context via COW, best case)
+  // and WRITTEN (one hit each — COW has fired, every core machine owns its context,
+  // the footprint a real churny app pays). The gap between them IS the COW story.
+  for (const write of [false, true]) {
+    const mode = write ? 'written (1 hit each — COW fired)' : 'idle (never written)'
+    for (const [width, fields] of Object.entries(FIELDS)) {
+      console.log(
+        `\n### Memory — ${N.toLocaleString()} machines, ${width} context (${fields} fields), ${mode}`,
+      )
+      const rows = Object.entries(ENGINES).map(([name, engine]) => {
+        const mb = measure(engine, N, fields, write)
+        return {
+          engine: name,
+          'total (MB)': mb.toFixed(1),
+          'KB / machine': ((mb * 1024) / N).toFixed(2),
+        }
+      })
+      console.table(rows)
+    }
   }
 }

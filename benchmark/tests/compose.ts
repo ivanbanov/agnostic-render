@@ -32,7 +32,7 @@ function buildGroup(M: number) {
 }
 
 function benchCombine(M: number) {
-  const bench = new Bench({ time: 120, warmupTime: 40 })
+  const bench = new Bench({ time: 500, warmupTime: 100 })
   const g = buildGroup(M)
   g.start()
   const keys = Object.keys(g.members)
@@ -49,7 +49,7 @@ function benchCombine(M: number) {
 }
 
 function benchSync(M: number) {
-  const bench = new Bench({ time: 120, warmupTime: 40 })
+  const bench = new Bench({ time: 500, warmupTime: 100 })
   const g = buildGroup(M)
   g.start()
   const keys = Object.keys(g.members)

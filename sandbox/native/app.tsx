@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { Tooltip, TooltipProvider } from '@render-experiment/tooltip-native'
 import { DropdownMenu } from '@render-experiment/dropdown-menu-native'
+import { Dialog } from '@render-experiment/dialog-native'
 
 // Premium light surface — mirrors the React sandbox: soft gray → white gradient,
 // a centered container, white cards with a soft shadow, clean buttons.
@@ -127,6 +128,37 @@ export default function App() {
             </View>
             <Text style={styles.cardHint}>last action · {lastAction}</Text>
           </View>
+
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Dialog</Text>
+            <Text style={styles.cardHint}>
+              Modal window: tap the backdrop or Android back to close.
+            </Text>
+            <View style={styles.row}>
+              <Dialog>
+                <Dialog.Trigger>
+                  <Button tone='primary'>Open dialog</Button>
+                </Dialog.Trigger>
+                <Dialog.Overlay>
+                  <Dialog.Content>
+                    <Dialog.Title>Delete project?</Dialog.Title>
+                    <Dialog.Description>
+                      This permanently removes the project and all of its data. This action cannot
+                      be undone.
+                    </Dialog.Description>
+                    <View style={styles.dialogFooter}>
+                      <Dialog.Close>
+                        <Button>Cancel</Button>
+                      </Dialog.Close>
+                      <Dialog.Close>
+                        <Button tone='primary'>Delete</Button>
+                      </Dialog.Close>
+                    </View>
+                  </Dialog.Content>
+                </Dialog.Overlay>
+              </Dialog>
+            </View>
+          </View>
         </ScrollView>
       </TooltipProvider>
     </View>
@@ -154,6 +186,7 @@ const styles = StyleSheet.create({
   hero: { gap: 10, marginBottom: 8 },
   title: { fontSize: 32, fontWeight: '700', letterSpacing: -0.5, color: '#0d0f16' },
   lead: { fontSize: 16, lineHeight: 24, color: '#5b6172' },
+  dialogFooter: { flexDirection: 'row', gap: 12, marginTop: 4 },
 
   card: {
     gap: 14,
