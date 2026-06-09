@@ -8,19 +8,13 @@ import {
   type TooltipMachineProps,
   type TooltipProps,
 } from '@render-experiment/tooltip-core'
-import { tooltipAdapter } from '../adapter'
 import { tooltipEffects } from '../effects'
 
 /** Wire the core tooltip machine to React and return the connect() API. */
 export function useTooltipApi(props: TooltipProps): TooltipApi {
   // Resolve defaults once (machine + connector operate on the concrete shape).
   const tooltipProps: TooltipMachineProps = { ...TOOLTIP_DEFAULTS, ...props }
-  const { api, machine } = useMachine(
-    tooltipMachineConfig,
-    connectTooltip,
-    tooltipAdapter,
-    tooltipProps,
-  )
+  const { api, machine } = useMachine(tooltipMachineConfig, connectTooltip, tooltipProps)
   // Substrate-specific transport (Escape, back-button, …) declared as a
   // ComponentEffect; useEffects owns the React effect + builds its dep array.
   useEffects(machine, tooltipEffects, tooltipProps)

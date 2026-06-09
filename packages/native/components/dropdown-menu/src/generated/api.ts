@@ -8,7 +8,6 @@ import {
   type DropdownMenuMachineProps,
   type DropdownMenuProps,
 } from '@render-experiment/dropdown-menu-core'
-import { dropdownMenuAdapter } from '../adapter'
 import { dropdownMenuEffects } from '../effects'
 
 /** Wire the core dropdownMenu machine to native and return the connect() API. */
@@ -18,7 +17,6 @@ export function useDropdownMenuApi(props: DropdownMenuProps): DropdownMenuApi {
   const { api, machine } = useMachine(
     dropdownMenuMachineConfig,
     connectDropdownMenu,
-    dropdownMenuAdapter,
     dropdownMenuProps,
   )
   // Substrate-specific transport declared as a ComponentEffect; useEffects owns

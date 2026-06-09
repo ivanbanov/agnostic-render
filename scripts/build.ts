@@ -224,7 +224,6 @@ import {
   type ${pascal}MachineProps,
   type ${pascal}Props,
 } from "@render-experiment/${slug}-core";
-import { ${camel}Adapter } from "../adapter";
 import { ${camel}Effects } from "../effects";
 
 /** Wire the core ${camel} machine to React and return the connect() API. */
@@ -234,7 +233,6 @@ export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
   const { api, machine } = useMachine(
     ${camel}MachineConfig,
     connect${pascal},
-    ${camel}Adapter,
     ${camel}Props,
   );
   // Substrate-specific transport (Escape, back-button, …) declared as a
@@ -305,7 +303,6 @@ import {
   type ${pascal}MachineProps,
   type ${pascal}Props,
 } from "@render-experiment/${slug}-core";
-import { ${camel}Adapter } from "../adapter";
 import { ${camel}Effects } from "../effects";
 
 /** Wire the core ${camel} machine to native and return the connect() API. */
@@ -315,7 +312,6 @@ export function use${pascal}Api(props: ${pascal}Props): ${pascal}Api {
   const { api, machine } = useMachine(
     ${camel}MachineConfig,
     connect${pascal},
-    ${camel}Adapter,
     ${camel}Props,
   );
   // Substrate-specific transport declared as a ComponentEffect; useEffects owns
