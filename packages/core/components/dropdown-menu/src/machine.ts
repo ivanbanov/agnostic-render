@@ -20,7 +20,7 @@
  * Sibling files: types.ts · props.ts · store.ts · connect.ts · utils.ts · index.ts
  */
 
-import { act, config, type Machine } from '@render-experiment/machine-core'
+import { act, setup, type Machine } from '@render-experiment/machine-core'
 import { TYPEAHEAD_RESET_MS } from './props'
 import { dropdownMenuStore } from './store'
 import type {
@@ -32,11 +32,141 @@ import type {
 } from './types'
 import { firstEnabled, lastEnabled, makeSelectEvent, step, typeaheadFind } from './utils'
 
+// Named impls registered once (they read context / events / the global store,
+// never props) — so a state's `guard`/`entry`/`effects` name is checked against
+// these.
+const { createMachine } = setup<DropdownMenuContext, DropdownMenuEvent, DropdownMenuComputed>()({
+  guards: {
+    shouldCloseOnSelect: ({ context, event }) => {
+      // Only meaningful for `item.click`. Guarding by type narrows the
+      // payload so `selectEvent` / `closeOnSelect` are typed.
+      if (event.type !== 'item.click') return false
+      // Consumer can cancel close via onSelect(event).preventDefault().
+      if (event.selectEvent.defaultPrevented) return false
+      // Per-item override (false for checkbox/radio); else the resolved default.
+      if (event.closeOnSelect !== undefined) return event.closeOnSelect
+      return context.closeOnSelect
+    },
+  },
+
+  actions: {
+    setGlobalId: ({ context }) => {
+      dropdownMenuStore.setOpen(context.id)
+    },
+    clearGlobalId: ({ context }) => {
+      if (dropdownMenuStore.get().openId === context.id) {
+        dropdownMenuStore.setOpen(null)
+      }
+    },
+
+    highlightItem: ({ context, setContext, event }) => {
+      if (context.suspendPointer) return
+      if (event.type !== 'item.pointermove') return
+      setContext({ highlightedValue: event.value })
+    },
+    clearHighlightIfMatch: ({ context, setContext, event }) => {
+      if (context.suspendPointer) return
+      if (event.type !== 'item.pointerleave') return
+      if (context.highlightedValue === event.value) {
+        setContext({ highlightedValue: null })
+      }
+    },
+
+    applyPendingHighlight: ({ context, setContext, event }) => {
+      if (!context.pendingHighlight) return
+      if (!('items' in event)) return
+      const next =
+        context.pendingHighlight === 'first' ? firstEnabled(event.items) : lastEnabled(event.items)
+      if (next) {
+        setContext({ highlightedValue: next.value, pendingHighlight: null })
+      }
+    },
+
+    highlightFirst: ({ setContext, event }) => {
+      if (!('items' in event)) return
+      const next = firstEnabled(event.items)
+      if (next) setContext({ highlightedValue: next.value })
+    },
+    highlightLast: ({ setContext, event }) => {
+      if (!('items' in event)) return
+      const next = lastEnabled(event.items)
+      if (next) setContext({ highlightedValue: next.value })
+    },
+    highlightNext: ({ context, setContext, event }) => {
+      if (!('items' in event)) return
+      const next = step(event.items, context.highlightedValue, 1, context.loop)
+      if (next) setContext({ highlightedValue: next.value })
+    },
+    highlightPrev: ({ context, setContext, event }) => {
+      if (!('items' in event)) return
+      const next = step(event.items, context.highlightedValue, -1, context.loop)
+      if (next) setContext({ highlightedValue: next.value })
+    },
+
+    clickHighlightedItem: ({ context, send, event }) => {
+      if (!('items' in event)) return
+      const current = event.items.find(i => i.value === context.highlightedValue)
+      if (!current || current.disabled) return
+      // Invoke onSelect synchronously so the guard can read
+      // defaultPrevented — matches the pointer-click path in connect.ts.
+      const selectEvent = makeSelectEvent()
+      current.onSelect?.(selectEvent)
+      send({
+        type: 'item.click',
+        value: current.value,
+        onSelect: current.onSelect,
+        selectEvent,
+        // explicit per-item override; falls through to default behavior
+        // when undefined (regular items close, toggles don't).
+        closeOnSelect:
+          current.closeOnSelect ??
+          (current.kind === 'checkbox' || current.kind === 'radio' ? false : undefined),
+        items: event.items,
+      })
+    },
+
+    typeaheadMatch: ({ context, setContext, event }) => {
+      if (event.type !== 'typeahead.char') return
+      const char = event.char.toLowerCase()
+      if (!char) return
+
+      const now = Date.now()
+      const expired = now - context.typeaheadLastTime > TYPEAHEAD_RESET_MS
+      const buffer = expired ? char : context.typeaheadBuffer + char
+
+      const match = typeaheadFind(event.items, buffer, context.highlightedValue)
+      if (match) {
+        setContext({
+          typeaheadBuffer: buffer,
+          typeaheadLastTime: now,
+          highlightedValue: match.value,
+          suspendPointer: true,
+        })
+      } else {
+        setContext({ typeaheadBuffer: buffer, typeaheadLastTime: now })
+      }
+    },
+  },
+
+  effects: {
+    // While open, watch the global store: if another menu claims the
+    // single-open slot, close this one. (Escape is NOT a machine effect —
+    // its listener lives in the target's effects.ts, which sends `escape`.)
+    trackGlobalStore: ({ context, send }) =>
+      dropdownMenuStore.subscribe(() => {
+        const openId = dropdownMenuStore.get().openId
+        if (openId !== context.id && openId !== null) {
+          send({ type: 'close', src: 'store.id.change' })
+        }
+      }),
+  },
+})
+
 /**
  * Build the dropdown-menu machine CONFIG from already-resolved props (defaults
- * applied). Returns a config — the target bridge applies its adapter
- * (withAdapter) and builds the running machine. Props are read ONCE here to
- * seed context + initial state.
+ * applied). Props are read ONCE here to seed context + initial state; the named
+ * impls are registered above via setup(), so the state graph's guard/action/
+ * effect names are checked at compile time.
  */
 export function dropdownMenuMachineConfig(props: DropdownMenuMachineProps) {
   const context: DropdownMenuContext = {
@@ -52,7 +182,7 @@ export function dropdownMenuMachineConfig(props: DropdownMenuMachineProps) {
     pendingHighlight: null,
   }
 
-  return config<DropdownMenuState, DropdownMenuContext, DropdownMenuEvent, DropdownMenuComputed>({
+  return createMachine({
     initial: (props.open ?? props.defaultOpen) ? 'open' : 'closed',
     context,
 
@@ -111,135 +241,6 @@ export function dropdownMenuMachineConfig(props: DropdownMenuMachineProps) {
 
           'items.ready': { actions: ['applyPendingHighlight'] },
         },
-      },
-    },
-
-    implementations: {
-      guards: {
-        shouldCloseOnSelect: ({ context, event }) => {
-          // Only meaningful for `item.click`. Guarding by type narrows the
-          // payload so `selectEvent` / `closeOnSelect` are typed.
-          if (event.type !== 'item.click') return false
-          // Consumer can cancel close via onSelect(event).preventDefault().
-          if (event.selectEvent.defaultPrevented) return false
-          // Per-item override (false for checkbox/radio); else the resolved default.
-          if (event.closeOnSelect !== undefined) return event.closeOnSelect
-          return context.closeOnSelect
-        },
-      },
-
-      actions: {
-        setGlobalId: ({ context }) => {
-          dropdownMenuStore.setOpen(context.id)
-        },
-        clearGlobalId: ({ context }) => {
-          if (dropdownMenuStore.get().openId === context.id) {
-            dropdownMenuStore.setOpen(null)
-          }
-        },
-
-        highlightItem: ({ context, setContext, event }) => {
-          if (context.suspendPointer) return
-          if (event.type !== 'item.pointermove') return
-          setContext({ highlightedValue: event.value })
-        },
-        clearHighlightIfMatch: ({ context, setContext, event }) => {
-          if (context.suspendPointer) return
-          if (event.type !== 'item.pointerleave') return
-          if (context.highlightedValue === event.value) {
-            setContext({ highlightedValue: null })
-          }
-        },
-
-        applyPendingHighlight: ({ context, setContext, event }) => {
-          if (!context.pendingHighlight) return
-          if (!('items' in event)) return
-          const next =
-            context.pendingHighlight === 'first'
-              ? firstEnabled(event.items)
-              : lastEnabled(event.items)
-          if (next) {
-            setContext({ highlightedValue: next.value, pendingHighlight: null })
-          }
-        },
-
-        highlightFirst: ({ setContext, event }) => {
-          if (!('items' in event)) return
-          const next = firstEnabled(event.items)
-          if (next) setContext({ highlightedValue: next.value })
-        },
-        highlightLast: ({ setContext, event }) => {
-          if (!('items' in event)) return
-          const next = lastEnabled(event.items)
-          if (next) setContext({ highlightedValue: next.value })
-        },
-        highlightNext: ({ context, setContext, event }) => {
-          if (!('items' in event)) return
-          const next = step(event.items, context.highlightedValue, 1, context.loop)
-          if (next) setContext({ highlightedValue: next.value })
-        },
-        highlightPrev: ({ context, setContext, event }) => {
-          if (!('items' in event)) return
-          const next = step(event.items, context.highlightedValue, -1, context.loop)
-          if (next) setContext({ highlightedValue: next.value })
-        },
-
-        clickHighlightedItem: ({ context, send, event }) => {
-          if (!('items' in event)) return
-          const current = event.items.find(i => i.value === context.highlightedValue)
-          if (!current || current.disabled) return
-          // Invoke onSelect synchronously so the guard can read
-          // defaultPrevented — matches the pointer-click path in connect.ts.
-          const selectEvent = makeSelectEvent()
-          current.onSelect?.(selectEvent)
-          send({
-            type: 'item.click',
-            value: current.value,
-            onSelect: current.onSelect,
-            selectEvent,
-            // explicit per-item override; falls through to default behavior
-            // when undefined (regular items close, toggles don't).
-            closeOnSelect:
-              current.closeOnSelect ??
-              (current.kind === 'checkbox' || current.kind === 'radio' ? false : undefined),
-            items: event.items,
-          })
-        },
-
-        typeaheadMatch: ({ context, setContext, event }) => {
-          if (event.type !== 'typeahead.char') return
-          const char = event.char.toLowerCase()
-          if (!char) return
-
-          const now = Date.now()
-          const expired = now - context.typeaheadLastTime > TYPEAHEAD_RESET_MS
-          const buffer = expired ? char : context.typeaheadBuffer + char
-
-          const match = typeaheadFind(event.items, buffer, context.highlightedValue)
-          if (match) {
-            setContext({
-              typeaheadBuffer: buffer,
-              typeaheadLastTime: now,
-              highlightedValue: match.value,
-              suspendPointer: true,
-            })
-          } else {
-            setContext({ typeaheadBuffer: buffer, typeaheadLastTime: now })
-          }
-        },
-      },
-
-      effects: {
-        // While open, watch the global store: if another menu claims the
-        // single-open slot, close this one. (Escape is NOT a machine effect —
-        // its listener lives in the target's effects.ts, which sends `escape`.)
-        trackGlobalStore: ({ context, send }) =>
-          dropdownMenuStore.subscribe(() => {
-            const openId = dropdownMenuStore.get().openId
-            if (openId !== context.id && openId !== null) {
-              send({ type: 'close', src: 'store.id.change' })
-            }
-          }),
       },
     },
   })

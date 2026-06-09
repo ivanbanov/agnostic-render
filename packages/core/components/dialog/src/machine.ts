@@ -18,7 +18,7 @@
  * Sibling files: types.ts · props.ts · connect.ts · parts.ts · utils.ts · index.ts
  */
 
-import { config, type Machine } from '@render-experiment/machine-core'
+import { setup, type Machine } from '@render-experiment/machine-core'
 import type {
   DialogComputed,
   DialogContext,
@@ -27,10 +27,15 @@ import type {
   DialogState,
 } from './types'
 
+// The dialog machine has no named impls (no guards/actions/effects/delays) — its
+// transitions are unconditional. setup() is still used for a consistent shape:
+// an empty registry, so any future named slot is checked at compile time.
+const { createMachine } = setup<DialogContext, DialogEvent, DialogComputed>()({})
+
 /**
  * Build the dialog machine CONFIG from already-resolved props (defaults
- * applied). Returns a config — the target bridge applies its adapter and builds
- * the running machine. Props are read ONCE here to seed context + initial state.
+ * applied). Props are read ONCE here to seed context + initial state; named
+ * impls (none here) are registered above via setup().
  */
 export function dialogMachineConfig(props: DialogMachineProps) {
   const context: DialogContext = {
@@ -38,7 +43,7 @@ export function dialogMachineConfig(props: DialogMachineProps) {
     modal: props.modal,
   }
 
-  return config<DialogState, DialogContext, DialogEvent, DialogComputed>({
+  return createMachine({
     initial: (props.open ?? props.defaultOpen) ? 'open' : 'closed',
     context,
 

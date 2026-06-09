@@ -1,4 +1,4 @@
-import { act, config, type Machine } from '@render-experiment/machine-core'
+import { act, setup, type Machine } from '@render-experiment/machine-core'
 import { tooltipStore } from './store'
 import type {
   TooltipComputed,
@@ -8,11 +8,52 @@ import type {
   TooltipState,
 } from './types'
 
+// Named impls registered once (they read context / the global store, never props)
+// — so a state's `guard`/`entry`/`effects`/`after` name is checked against these.
+const { createMachine } = setup<TooltipContext, TooltipEvent, TooltipComputed>()({
+  delays: {
+    openDelay: ({ context }) => context.openDelay,
+    closeDelay: ({ context }) => context.closeDelay,
+  },
+
+  guards: {
+    shouldSkipDelay: () => tooltipStore.isInSkipWindow(),
+    /** Inverse of disableHoverableContent — pointer can dwell on Content. */
+    isHoverableContent: ({ context }) => !context.disableHoverableContent,
+  },
+
+  actions: {
+    setGlobalId: ({ context }) => {
+      tooltipStore.setOpen(context.id)
+      if (context.skipDelayDuration > 0) {
+        tooltipStore.startSkipWindow(context.skipDelayDuration)
+      }
+    },
+    clearGlobalId: ({ context }) => {
+      if (tooltipStore.get().openId === context.id) tooltipStore.setOpen(null)
+    },
+  },
+
+  effects: {
+    // While open, watch the global store: if another tooltip claims the
+    // single-open slot, close this one. (Escape is NOT a machine effect —
+    // its listener + prevent-able gate live in the target's effects.ts, which
+    // then sends `escape`.)
+    trackGlobalStore: ({ context, send }) =>
+      tooltipStore.subscribe(() => {
+        const openId = tooltipStore.get().openId
+        if (openId !== context.id && openId !== null) {
+          send({ type: 'close', src: 'store.id.change' })
+        }
+      }),
+  },
+})
+
 /**
  * Build the tooltip machine CONFIG from already-resolved props (defaults
- * applied). Returns a config — the target bridge applies its adapter
- * (withAdapter) and builds the running machine, so platform effects stay at
- * the edge. Props are read ONCE here to seed context + initial state.
+ * applied). Props are read ONCE here to seed context + initial state; the named
+ * impls are registered above via setup(), so the state graph's guard/action/
+ * effect/delay names are checked at compile time.
  */
 export function tooltipMachineConfig(props: TooltipMachineProps) {
   const openInitially = props.open ?? props.defaultOpen
@@ -28,7 +69,7 @@ export function tooltipMachineConfig(props: TooltipMachineProps) {
     timing: openInitially ? 'instant' : null,
   }
 
-  return config<TooltipState, TooltipContext, TooltipEvent, TooltipComputed>({
+  return createMachine({
     initial: openInitially ? 'open' : 'closed',
     context,
 
@@ -120,45 +161,6 @@ export function tooltipMachineConfig(props: TooltipMachineProps) {
             actions: act({ timing: 'instant' }),
           },
         },
-      },
-    },
-
-    implementations: {
-      delays: {
-        openDelay: ({ context }) => context.openDelay,
-        closeDelay: ({ context }) => context.closeDelay,
-      },
-
-      guards: {
-        shouldSkipDelay: () => tooltipStore.isInSkipWindow(),
-        /** Inverse of disableHoverableContent — pointer can dwell on Content. */
-        isHoverableContent: ({ context }) => !context.disableHoverableContent,
-      },
-
-      actions: {
-        setGlobalId: ({ context }) => {
-          tooltipStore.setOpen(context.id)
-          if (context.skipDelayDuration > 0) {
-            tooltipStore.startSkipWindow(context.skipDelayDuration)
-          }
-        },
-        clearGlobalId: ({ context }) => {
-          if (tooltipStore.get().openId === context.id) tooltipStore.setOpen(null)
-        },
-      },
-
-      effects: {
-        // While open, watch the global store: if another tooltip claims the
-        // single-open slot, close this one. (Escape is NOT a machine effect —
-        // its listener + prevent-able gate live in the target adapter, which
-        // then sends `escape`.)
-        trackGlobalStore: ({ context, send }) =>
-          tooltipStore.subscribe(() => {
-            const openId = tooltipStore.get().openId
-            if (openId !== context.id && openId !== null) {
-              send({ type: 'close', src: 'store.id.change' })
-            }
-          }),
       },
     },
   })
