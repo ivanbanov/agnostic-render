@@ -57,7 +57,7 @@ export interface DropdownMenuProps {
 
 /**
  * Props after defaults are applied (`{ ...DROPDOWN_MENU_DEFAULTS, ...props }`),
- * resolved once at the adapter entry. The machine and connect operate on
+ * resolved once at the target entry. The machine and connect operate on
  * this concrete shape and never re-resolve.
  */
 export interface DropdownMenuMachineProps {
@@ -138,7 +138,7 @@ export interface DropdownMenuContext {
   suspendPointer: boolean
   /** Type-ahead buffer; cleared after a quiet period. */
   typeaheadBuffer: string
-  /** Time of last typeahead key — adapters compare to clear the buffer. */
+  /** Time of last typeahead key — targets compare to clear the buffer. */
   typeaheadLastTime: number
   /**
    * Set when the menu opens via a keyboard intent ("first" from
@@ -221,8 +221,8 @@ export interface DropdownMenuComputed {
 
 /**
  * A named part — one flat bag the view spreads: event handlers + substrate
- * attributes. Matches the tooltip's flat part shape; the adapter's normalize()
- * maps each key by name. Core emits no `data-*`; each adapter derives whatever
+ * attributes. Matches the tooltip's flat part shape; the target's normalize()
+ * maps each key by name. Core emits no `data-*`; each target derives whatever
  * `data-*` it wants from the machine state + these fields.
  */
 export type DropdownMenuPart = EventBindings & AttrBindings

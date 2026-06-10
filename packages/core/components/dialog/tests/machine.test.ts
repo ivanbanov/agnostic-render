@@ -8,7 +8,7 @@
  *
  * Mapping to SPEC.md:
  *   - Opening: trigger toggle, controlled/default open
- *   - Closing: close button, escape (via the `escape` event the adapter sends),
+ *   - Closing: close button, escape (via the `escape` event the target's effects.ts sends),
  *     outside pointer-down (via `outside.pointer.down`)
  *   - Escape / outside vetoes: resolveEscape / resolveOutsidePointerDown
  *   - Accessibility (connect): role=dialog, aria-modal, labelledby/describedby

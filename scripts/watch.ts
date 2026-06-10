@@ -5,7 +5,7 @@
  * types, props, utils, and the elements/ folder — and re-runs the build
  * emitter for the affected component when any of them change.
  *
- * The build script writes elements.ts and api.ts inside each adapter
+ * The build script writes elements.ts and api.ts inside each target
  * package; Vite (web) and Metro (RN) pick those changes up via their
  * own file watchers and trigger HMR. This watcher's only job is to
  * keep the generated files in sync with the agnostic core.

@@ -4,7 +4,7 @@
  *
  * Output is substrate-agnostic: handlers (`onPress`) + attrs (`id`, `role`,
  * `labelledBy`, `describedBy`, `modal`, `expanded`, `controls`, `hasPopup`) in
- * one flat bag per part. Core emits no `data-*` — each adapter derives whatever
+ * one flat bag per part. Core emits no `data-*` — each target derives whatever
  * it wants from the machine state + these fields.
  *
  * This is pure — it runs on every snapshot read and must not fire side effects.

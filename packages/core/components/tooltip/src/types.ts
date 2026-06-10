@@ -71,7 +71,7 @@ export interface TooltipProps extends TooltipProviderConfig {
 
 /**
  * Props after defaults are applied (`{ ...TOOLTIP_DEFAULTS, ...props }`),
- * resolved once at the adapter entry. The connector operates on this concrete
+ * resolved once at the target entry. The connector operates on this concrete
  * shape (controlled `open`, callbacks); the machine does NOT — config fields
  * are seeded into context.
  */
@@ -161,18 +161,18 @@ export type TooltipEvent =
   | { type: 'escape'; src?: string }
 
 // -----------------------------------------------------------------------------
-// Connect API (consumed by adapter render layer)
+// Connect API (consumed by the target's render layer)
 // -----------------------------------------------------------------------------
 
 /**
  * A named part of the component — one flat bag of the things the view spreads
  * onto the element: event handlers (`onPointerMove`, `onFocus`, …) and
  * substrate attributes (`id`, `role`, `describedBy`, `disabled`, aria-*). The
- * adapter's normalize() maps each key by name; there's no handler/attr grouping
+ * target's normalize() maps each key by name; there's no handler/attr grouping
  * because nothing downstream needs one.
  *
  * Semantic state (machine state, side) is NOT collapsed into `data-*` here —
- * core stays agnostic; each adapter derives whatever `data-*` it wants from the
+ * core stays agnostic; each target derives whatever `data-*` it wants from the
  * machine state + the part's own fields (e.g. `side`).
  */
 export type TooltipPart = EventBindings & AttrBindings

@@ -20,7 +20,7 @@ export function useDropdownMenuContext(): DropdownMenuContextValue {
 }
 
 // -----------------------------------------------------------------------------
-// Items registry — same shape as the React DOM adapter.
+// Items registry — same shape as the React DOM target.
 // -----------------------------------------------------------------------------
 
 export interface DropdownMenuItemRegistry {

@@ -4,7 +4,7 @@
  *
  * Output is substrate-agnostic: handlers (`onPress`, `onKeyDown`, …) + attrs
  * (`id`, `role`, `expanded`, …) in one flat bag per part. Core emits no
- * `data-*` — each adapter derives whatever it wants from the machine state +
+ * `data-*` — each target derives whatever it wants from the machine state +
  * these fields. Plus content-only positioning fields (`side`, `placement`,
  * offsets) the view consumes to anchor.
  *

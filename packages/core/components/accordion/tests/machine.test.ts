@@ -24,7 +24,7 @@ interface Harness {
 }
 
 /** Build + start an accordion machine and its connector (defaults resolved as
- * the adapter entry does). `api()` returns the item-aware api each call. */
+ * the target entry does). `api()` returns the item-aware api each call. */
 function make(props: Partial<AccordionProps> = {}, items = ITEMS): Harness {
   const resolved: AccordionMachineProps = {
     ...ACCORDION_DEFAULTS,

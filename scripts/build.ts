@@ -2,25 +2,25 @@
  * Component codegen.
  *
  * For each component under packages/core/components/<slug>/, regenerate
- * the elements.ts + api.ts files in each adapter (React, native)
+ * the elements.ts + api.ts files in each target (React, native)
  * that exists for that component.
  *
- * Hand-written files in each adapter:
+ * Hand-written files in each target:
  *   - <Component>.tsx     — the actual view
- *   - context.ts          — adapter-specific context/provider
+ *   - context.ts          — target-specific context/provider
  *   - utils.ts            — component-local helpers (when needed)
  *   - index.ts            — public reexports
  *
  * Generated files (overwritten on every run, marked with a header,
- * live under each adapter's `src/generated/`):
+ * live under each target's `src/generated/`):
  *   - generated/elements.ts  — one styled wrapper or style record per *Style spec
- *   - generated/api.ts       — useXxxApi (wires the machine to the adapter)
+ *   - generated/api.ts       — useXxxApi (wires the machine to the target)
  *
  * Convention contract:
  *   - core folder name = component slug (kebab-case): "tooltip" / "dropdown-menu"
  *   - shared/components/<slug>/src/styles.ts exports each part as a
  *     camelCase const whose value is a style spec (object with `variants`).
- *     The part name on adapters is the PascalCase form: `content` → `Content`.
+ *     The part name on targets is the PascalCase form: `content` → `Content`.
  *   - core/components/<slug>/src/parts/<name>.ts holds the matching variant
  *     types (the contract). Codegen does not read these.
  *   - core/components/<slug>/src/index.ts exports `<camel>MachineConfig` and
@@ -48,7 +48,7 @@ const COMPONENTS_SHARED = resolve(REPO_ROOT, 'packages/shared/components')
 export interface DiscoveredComponent {
   /** Kebab-case folder name: "tooltip" / "dropdown-menu". */
   slug: string
-  /** camelCase form, used as the export-name prefix on adapters. */
+  /** camelCase form, used as the export-name prefix on targets. */
   camel: string
   /** PascalCase, used as the React/RN component name. */
   pascal: string
@@ -56,9 +56,9 @@ export interface DiscoveredComponent {
   coreSrc: string
   /** Path to the shared package's src dir (hosts style specs). */
   sharedSrc: string
-  /** Path to react adapter's src dir (may not exist). */
+  /** Path to react target's src dir (may not exist). */
   reactSrc: string
-  /** Path to native adapter's src dir (may not exist). */
+  /** Path to native target's src dir (may not exist). */
   nativeSrc: string
 }
 
@@ -130,7 +130,7 @@ async function loadCore(component: DiscoveredComponent): Promise<LoadedCore> {
   const indexMod = (await import(pathToFileURL(indexPath).href + bust)) as Record<string, unknown>
 
   // Pick up every camelCase export from the shared styles.ts whose
-  // value looks like a style spec. The part name on adapters is the
+  // value looks like a style spec. The part name on targets is the
   // PascalCase form.
   const styles: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(stylesMod)) {
@@ -354,7 +354,7 @@ export async function buildComponent(component: DiscoveredComponent) {
   }
 
   if (targets.length === 0) {
-    console.warn(`[${component.pascal}] no adapters found; skipping`)
+    console.warn(`[${component.pascal}] no targets found; skipping`)
     return
   }
 

@@ -47,7 +47,7 @@ export interface DialogProps {
 
 /**
  * Props after defaults are applied (`{ ...DIALOG_DEFAULTS, ...props }`),
- * resolved once at the adapter entry. The connector operates on this concrete
+ * resolved once at the target entry. The connector operates on this concrete
  * shape (controlled `open`, callbacks); the machine does NOT — config fields are
  * seeded into context.
  */
@@ -106,14 +106,14 @@ export type DialogEvent =
   | { type: 'outside.pointer.down'; src?: string }
 
 // -----------------------------------------------------------------------------
-// Connect API (consumed by adapter render layer)
+// Connect API (consumed by the target's render layer)
 // -----------------------------------------------------------------------------
 
 /**
  * A named part — one flat bag of the things the view spreads onto the element:
  * event handlers (`onPress`, …) and substrate attributes (`id`, `role`,
- * `labelledBy`, `modal`, …). The adapter's normalize() maps each key by name.
- * Core emits no `data-*`; each adapter derives whatever it wants from these.
+ * `labelledBy`, `modal`, …). The target's normalize() maps each key by name.
+ * Core emits no `data-*`; each target derives whatever it wants from these.
  */
 export type DialogPart = EventBindings & AttrBindings
 

@@ -10,7 +10,7 @@
  *   - `after` delays use setTimeout → vitest fake timers.
  *   - Escape's listener + prevent-able onEscapeKeyDown gate are a substrate
  *     (React) concern; here we assert the machine closes on the `escape`/`close`
- *     event the adapter sends after gating.
+ *     event the target's effects.ts sends after gating.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -31,7 +31,7 @@ import { connector, machine } from '@render-experiment/machine-core'
 let nextId = 0
 
 /** Build + start a tooltip machine and its connector (defaults resolved as the
- * adapter entry does). The connector makes connect's snapshot + reactions real. */
+ * target entry does). The connector makes connect's snapshot + reactions real. */
 function make(props: Partial<TooltipProps> = {}) {
   const resolved: TooltipMachineProps = { ...TOOLTIP_DEFAULTS, id: `t${nextId++}`, ...props }
   const m = machine(tooltipMachineConfig(resolved))
@@ -178,7 +178,7 @@ describe('closing', () => {
     expect(m.state).toBe('closed')
   })
 
-  it('an `escape` event (sent by the adapter after gating) closes from open', () => {
+  it('an `escape` event (sent by the target effects.ts after gating) closes from open', () => {
     const { m } = make()
     m.send({ type: 'open' })
     expect(m.state).toBe('open')

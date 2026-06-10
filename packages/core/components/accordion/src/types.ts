@@ -47,7 +47,7 @@ export interface AccordionProps {
 
 /**
  * Props after defaults are applied (`{ ...ACCORDION_DEFAULTS, ...props }`),
- * resolved once at the adapter entry. The machine and connect operate on this
+ * resolved once at the target entry. The machine and connect operate on this
  * concrete shape and never re-resolve.
  */
 export interface AccordionMachineProps {
@@ -142,8 +142,8 @@ export interface AccordionComputed {
 
 /**
  * A named part — one flat bag the view spreads: event handlers + substrate
- * attributes. The adapter's normalize() maps each key by name. Core emits no
- * `data-*`; each adapter derives whatever `data-*` it wants from the machine
+ * attributes. The target's normalize() maps each key by name. Core emits no
+ * `data-*`; each target derives whatever `data-*` it wants from the machine
  * state + these fields.
  */
 export type AccordionPart = EventBindings & AttrBindings

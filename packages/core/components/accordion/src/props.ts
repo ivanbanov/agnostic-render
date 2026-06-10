@@ -2,7 +2,7 @@
  * Accordion defaults.
  *
  * Resolution is a plain object spread — `{ ...ACCORDION_DEFAULTS, ...props }`
- * applied ONCE at the adapter entry (generated api.ts). Every prop is flat, so
+ * applied ONCE at the target entry (generated api.ts). Every prop is flat, so
  * a shallow spread fully resolves them; there is no merge function.
  *
  * Kept separate from machine.ts so a designer collaborator can read the

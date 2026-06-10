@@ -8,7 +8,7 @@
  *
  * Mapping to packages/core/components/dropdown-menu/SPEC.md:
  *   - Opening: click, Enter/Space, ArrowDown (first), ArrowUp (last)
- *   - Closing: trigger click, Escape (via the `escape` event the adapter sends)
+ *   - Closing: trigger click, Escape (via the `escape` event the target's effects.ts sends)
  *   - Highlight + keyboard nav: ArrowDown/Up, Home/End, loop
  *   - Item activation: closeOnSelect, checkbox/radio stay open, onSelect cancel
  *   - Typeahead: prefix match, disabled items participate
@@ -47,7 +47,7 @@ const ITEMS: DropdownMenuItemProps[] = [
 ]
 
 /** Build + start a menu machine and its connector (defaults resolved as the
- * adapter entry does). */
+ * target entry does). */
 function make(props: Partial<DropdownMenuProps> = {}) {
   const resolved: DropdownMenuMachineProps = {
     ...DROPDOWN_MENU_DEFAULTS,
@@ -142,7 +142,7 @@ describe('closing', () => {
     expect(m.state).toBe('closed')
   })
 
-  it('an `escape` event closes (what the Escape adapter sends)', () => {
+  it('an `escape` event closes (what the Escape listener in effects.ts sends)', () => {
     const { m } = make({ defaultOpen: true })
     m.send({ type: 'escape' })
     expect(m.state).toBe('closed')

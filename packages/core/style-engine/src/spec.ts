@@ -5,7 +5,7 @@
  * Property naming rule:
  *   - Use CSS names where they map cleanly across renderers.
  *   - For the handful that don't (writing-mode logical inline/block),
- *     use physical-axis equivalents: `paddingX` / `paddingY`. Adapters
+ *     use physical-axis equivalents: `paddingX` / `paddingY`. Targets
  *     expand these to substrate-native equivalents.
  *
  * Shape: flat base styles at the top level alongside variants /

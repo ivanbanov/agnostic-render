@@ -2,7 +2,7 @@
  * DropdownMenu defaults.
  *
  * Resolution is a plain object spread — `{ ...DROPDOWN_MENU_DEFAULTS, ...props }`
- * applied ONCE at the adapter entry (generated api.ts). Every prop is flat,
+ * applied ONCE at the target entry (generated api.ts). Every prop is flat,
  * so a shallow spread fully resolves them; there is no merge function and no
  * nested `positioning` object to deep-merge.
  *

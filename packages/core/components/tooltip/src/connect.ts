@@ -6,11 +6,11 @@
  *   - handlers — `onPointerMove`, `onFocus`, …
  *   - attrs    — substrate attributes: `id`, `describedBy`, `role`, `disabled`
  * Plus content-only fields (`side`, `placement`, offsets, `rendered`) the view
- * consumes to position/mount. Core never emits `data-*` — each adapter derives
+ * consumes to position/mount. Core never emits `data-*` — each target derives
  * whatever `data-*` it wants from the machine state + these fields.
  *
  * This is pure — it runs on every snapshot read and must not fire side effects.
- * Consumer callbacks (onOpenChange) are fired by the adapter, which observes the
+ * Consumer callbacks (onOpenChange) are fired by the connector (reactions), which observes the
  * machine's `open` via select (the machine never fires them, never reads props).
  *
  * See ../SPEC.md for the contract.

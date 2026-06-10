@@ -2,7 +2,7 @@
  * Style engine — Stitches placeholder + agnostic-spec translator.
  *
  * `stitches` / `styled` / `css` are the runtime engine (stand-in for the
- * future @style-dsl React adapter).
+ * future @style-dsl React target).
  *
  * `translateAgnosticSpec()` is the bridge: takes a renderer-blind style spec
  * (the kind components publish from their core package) and returns a
