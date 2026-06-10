@@ -1,9 +1,9 @@
 /**
  * Construction cost. DISPOSABLE first-look benchmark.
  *
- * "Cheaper to create than XState" is a claim the README makes — this times it.
- * Builds N machines/actors and measures wall-clock for construction alone
- * (no events sent). Both started, to match a real mount.
+ * Times spin-up across engines: builds N machines/actors and measures
+ * wall-clock for construction alone (no events sent). Both started, to match a
+ * real mount.
  *
  *   core   : machine(config) + .start()
  *   xstate : createActor(createMachine(config)) + .start()

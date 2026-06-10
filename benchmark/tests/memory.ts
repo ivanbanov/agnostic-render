@@ -5,8 +5,8 @@
  * trading-view case) — asserted in the README with no script until now. This
  * measures it: build N machines, hold them live, report retained heap / machine.
  *
- * Two context widths, because the whole point of the plain-object + COW model is
- * that memory should stay ~flat in FIELD COUNT (no per-field reactive cell):
+ * Two context widths, because the whole point of the plain-object model is that
+ * memory should stay ~flat in FIELD COUNT (no per-field reactive cell):
  *   - thin :  2 fields
  *   - fat  : 64 fields   (the case that would blow up a cell-per-field engine)
  *
@@ -30,11 +30,9 @@ function makeContext(n: number): Record<string, number> {
 }
 
 // ONE config per width, shared by all N machines — the shape a real app has
-// (a component's config is a module-level const; instances share it). This is
-// also what makes the idle row meaningful for core: idle machines share the
-// config's context object until their first write. The old version built a
-// fresh config + context per machine, so it measured config duplication, never
-// the sharing.
+// (a component's config is a module-level const; instances share it). The old
+// version built a fresh config + context per machine, so it measured config
+// duplication, not per-machine overhead.
 const coreConfigCache = new Map<number, ReturnType<typeof coreConfig>>()
 function coreConfig(fields: number) {
   return {
@@ -131,10 +129,10 @@ type Sendable = { send: (e: { type: string }) => void }
 
 interface Engine {
   build: (fields: number) => unknown
-  // Fire one `hit` so a write actually happens. For core this trips copy-on-write
-  // (each machine stops sharing the config's context object and owns a private
-  // copy), which is the footprint a real app pays — an idle machine that never
-  // wrote shares one context and is the best-case-only number.
+  // Fire one `hit` so a write actually happens. Core owns its context copy from
+  // construction (idle ≈ written by design); for XState the first assign()
+  // allocates a per-actor context, so its written footprint grows — the
+  // idle/written split exists to expose lazy-copy schemes like that.
   write: (m: unknown) => void
 }
 
@@ -188,11 +186,12 @@ export async function runMemory() {
     console.warn('⚠️  no --expose-gc — numbers are noisy (the suite passes it for you).')
   }
   const N = 5000
-  // Two modes: IDLE (never written — core shares one context via COW, best case)
-  // and WRITTEN (one hit each — COW has fired, every core machine owns its context,
-  // the footprint a real churny app pays). The gap between them IS the COW story.
+  // Two modes: IDLE (never written) and WRITTEN (one hit each — the footprint a
+  // real churny app pays). Core owns its context from construction, so its two
+  // rows should match; the split exposes engines whose first write allocates
+  // (XState's assign builds a per-actor context).
   for (const write of [false, true]) {
-    const mode = write ? 'written (1 hit each — COW fired)' : 'idle (never written)'
+    const mode = write ? 'written (1 hit each)' : 'idle (never written)'
     for (const [width, fields] of Object.entries(FIELDS)) {
       console.log(
         `\n### Memory — ${N.toLocaleString()} machines, ${width} context (${fields} fields), ${mode}`,
