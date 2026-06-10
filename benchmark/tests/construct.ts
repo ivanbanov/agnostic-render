@@ -23,34 +23,47 @@ import { machine } from '../../packages/core/machine/src/index'
 type Ctx = { value: number; other: number }
 type Ev = { type: 'hit' | 'miss' }
 
-function buildCore() {
-  const m = machine<'idle', Ctx, Ev>({
-    initial: 'idle',
-    context: { value: 0, other: 0 },
-    states: {
-      idle: {
-        on: {
-          hit: { actions: [({ context, setContext }) => setContext({ value: context.value + 1 })] },
-          miss: {
-            actions: [({ context, setContext }) => setContext({ other: context.other + 1 })],
-          },
+// Configs are shared across instances for ALL engines (module-level, like a
+// real app's component config) — so the loop times MACHINE construction, not
+// config-literal allocation. The old version rebuilt the core/xstate config per
+// machine while zag shared its def, despite the comment below claiming parity.
+const coreConfig = {
+  initial: 'idle' as const,
+  context: { value: 0, other: 0 },
+  states: {
+    idle: {
+      on: {
+        hit: {
+          actions: [
+            ({ context, setContext }: { context: Ctx; setContext: (p: Partial<Ctx>) => void }) =>
+              setContext({ value: context.value + 1 }),
+          ],
+        },
+        miss: {
+          actions: [
+            ({ context, setContext }: { context: Ctx; setContext: (p: Partial<Ctx>) => void }) =>
+              setContext({ other: context.other + 1 }),
+          ],
         },
       },
     },
-  })
+  },
+}
+function buildCore() {
+  const m = machine<'idle', Ctx, Ev>(coreConfig)
   m.start()
   return m
 }
 
+const xstateDef = createXMachine({
+  context: { value: 0, other: 0 },
+  on: {
+    hit: { actions: assign({ value: ({ context }) => context.value + 1 }) },
+    miss: { actions: assign({ other: ({ context }) => context.other + 1 }) },
+  },
+})
 function buildXstate() {
-  const def = createXMachine({
-    context: { value: 0, other: 0 },
-    on: {
-      hit: { actions: assign({ value: ({ context }) => context.value + 1 }) },
-      miss: { actions: assign({ other: ({ context }) => context.other + 1 }) },
-    },
-  })
-  const a = createActor(def)
+  const a = createActor(xstateDef)
   a.start()
   return a
 }

@@ -29,29 +29,58 @@ function makeContext(n: number): Record<string, number> {
   return ctx
 }
 
-function buildCore(fields: number) {
-  const context = makeContext(fields)
-  const m = machine({
-    initial: 'idle',
-    context,
+// ONE config per width, shared by all N machines — the shape a real app has
+// (a component's config is a module-level const; instances share it). This is
+// also what makes the idle row meaningful for core: idle machines share the
+// config's context object until their first write. The old version built a
+// fresh config + context per machine, so it measured config duplication, never
+// the sharing.
+const coreConfigCache = new Map<number, ReturnType<typeof coreConfig>>()
+function coreConfig(fields: number) {
+  return {
+    initial: 'idle' as const,
+    context: makeContext(fields),
     states: {
       idle: {
         on: {
-          hit: { actions: [({ context: c, setContext }) => setContext({ f0: c.f0 + 1 })] },
+          hit: {
+            actions: [
+              ({
+                context: c,
+                setContext,
+              }: {
+                context: Record<string, number>
+                setContext: (p: Record<string, number>) => void
+              }) => setContext({ f0: c.f0 + 1 }),
+            ],
+          },
         },
       },
     },
-  })
+  }
+}
+function buildCore(fields: number) {
+  let cfg = coreConfigCache.get(fields)
+  if (!cfg) coreConfigCache.set(fields, (cfg = coreConfig(fields)))
+  const m = machine(cfg)
   m.start()
   return m
 }
 
-function buildXstate(fields: number) {
-  const context = makeContext(fields)
-  const def = createXMachine({
-    context,
+// xstate: same sharing — one machine DEF per width. With a static `context`
+// object, actors share its reference until the first assign() allocates a
+// per-actor context (XState's own lazy-copy shape), so the idle/written split
+// is directly comparable to core's.
+const xstateDefCache = new Map<number, ReturnType<typeof xstateDef>>()
+function xstateDef(fields: number) {
+  return createXMachine({
+    context: makeContext(fields),
     on: { hit: { actions: assign({ f0: ({ context: c }) => c.f0 + 1 }) } },
   })
+}
+function buildXstate(fields: number) {
+  let def = xstateDefCache.get(fields)
+  if (!def) xstateDefCache.set(fields, (def = xstateDef(fields)))
   const a = createActor(def)
   a.start()
   return a
@@ -146,6 +175,10 @@ function measureOnce(engine: Engine, N: number, fields: number, write: boolean):
 // true retained set. heapMB() already double-GCs before each sample.
 const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]
 function measure(engine: Engine, N: number, fields: number, write: boolean): number {
+  // Warmup OUTSIDE the measured window: builds (and writes) a few hundred
+  // machines so one-time costs — JIT, hidden classes, the shared config cache —
+  // aren't retained-set-attributed to whichever engine/mode runs first.
+  for (let i = 0; i < 200; i++) engine.write(engine.build(fields))
   return median(Array.from({ length: 3 }, () => measureOnce(engine, N, fields, write)))
 }
 
